@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+.dist/
+build/
+
+# Virtual env
+.venv/
+
+# Hydra
+.outputs/
+.multirun/
+
+# ClearML
+clearml.conf
+
+# Codex runtime (environment-specific)
+tools/codex_loop/runtime.json
+
+# Codex loop runs
+work/runs/
+
+# Codex loop state / lock / memo (do not version)
+work/state.json
+work/last_failure.md
+work/platform_api_summary.txt
+work/.codex_lock.json
+
+# Smoke / verify outputs
+work/_smoke/
+work/_verify_outputs/
+
+# Data (keep repo clean)
+*.csv
+*.parquet
+*.pkl
+*.joblib

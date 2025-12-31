@@ -1,0 +1,7 @@
+{
+  "cmd": ["bash", "tools/codex_loop/codex_exec.sh"],
+  "args": ["default", "{prompt_file}"],
+  "timeout_sec": 1800,
+  "env": {},
+  "notes": "Codex CLI には --prompt-file が無い実装があるため、wrapper(codex_exec.sh)経由で prompt.md を stdin から渡します（codex exec の PROMPT に '-' を指定）。profile 名は第1引数(default)を変更してください。"
+}

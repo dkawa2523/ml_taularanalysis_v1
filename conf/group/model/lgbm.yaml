@@ -1,0 +1,10 @@
+# モデルバリアント: LightGBM（optional dependency: pip install .[models]）
+model_variant:
+  name: lgbm
+  framework: lightgbm
+  class_path: lightgbm.LGBMRegressor
+  params:
+    n_estimators: 500
+    learning_rate: 0.05
+    num_leaves: 31
+    random_state: ${eval.seed}

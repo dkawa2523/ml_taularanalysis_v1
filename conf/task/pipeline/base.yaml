@@ -1,0 +1,18 @@
+task:
+  name: pipeline
+  stage: "99_pipeline"
+  project_name: "${run.clearml.project_root}/${run.usecase_id}/99_pipeline"
+
+pipeline:
+  # どの工程を実行するか
+  run_dataset_register: true
+  run_preprocess: true
+  run_train: true
+  run_leaderboard: true
+  run_infer: false
+
+  # grid 実行（前処理×モデルなど）
+  grid:
+    preprocess_variants: [stdscaler_ohe]
+    model_variants: [ridge]
+    max_jobs: 50

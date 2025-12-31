@@ -1,0 +1,121 @@
+{
+  "version": 1,
+  "solution": "ml-solution-tabular-analysis",
+  "tasks": [
+    {
+      "id": "T001",
+      "title": "Bootstrap: パッケージ化/CLI/基本導線",
+      "md": "work/tasks/T001_BOOTSTRAP.md",
+      "deps": [],
+      "must_change_globs": [
+        "pyproject.toml",
+        "src/tabular_analysis/cli.py",
+        "tools/codex_loop/run.py",
+        "work/CODEX_GUIDE.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python -m tabular_analysis.cli --print-config > /dev/null"
+      ]
+    },
+    {
+      "id": "T002",
+      "title": "Hydra 設計: タスク単位 config + バリアント設計",
+      "md": "work/tasks/T002_HYDRA_CONFIG.md",
+      "deps": ["T001"],
+      "must_change_globs": ["conf/**", "docs/05_PROCESS_CATALOG.md"],
+      "verify": [
+        "python -m tabular_analysis.cli --print-config task=preprocess > /dev/null",
+        "python -m tabular_analysis.cli --print-config task=train_model > /dev/null"
+      ]
+    },
+    {
+      "id": "T003",
+      "title": "Platform 連携: platform_adapter を P201〜P204 に合わせて完成",
+      "md": "work/tasks/T003_PLATFORM_ADAPTER.md",
+      "deps": ["T002"],
+      "must_change_globs": ["src/tabular_analysis/platform_adapter.py", "docs/13_PLATFORM_INTEGRATION.md"],
+      "verify": [
+        "python tools/codex_loop/platform_scan.py > work/platform_api_summary.txt || true",
+        "python -c \"import tabular_analysis.platform_adapter as a; print('ok')\""
+      ]
+    },
+    {
+      "id": "T004",
+      "title": "dataset_register 実装: rawデータ登録 + schema + manifest/out",
+      "md": "work/tasks/T004_DATASET_REGISTER.md",
+      "deps": ["T003"],
+      "must_change_globs": ["src/tabular_analysis/processes/dataset_register.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until dataset_register"
+      ]
+    },
+    {
+      "id": "T005",
+      "title": "preprocess 実装: 前処理 + split固定 + bundle",
+      "md": "work/tasks/T005_PREPROCESS.md",
+      "deps": ["T004"],
+      "must_change_globs": ["src/tabular_analysis/processes/preprocess.py", "src/tabular_analysis/registry/preprocessors.py", "src/tabular_analysis/io/*"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until preprocess"
+      ]
+    },
+    {
+      "id": "T006",
+      "title": "train_model 実装: 学習 + model_bundle + metrics",
+      "md": "work/tasks/T006_TRAIN_MODEL.md",
+      "deps": ["T005"],
+      "must_change_globs": ["src/tabular_analysis/processes/train_model.py", "src/tabular_analysis/registry/models.py", "src/tabular_analysis/registry/metrics.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until train_model"
+      ]
+    },
+    {
+      "id": "T007",
+      "title": "leaderboard 実装: 比較可能性チェック + 推奨",
+      "md": "work/tasks/T007_LEADERBOARD.md",
+      "deps": ["T006"],
+      "must_change_globs": ["src/tabular_analysis/processes/leaderboard.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until leaderboard"
+      ]
+    },
+    {
+      "id": "T008",
+      "title": "infer 実装: single/batch（optimizeは任意）",
+      "md": "work/tasks/T008_INFER.md",
+      "deps": ["T006"],
+      "must_change_globs": ["src/tabular_analysis/processes/infer.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until infer"
+      ]
+    },
+    {
+      "id": "T009",
+      "title": "pipeline 実装: grid 実行 + task_id 受け渡し",
+      "md": "work/tasks/T009_PIPELINE.md",
+      "deps": ["T007", "T008"],
+      "must_change_globs": ["src/tabular_analysis/processes/pipeline.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_local.py --until pipeline"
+      ]
+    },
+    {
+      "id": "T010",
+      "title": "doctor/contract lint: 実行前検査 + UI契約チェック",
+      "md": "work/tasks/T010_DOCTOR_AND_LINT.md",
+      "deps": ["T009"],
+      "must_change_globs": ["src/tabular_analysis/doctor.py"],
+      "verify": [
+        "python -m compileall -q src",
+        "python -m tabular_analysis.doctor --help > /dev/null"
+      ]
+    }
+  ]
+}

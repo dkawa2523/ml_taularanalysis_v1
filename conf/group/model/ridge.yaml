@@ -1,0 +1,8 @@
+# モデルバリアント: Ridge Regression（scikit-learn）
+model_variant:
+  name: ridge
+  framework: sklearn
+  class_path: sklearn.linear_model.Ridge
+  params:
+    alpha: 1.0
+    random_state: ${eval.seed}
