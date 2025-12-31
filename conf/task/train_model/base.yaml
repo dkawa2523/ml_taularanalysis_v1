@@ -1,3 +1,4 @@
+# @package _global_
 task:
   name: train_model
   stage: "03_train_model"
@@ -9,3 +10,7 @@ train:
 
   # 追加のモデルハイパーパラメータ（バリアント側で上書き／追加）
   params: {}
+
+  # preprocess の出力ディレクトリ（out.json/processed_dataset.parquet 等）
+  inputs:
+    preprocess_run_dir: null

@@ -12,8 +12,17 @@ from typing import Any
 
 
 def save_bundle(path: Path, obj: Any) -> None:
-    raise NotImplementedError
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        import joblib  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("joblib is required for bundle serialization.") from exc
+    joblib.dump(obj, path)
 
 
 def load_bundle(path: Path) -> Any:
-    raise NotImplementedError
+    try:
+        import joblib  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("joblib is required for bundle serialization.") from exc
+    return joblib.load(path)

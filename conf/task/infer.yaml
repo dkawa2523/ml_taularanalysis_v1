@@ -1,0 +1,10 @@
+# @package _global_
+task:
+  name: infer
+  stage: "04_infer"
+  project_name: "${run.clearml.project_root}/${run.usecase_id}/04_infer"
+
+infer:
+  model_id: null
+  train_task_id: null
+  mode: single

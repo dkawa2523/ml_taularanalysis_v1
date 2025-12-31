@@ -11,4 +11,17 @@ from typing import Any, Dict
 
 
 def infer_schema(df) -> Dict[str, Any]:
-    raise NotImplementedError
+    rows = int(df.shape[0])
+    cols = int(df.shape[1])
+    null_count = df.isna().sum()
+    fields: Dict[str, Any] = {}
+    for col in df.columns:
+        key = str(col)
+        count = int(null_count[col])
+        rate = float(count / rows) if rows else 0.0
+        fields[key] = {
+            "dtype": str(df[col].dtype),
+            "null_count": count,
+            "null_rate": rate,
+        }
+    return {"rows": rows, "columns": cols, "fields": fields}

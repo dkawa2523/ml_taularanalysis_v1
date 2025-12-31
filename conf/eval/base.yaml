@@ -1,12 +1,11 @@
-eval:
-  # primary metric（leaderboard はこれで順位付け）
-  primary_metric: rmse  # rmse | mae | r2
+# primary metric（leaderboard はこれで順位付け）
+primary_metric: rmse  # rmse | mae | r2
 
-  # minimize / maximize
-  direction: minimize
+# minimize / maximize
+direction: minimize
 
-  # cross-validation の folds（train_model で利用。0 の場合は holdout のみ）
-  cv_folds: 5
+# cross-validation の folds（train_model で利用。0 の場合は holdout のみ）
+cv_folds: 5
 
-  # seed（再現性）
-  seed: 42
+# seed（再現性）
+seed: 42

@@ -36,14 +36,17 @@
 
 ## train_model
 **入力**
-- `processed_dataset_id`（preprocess から）
-- `split_hash`（preprocess から）
+- `train.inputs.preprocess_run_dir`（preprocess の出力ディレクトリ）
+- `data.processed_dataset_id`（preprocess out.json の整合チェック用。ClearML では Dataset ID）
 - `model_variant`
-- `eval.primary_metric`/`eval.cv_folds`/`eval.seed`
+- `eval.primary_metric`/`eval.direction`/`eval.cv_folds`/`eval.seed`
 
 **出力（out.json）**
-- `train_task_id`（ClearML Task ID）
-- `model_id`（ClearML Model ID など）
+- `processed_dataset_id`
+- `split_hash`
+- `recipe_hash`
+- `train_task_id`（ClearML Task ID。local では null）
+- `model_id`（ClearML Model ID など。local では path）
 - `best_score`
 - `primary_metric`
 
@@ -52,12 +55,14 @@
 
 ## leaderboard
 **入力**
-- `leaderboard.train_task_ids`
+- `leaderboard.train_task_ids` (ClearML task IDs)
+- `leaderboard.train_run_dirs` (local run directories; fallback to train_task_ids when ClearML disabled)
 
 **出力（out.json）**
 - `leaderboard_csv`
 - `recommended_train_task_id`
 - `recommended_model_id`
+- `excluded_count`
 
 **追加 Artifacts**
 - `leaderboard.csv`, `recommendation.json`, `summary.md`

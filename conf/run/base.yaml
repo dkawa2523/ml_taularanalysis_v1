@@ -1,35 +1,34 @@
-run:
-  # ClearML 上で識別するための UseCase ID（Project 階層・Properties にも利用）
-  usecase_id: TabularAnalysis
+# ClearML 上で識別するための UseCase ID（Project 階層・Properties にも利用）
+usecase_id: TabularAnalysis
 
-  # 全タスク共通の出力先（ローカル実行時）
-  output_dir: outputs/${now:%Y%m%d_%H%M%S}
+# 全タスク共通の出力先（ローカル実行時）
+output_dir: outputs/${now:%Y%m%d_%H%M%S}
 
-  # schema_version は artifacts/manifest の互換性キー（Solution 側で固定）
-  schema_version: v1
+# schema_version は artifacts/manifest の互換性キー（Solution 側で固定）
+schema_version: v1
 
-  # grid 実行単位の識別子（pipeline が設定して各タスクへ伝播させる）
-  grid_run_id: null
+# grid 実行単位の識別子（pipeline が設定して各タスクへ伝播させる）
+grid_run_id: null
 
-  clearml:
-    # enabled=false の時は ClearML SDK を使わずローカルで処理する（開発・デバッグ用）
-    enabled: false
+clearml:
+  # enabled=false の時は ClearML SDK を使わずローカルで処理する（開発・デバッグ用）
+  enabled: false
 
-    # 実行モード：local | logging | agent | clone
-    # local: ClearMLなし
-    # logging: ローカル実行しつつ ClearML に記録
-    # agent: Task.execute_remotely で投入
-    # clone: テンプレTaskから clone して投入
-    execution: local
+  # 実行モード：local | logging | agent | clone
+  # local: ClearMLなし
+  # logging: ローカル実行しつつ ClearML に記録
+  # agent: Task.execute_remotely で投入
+  # clone: テンプレTaskから clone して投入
+  execution: local
 
-    # project のルート（例: MFG/<UseCase>/<Stage>）
-    project_root: "MFG"
+  # project のルート（例: MFG/<UseCase>/<Stage>）
+  project_root: "MFG"
 
-    # agent 実行時の queue
-    queue_name: null
+  # agent 実行時の queue
+  queue_name: null
 
-    # clone 実行時のテンプレ task_id（任意。運用で固定）
-    clone_from_task_id: null
+  # clone 実行時のテンプレ task_id（任意。運用で固定）
+  clone_from_task_id: null
 
-    # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
-    extra_tags: []
+  # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
+  extra_tags: []

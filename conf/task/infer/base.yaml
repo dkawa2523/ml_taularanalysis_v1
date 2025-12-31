@@ -1,3 +1,4 @@
+# @package _global_
 task:
   name: infer
   stage: "04_infer"

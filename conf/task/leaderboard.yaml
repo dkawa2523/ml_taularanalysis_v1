@@ -5,12 +5,8 @@ task:
   project_name: "${run.clearml.project_root}/${run.usecase_id}/05_leaderboard"
 
 leaderboard:
-  # pipeline から train_task_ids を渡すのが基本。
   train_task_ids: []
-  # local 実行時は run ディレクトリを直接渡す
   train_run_dirs: []
-
-  # 同一 split_hash / processed_dataset_id のみ比較する（不一致は除外して警告）
   require_comparable: true
 
   top_k: 10
