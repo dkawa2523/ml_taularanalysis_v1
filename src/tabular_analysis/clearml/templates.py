@@ -6,6 +6,16 @@ from typing import Any, Mapping
 
 from ..platform_adapter import find_clearml_task_id_by_tags
 
+_STAGE_BY_PROCESS = {
+    "dataset_register": "01_dataset_register",
+    "preprocess": "02_preprocess",
+    "train_model": "03_train_model",
+    "infer": "04_infer",
+    "leaderboard": "05_leaderboard",
+    "promote_model": "06_promote_model",
+    "pipeline": "99_pipeline",
+}
+
 
 def _cfg_value(cfg: Any, dotted_path: str, default: Any | None = None) -> Any:
     if cfg is None:
@@ -41,6 +51,15 @@ def _normalize_str(value: Any) -> str | None:
     return text or None
 
 
+def _template_project_name(cfg: Any, process: str) -> str | None:
+    stage = _STAGE_BY_PROCESS.get(process)
+    if not stage:
+        return None
+    project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root")) or "MFG"
+    template_usecase = _normalize_str(_cfg_value(cfg, "run.clearml.template_usecase_id")) or "TabularAnalysis"
+    return f"{project_root}/{template_usecase}/{stage}"
+
+
 def resolve_template_task_id(cfg: Any, process: str) -> str:
     process_name = _normalize_str(process)
     if not process_name:
@@ -48,7 +67,8 @@ def resolve_template_task_id(cfg: Any, process: str) -> str:
     usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id"))
     schema_version = _normalize_str(_cfg_value(cfg, "run.schema_version"))
 
-    base_tags = ["__$all", "template:true", f"process:{process_name}"]
+    project_name = _template_project_name(cfg, process_name)
+    base_tags = ["template:true", f"process:{process_name}"]
     candidates: list[list[str]] = []
     if usecase_id:
         tags = [*base_tags, f"usecase:{usecase_id}"]
@@ -60,7 +80,7 @@ def resolve_template_task_id(cfg: Any, process: str) -> str:
     candidates.append(list(base_tags))
 
     for tags in candidates:
-        task_id = find_clearml_task_id_by_tags(tags)
+        task_id = find_clearml_task_id_by_tags(tags, project_name=project_name)
         if task_id:
             return task_id
 

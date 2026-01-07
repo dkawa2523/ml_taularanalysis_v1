@@ -30,6 +30,9 @@ clearml:
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
 
+  # テンプレートタスクを置く usecase_id（templates.yaml の {usecase_id} に対応）
+  template_usecase_id: "TabularAnalysis"
+
   # tags/properties のポリシーは run.clearml.policy で切り替える
 
   # agent 実行時の queue
