@@ -1,0 +1,34 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-05T22:12:36Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "categorical_encoding": {
+      "encoding": "onehot",
+      "auto_onehot_max_categories": 50,
+      "hashing": {
+        "n_features": 128
+      },
+      "target_mean_oof": {
+        "folds": 5,
+        "smoothing": 10.0
+      }
+    },
+    "dataset_path": "/tmp/ta_rehearsal/toy.csv",
+    "raw_dataset_id": "817e11ce55ac40bf868130b16cd70afd"
+  },
+  "outputs": {
+    "processed_dataset_id": "b94338318a234f34a19dc845646d74f5",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  },
+  "hashes": {
+    "config_hash": "f7e1144c2b550460361969acd57457dc301f1e6029507d63cb971c6162a06a82",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

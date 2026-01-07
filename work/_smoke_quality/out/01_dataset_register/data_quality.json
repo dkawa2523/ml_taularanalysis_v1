@@ -1,0 +1,77 @@
+{
+  "rows_total": 51,
+  "rows_scanned": 51,
+  "columns": 5,
+  "columns_scanned": 5,
+  "scan_sampled": false,
+  "target_column": "target",
+  "task_type": "regression",
+  "id_columns": [],
+  "dtype_counts": {
+    "float64": 4,
+    "object": 1
+  },
+  "missing_total": 19,
+  "missing_rate_total": 0.07450980392156863,
+  "missing_columns": 2,
+  "missing_top": [
+    {
+      "column": "cat",
+      "missing_count": 17,
+      "missing_rate": 0.3333333333333333
+    },
+    {
+      "column": "noise",
+      "missing_count": 2,
+      "missing_rate": 0.0392156862745098
+    }
+  ],
+  "duplicates_count": 1,
+  "duplicates_rate": 0.0196078431372549,
+  "constant_columns": [],
+  "high_cardinality_columns": [
+    "num",
+    "noise",
+    "leak_feature"
+  ],
+  "high_cardinality_threshold": 0.8,
+  "leak_suspects": [
+    {
+      "column": "leak_feature",
+      "reason": "high_correlation",
+      "severity": "warning",
+      "score": 0.9999999978656907
+    },
+    {
+      "column": "num",
+      "reason": "high_correlation",
+      "severity": "warning",
+      "score": 0.9987472471733434
+    }
+  ],
+  "leak_summary": {
+    "available": true,
+    "exact_match": [],
+    "near_match": [],
+    "correlation_top": [
+      {
+        "column": "leak_feature",
+        "corr": 0.9999999978656907
+      },
+      {
+        "column": "num",
+        "corr": 0.9987472471733434
+      },
+      {
+        "column": "noise",
+        "corr": 0.19161749979908518
+      }
+    ],
+    "mapping_suspects": [],
+    "thresholds": {
+      "near_match": 0.98,
+      "correlation": 0.98,
+      "mapping_accuracy": 0.98
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "pipeline_run": {
+    "grid_run_id": "00b5d914a8fb463ea1768b05e70ab90a",
+    "plan_only": true,
+    "planned_jobs": 2,
+    "executed_jobs": 0,
+    "skipped_due_to_policy": 2,
+    "dataset_register_ref": null,
+    "preprocess_ref": [],
+    "train_refs": [],
+    "leaderboard_ref": null,
+    "infer_ref": null,
+    "grid": {
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge",
+        "lasso"
+      ],
+      "max_jobs": 2,
+      "max_hpo_trials": 2,
+      "hpo": {
+        "enabled": true,
+        "params": {
+          "ridge": {
+            "alpha": [
+              0.1,
+              1.0,
+              10.0
+            ]
+          }
+        }
+      }
+    },
+    "policy": {
+      "limits": {
+        "max_jobs": 2,
+        "max_models": 1,
+        "max_hpo_trials": 2
+      },
+      "selection": {
+        "calibration": false,
+        "uncertainty": false,
+        "ci": false
+      }
+    }
+  }
+}

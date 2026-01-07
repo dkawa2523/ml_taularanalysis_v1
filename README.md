@@ -30,11 +30,11 @@ source .venv/bin/activate
 pip install -U pip
 
 # 1) 先に ml-platform を editable install（例）
-pip install -e /path/to/ml_platform_v1
+pip install -e ../ml-platform
 
 # 2) 本 solution をインストール
 pip install -r requirements/base.txt
-pip install -e .
+pip install -e .  
 ```
 
 > `pip install -e /path/to/ml_platform_v1` のパスは、あなたのローカル環境の配置に合わせてください。

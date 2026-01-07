@@ -1,0 +1,199 @@
+run:
+  usecase_id: TabularAnalysis
+  output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/21ce94afb59c48e8897732af5c99f572/dataset_register
+  schema_version: v1
+  grid_run_id: 21ce94afb59c48e8897732af5c99f572
+  retrain_run_id: null
+  clearml:
+    enabled: false
+    execution: local
+    project_root: MFG
+    queue_name: null
+    clone_from_task_id: null
+    extra_tags: []
+  alerts:
+    enabled: false
+    sinks:
+      file:
+        enabled: true
+        path: null
+      stdout:
+        enabled: false
+      webhook:
+        enabled: false
+        url: null
+        timeout_sec: 5
+exec_policy:
+  limits:
+    max_jobs: 50
+    max_models: 10
+    max_hpo_trials: 0
+  queues:
+    default: ${run.clearml.queue_name}
+    pipeline: ${exec_policy.queues.default}
+    dataset_register: ${exec_policy.queues.default}
+    preprocess: ${exec_policy.queues.default}
+    train_model: ${exec_policy.queues.default}
+    train_model_heavy: gpu
+    leaderboard: ${exec_policy.queues.default}
+    infer: ${exec_policy.queues.default}
+    model_variants: {}
+    heavy_model_variants: []
+  selection:
+    calibration: false
+    uncertainty: false
+    ci: false
+monitor:
+  drift:
+    enabled: false
+    sample_n: 5000
+    metrics:
+    - psi
+    - ks
+    alert_thresholds:
+      psi: 0.2
+data:
+  quality:
+    mode: warn
+    enabled: true
+    max_rows_scan: 50000
+    fail_on_duplicates: false
+    fail_on_leak: false
+    thresholds:
+      missing_rate_warn: 0.2
+      missing_rate_fail: 0.5
+      duplicates_rate_warn: 0.01
+      duplicates_rate_fail: 0.05
+      constant_columns_warn: 1
+      constant_columns_fail: 5
+      mixed_type_columns_warn: 1
+      mixed_type_columns_fail: 5
+      high_cardinality_ratio_warn: 0.8
+      high_cardinality_ratio_fail: 1.01
+      high_cardinality_min_unique: 20
+      high_cardinality_count_fail: 9999
+      id_like_ratio_warn: 0.98
+      id_like_ratio_fail: 1.01
+      id_like_min_unique: 20
+      leak_near_match_warn: 0.98
+      leak_correlation_warn: 0.98
+      leak_mapping_accuracy_warn: 0.98
+    name_patterns:
+      leak_suspect:
+      - target
+      - label
+      - outcome
+      - response
+      id_suspect:
+      - id
+      - uuid
+      - guid
+  dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/tmp/toy_hpo.csv
+  raw_dataset_id: null
+  processed_dataset_id: null
+  target_column: target
+  id_columns: []
+  drop_columns: []
+  split:
+    strategy: random
+    test_size: 0.2
+    seed: 42
+    group_column: null
+    time_column: null
+eval:
+  task_type: regression
+  primary_metric: rmse
+  direction: auto
+  cv_folds: 5
+  seed: 42
+  ci:
+    enabled: false
+    n_boot: 200
+    alpha: 0.05
+    seed: 0
+  thresholding:
+    enabled: false
+    metric: f1
+    grid:
+    - 0.05
+    - 0.1
+    - 0.15
+    - 0.2
+    - 0.25
+    - 0.3
+    - 0.35
+    - 0.4
+    - 0.45
+    - 0.5
+    - 0.55
+    - 0.6
+    - 0.65
+    - 0.7
+    - 0.75
+    - 0.8
+    - 0.85
+    - 0.9
+    - 0.95
+  calibration:
+    enabled: false
+    method: sigmoid
+    mode: prefit
+  uncertainty:
+    enabled: false
+    method: conformal_split
+    alpha: 0.1
+    use_abs_residual: true
+  imbalance:
+    enabled: false
+    strategy: class_weight
+    class_weight: balanced
+  classification:
+    mode: auto
+    top_k: 1
+  metrics:
+    classification_multiclass:
+    - accuracy
+    - f1_macro
+    - logloss
+    classification_imbalance:
+    - pr_auc
+    - balanced_accuracy
+    - fbeta
+    fbeta_beta: 1.0
+viz:
+  enabled: true
+  max_features: 20
+  max_points: 1000
+  confusion_normalize: true
+  roc_curve: true
+  heavy:
+    enabled: false
+group:
+  preprocess:
+    preprocess_variant:
+      name: stdscaler_ohe
+      numeric_scaler: standard
+      categorical_encoder: onehot
+      handle_unknown: ignore
+  model:
+    model_variant:
+      name: ridge
+      framework: sklearn
+      class_path:
+        regression: sklearn.linear_model.Ridge
+        classification: sklearn.linear_model.RidgeClassifier
+      params:
+        alpha: 1.0
+        random_state: ${eval.seed}
+  split:
+    split_variant:
+      name: random
+      strategy: random
+  infer_mode:
+    infer_mode:
+      name: single
+      input_format: json
+task:
+  name: dataset_register
+  stage: 01_dataset_register
+  project_name: ${run.clearml.project_root}/${run.usecase_id}/01_dataset_register

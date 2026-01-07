@@ -1,0 +1,25 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "infer",
+  "created_at": "2026-01-01T05:07:26Z",
+  "inputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/03_train_model/model_bundle.joblib",
+    "train_task_id": null,
+    "mode": "single",
+    "input_path": null,
+    "processed_dataset_id": "local:196c80d5a57a487f7755c6d1a18067fcb96fdb30a0ee10efe2fa528f4733c8da",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  },
+  "outputs": {
+    "predictions_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/04_infer/prediction.json",
+    "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/04_infer/input_preview.json"
+  },
+  "hashes": {
+    "config_hash": "0e9746811928e536837e7042d0a3974228d0c3d79a3e1a5d4d793d93f661e9e7",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

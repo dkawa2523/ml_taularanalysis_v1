@@ -1,0 +1,17 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/03_train_model/model_bundle.joblib",
+  "stage": "staging",
+  "timestamp": "2026-01-01T05:22:10Z",
+  "source": "leaderboard_dir:/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/05_leaderboard",
+  "metric": "rmse",
+  "score": 0.07537177379896452,
+  "task_type": "regression",
+  "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+  "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0",
+  "processed_dataset_id": "local:1e22078d9567b798c54c08b843083cc210d25b990cb0671e821edca6bc24da19",
+  "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/03_train_model",
+  "train_task_id": null,
+  "model_variant": "ridge",
+  "preprocess_variant": "stdscaler_ohe",
+  "note": "smoke"
+}

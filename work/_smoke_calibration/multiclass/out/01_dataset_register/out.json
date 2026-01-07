@@ -1,0 +1,55 @@
+{
+  "raw_dataset_id": "local:ea3c2f6ad0cd1208ade8670cebebe1aadeff563bd1d30ec17be9ec15486b6bce",
+  "raw_dataset_hash": "ea3c2f6ad0cd1208ade8670cebebe1aadeff563bd1d30ec17be9ec15486b6bce",
+  "raw_schema": {
+    "rows": 220,
+    "columns": 7,
+    "fields": {
+      "num0": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num1": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num2": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num3": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num4": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num5": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "target": {
+        "dtype": "int64",
+        "null_count": 0,
+        "null_rate": 0.0
+      }
+    }
+  },
+  "data_quality_summary": {
+    "rows": 220,
+    "columns": 7,
+    "missing_columns": 0,
+    "missing_rate_max": null,
+    "duplicates_count": 0,
+    "leak_suspect_count": 0,
+    "leak_suspects": [],
+    "leak_error": false
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "train_model",
+  "created_at": "2026-01-01T19:14:21Z",
+  "inputs": {
+    "processed_dataset_id": "local:a5527dfd7b0ac70425e63e2e105b913099f7817e63efbf9290a3a6f1d1b79f7c",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "model_variant": "ridge",
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "cv_folds": 5,
+    "seed": 42,
+    "task_type": "regression"
+  },
+  "outputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/1faf2528b3a94c4aadec1079be043f41/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "best_score": 0.10457267357429041,
+    "primary_metric": "rmse",
+    "task_type": "regression"
+  },
+  "hashes": {
+    "config_hash": "336af691c081a663b2c35f26a38222b05a2627bc4e8804d07607a5b78f6614f6",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "test",
+  "platform_version": "test",
+  "process": "train_model",
+  "created_at": "2026-01-01T00:00:00Z",
+  "inputs": {
+    "direction": "maximize",
+    "task_type": "classification"
+  },
+  "outputs": {
+    "model_id": "model_challenger",
+    "best_score": 0.8,
+    "primary_metric": "accuracy"
+  },
+  "hashes": {
+    "config_hash": "test"
+  }
+}

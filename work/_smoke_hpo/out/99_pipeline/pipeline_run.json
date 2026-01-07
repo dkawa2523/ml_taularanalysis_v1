@@ -1,0 +1,95 @@
+{
+  "grid_run_id": "4a80cf1d637248a3b3167365ea2b1e6a",
+  "plan_only": false,
+  "planned_jobs": 3,
+  "executed_jobs": 3,
+  "skipped_due_to_policy": 0,
+  "dataset_register_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/dataset_register/01_dataset_register"
+  },
+  "preprocess_ref": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe",
+      "processed_dataset_id": "local:5812668ff82705adef95cfd3b1e34ee71780f41114508e5aef6daf30f416a82e",
+      "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+      "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+    }
+  ],
+  "train_refs": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_0_1/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_0_1/03_train_model/model_bundle.joblib",
+      "best_score": 0.07742012079743223,
+      "primary_metric": "rmse",
+      "hpo_run_id": "ridge__alpha_0_1",
+      "hpo_params": {
+        "alpha": 0.1
+      }
+    },
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib",
+      "best_score": 0.07537177379896452,
+      "primary_metric": "rmse",
+      "hpo_run_id": "ridge__alpha_1",
+      "hpo_params": {
+        "alpha": 1.0
+      }
+    },
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_10/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_10/03_train_model/model_bundle.joblib",
+      "best_score": 0.08915055308377491,
+      "primary_metric": "rmse",
+      "hpo_run_id": "ridge__alpha_10",
+      "hpo_params": {
+        "alpha": 10.0
+      }
+    }
+  ],
+  "leaderboard_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/leaderboard/05_leaderboard"
+  },
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": true,
+      "params": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    }
+  }
+}

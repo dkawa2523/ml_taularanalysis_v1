@@ -1,0 +1,74 @@
+run:
+  usecase_id: TabularAnalysis
+  output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ed0bd2d4905d4e909b4cc2da5007587e/train__stdscaler_ohe__ridge
+  schema_version: v1
+  grid_run_id: ed0bd2d4905d4e909b4cc2da5007587e
+  clearml:
+    enabled: false
+    execution: local
+    project_root: MFG
+    queue_name: null
+    clone_from_task_id: null
+    extra_tags: []
+data:
+  dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/tmp/toy.csv
+  raw_dataset_id: local:4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae
+  processed_dataset_id: local:5ef2fe75d9c0f3da54b5cc86c157a0d30d2a432313a12b0d7d5cd536b7ce650b
+  target_column: target
+  id_columns: []
+  drop_columns: []
+  split:
+    strategy: random
+    test_size: 0.2
+    seed: 42
+    group_column: null
+    time_column: null
+eval:
+  task_type: regression
+  primary_metric: rmse
+  direction: minimize
+  cv_folds: 5
+  seed: 42
+group:
+  preprocess:
+    preprocess_variant:
+      name: stdscaler_ohe
+      numeric_scaler: standard
+      categorical_encoder: onehot
+      handle_unknown: ignore
+  model:
+    model_variant:
+      name: ridge
+      framework: sklearn
+      class_path:
+        regression: sklearn.linear_model.Ridge
+        classification: sklearn.linear_model.RidgeClassifier
+      params:
+        alpha: 1.0
+        random_state: ${eval.seed}
+  split:
+    split_variant:
+      name: random
+      strategy: random
+  infer_mode:
+    infer_mode:
+      name: single
+      input_format: json
+task:
+  name: train_model
+  stage: 03_train_model
+  project_name: ${run.clearml.project_root}/${run.usecase_id}/03_train_model
+train:
+  model: ${model_variant.name}
+  params: {}
+  inputs:
+    preprocess_run_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ed0bd2d4905d4e909b4cc2da5007587e/preprocess__stdscaler_ohe/02_preprocess
+model_variant:
+  name: ridge
+  framework: sklearn
+  class_path:
+    regression: sklearn.linear_model.Ridge
+    classification: sklearn.linear_model.RidgeClassifier
+  params:
+    alpha: 1.0
+    random_state: ${eval.seed}

@@ -1,0 +1,191 @@
+{
+  "tasks": [
+    {
+      "id": "T041",
+      "title": "ClearML UI契約 lint 強化（doctor/CIで逸脱を検知）",
+      "md": "work/tasks/T041_CLEARML_UI_CONTRACT_LINT.md",
+      "deps": [
+        "T040"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/ui_contract_lint.py",
+        "src/tabular_analysis/doctor.py",
+        "tools/tests/test_ui_contract_lint.py",
+        "tools/tests/verify_all.py",
+        "docs/03_CLEARML_UI_CONTRACT.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_ui_contract_lint.py",
+        "python tools/tests/verify_all.py --quick"
+      ]
+    },
+    {
+      "id": "T042",
+      "title": "ClearML テンプレ Task 運用の標準化（clone運用の安定化）",
+      "md": "work/tasks/T042_CLEARML_TEMPLATE_TASKS.md",
+      "deps": [
+        "T041"
+      ],
+      "must_change_globs": [
+        "conf/clearml/templates.yaml",
+        "tools/clearml_templates/manage_templates.py",
+        "tools/tests/test_template_specs.py",
+        "docs/21_CLEARML_TEMPLATE_TASKS.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_template_specs.py"
+      ]
+    },
+    {
+      "id": "T043",
+      "title": "実行ポリシー（queue/予算/上限）標準化で“タスク爆発”を防ぐ",
+      "md": "work/tasks/T043_EXEC_POLICY_AND_QUEUES.md",
+      "deps": [
+        "T042"
+      ],
+      "must_change_globs": [
+        "conf/run/exec_policy/base.yaml",
+        "src/tabular_analysis/processes/pipeline.py",
+        "tools/tests/test_exec_policy.py",
+        "docs/22_EXECUTION_POLICY.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_exec_policy.py"
+      ]
+    },
+    {
+      "id": "T044",
+      "title": "Model Lifecycle 完成（promote/rollback/champion-challenger）",
+      "md": "work/tasks/T044_MODEL_LIFECYCLE.md",
+      "deps": [
+        "T043"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/rollback_model.py",
+        "src/tabular_analysis/processes/champion_challenger.py",
+        "conf/task/rollback_model/base.yaml",
+        "conf/task/champion_challenger/base.yaml",
+        "tools/tests/test_model_lifecycle_local.py",
+        "docs/23_MODEL_LIFECYCLE.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_model_lifecycle_local.py"
+      ]
+    },
+    {
+      "id": "T045",
+      "title": "ClearML Report 統合（結論を1ページに集約）",
+      "md": "work/tasks/T045_CLEARML_REPORT_INTEGRATION.md",
+      "deps": [
+        "T044"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/reporting/pipeline_report.py",
+        "src/tabular_analysis/processes/pipeline.py",
+        "tools/tests/test_pipeline_report.py",
+        "docs/24_REPORTING.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_pipeline_report.py"
+      ]
+    },
+    {
+      "id": "T046",
+      "title": "Alerting（品質/ドリフト/失敗を運用へ通知）",
+      "md": "work/tasks/T046_ALERTING.md",
+      "deps": [
+        "T045"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/alerting.py",
+        "conf/run/alerts/base.yaml",
+        "tools/tests/test_alerting_logfile.py",
+        "docs/25_ALERTING.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_alerting_logfile.py"
+      ]
+    },
+    {
+      "id": "T047",
+      "title": "Reproducible Runtime（環境スナップショットと依存固定の土台）",
+      "md": "work/tasks/T047_REPRODUCIBLE_RUNTIME.md",
+      "deps": [
+        "T046"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/env_snapshot.py",
+        "docs/26_REPRODUCIBLE_RUNTIME.md",
+        "tools/tests/test_env_snapshot.py",
+        "requirements/lock.txt"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_env_snapshot.py"
+      ]
+    },
+    {
+      "id": "T048",
+      "title": "Data Quality Gate 強化（リーク疑い/ID列/高カーディナリティ）",
+      "md": "work/tasks/T048_DATA_QUALITY_GATE.md",
+      "deps": [
+        "T047"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/data_quality.py",
+        "conf/data/quality/base.yaml",
+        "tools/tests/test_data_quality_gate.py",
+        "docs/27_DATA_QUALITY.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_data_quality_gate.py"
+      ]
+    },
+    {
+      "id": "T049",
+      "title": "Retrain Orchestration（監視→再学習→比較→任意promote）",
+      "md": "work/tasks/T049_RETRAIN_ORCHESTRATION.md",
+      "deps": [
+        "T048"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/retrain.py",
+        "conf/task/retrain/base.yaml",
+        "tools/tests/test_retrain_local.py",
+        "docs/28_RETRAIN.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_retrain_local.py"
+      ]
+    },
+    {
+      "id": "T050",
+      "title": "Serving Hardening（認証・ステージ選択・監査ログ・入力検証）",
+      "md": "work/tasks/T050_SERVING_HARDENING.md",
+      "deps": [
+        "T049"
+      ],
+      "must_change_globs": [
+        "serving/app.py",
+        "serving/auth.py",
+        "serving/model_loader.py",
+        "tools/tests/test_serving_app.py",
+        "docs/29_SERVING.md",
+        "tools/tests/verify_all.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_serving_app.py",
+        "python tools/tests/verify_all.py --quick"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "primary_metric": "f1_macro",
+  "direction": "maximize",
+  "task_type": "classification",
+  "holdout": {
+    "accuracy": 0.8125,
+    "f1_macro": 0.8111623143881208,
+    "logloss": 0.5278254522317447,
+    "train_rows": 192,
+    "val_rows": 48
+  },
+  "n_classes": 3,
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-01T01:54:41Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/tmp/toy_hpo.csv",
+    "raw_dataset_id": "local:47b97e941a790f6f068d82313f79d6059cdae16e7b7466fe9bf2b810b9b93fff"
+  },
+  "outputs": {
+    "processed_dataset_id": "local:1e22078d9567b798c54c08b843083cc210d25b990cb0671e821edca6bc24da19",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  },
+  "hashes": {
+    "config_hash": "54ad15ed90e06f8867ec591c4310f79437bc194f5fc1316c424185561ae9efa1",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

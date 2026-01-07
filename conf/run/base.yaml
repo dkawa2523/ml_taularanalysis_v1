@@ -1,5 +1,7 @@
 # ClearML 上で識別するための UseCase ID（Project 階層・Properties にも利用）
-usecase_id: TabularAnalysis
+# null の場合は run.usecase_id_policy に従って自動生成する
+# policy selectors: ops/usecase_id_policy and ops/clearml_policy
+usecase_id: null
 
 # 全タスク共通の出力先（ローカル実行時）
 output_dir: outputs/${now:%Y%m%d_%H%M%S}
@@ -10,19 +12,25 @@ schema_version: v1
 # grid 実行単位の識別子（pipeline が設定して各タスクへ伝播させる）
 grid_run_id: null
 
+# retrain 単位の識別子（retrain が設定して各タスクへ伝播させる）
+retrain_run_id: null
+
 clearml:
   # enabled=false の時は ClearML SDK を使わずローカルで処理する（開発・デバッグ用）
   enabled: false
 
-  # 実行モード：local | logging | agent | clone
+  # 実行モード：local | logging | agent | clone | pipeline_controller
   # local: ClearMLなし
   # logging: ローカル実行しつつ ClearML に記録
   # agent: Task.execute_remotely で投入
   # clone: テンプレTaskから clone して投入
+  # pipeline_controller: PipelineController で子タスク生成
   execution: local
 
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
+
+  # tags/properties のポリシーは run.clearml.policy で切り替える
 
   # agent 実行時の queue
   queue_name: null
@@ -32,3 +40,4 @@ clearml:
 
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []
+# Monitoring defaults are defined in conf/monitor/base.yaml.

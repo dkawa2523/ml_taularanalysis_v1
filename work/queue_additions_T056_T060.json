@@ -1,0 +1,65 @@
+{
+  "version": 2,
+  "tasks": [
+    {
+      "id": "T056",
+      "title": "ClearML Processed Dataset 管理を実装（preprocessでprocessed datasetを登録し、train/inferが復元して使う）",
+      "md": "work/tasks/T056_T056_ClearML_Processed_Dataset_preprocess_processed_dataset_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T057",
+      "title": "Scalars/Plots/Debug Samples を UI 契約通りに出す（png artifact偏重を改善）",
+      "md": "work/tasks/T057_T057_Scalars_Plots_Debug_Samples_UI_png_artifact_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T058",
+      "title": "PipelineController 実装（子タスク生成・grid実行）",
+      "md": "work/tasks/T058_T058_PipelineController_grid_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T059",
+      "title": "Template Task 作成/更新ツール整備（試験段階: local serverで簡単に作れる）",
+      "md": "work/tasks/T059_T059_Template_Task_local_server_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T060",
+      "title": "ClearML契約のリハーサル手順を更新（Datasets/Plots/Controllerが期待通りか検証する）",
+      "md": "work/tasks/T060_T060_ClearML_Datasets_Plots_Controller_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    }
+  ]
+}

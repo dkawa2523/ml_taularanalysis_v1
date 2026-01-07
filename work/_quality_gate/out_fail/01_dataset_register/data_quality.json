@@ -1,0 +1,262 @@
+{
+  "rows_total": 120,
+  "rows_scanned": 120,
+  "columns": 5,
+  "columns_scanned": 5,
+  "scan_sampled": false,
+  "target_column": "target",
+  "task_type": "regression",
+  "id_columns": [],
+  "dtype_counts": {
+    "float64": 3,
+    "int64": 1,
+    "object": 1
+  },
+  "missing_total": 0,
+  "missing_rate_total": 0.0,
+  "missing_columns": 0,
+  "missing_top": [],
+  "duplicates_count": 0,
+  "duplicates_rate": 0.0,
+  "constant_columns": [],
+  "mixed_type_columns": [],
+  "mixed_type_details": [],
+  "high_cardinality_columns": [
+    "record_id",
+    "cat_high"
+  ],
+  "high_cardinality_details": [
+    {
+      "column": "record_id",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    },
+    {
+      "column": "cat_high",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    }
+  ],
+  "high_cardinality_threshold": 0.8,
+  "id_like_columns": [
+    {
+      "column": "record_id",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    },
+    {
+      "column": "cat_high",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    },
+    {
+      "column": "feature",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    },
+    {
+      "column": "leak_feature",
+      "unique_count": 120,
+      "unique_ratio": 1.0,
+      "missing_rate": 0.0,
+      "declared_id": false
+    }
+  ],
+  "name_suspects": [
+    {
+      "column": "record_id",
+      "kind": "id_suspect",
+      "patterns": [
+        "id"
+      ],
+      "declared_id": false
+    }
+  ],
+  "quality_thresholds": {
+    "high_cardinality_ratio_warn": 0.8,
+    "high_cardinality_min_unique": 20,
+    "id_like_ratio_warn": 0.98,
+    "id_like_min_unique": 20,
+    "leak_near_match_warn": 0.98,
+    "leak_correlation_warn": 0.98,
+    "leak_mapping_accuracy_warn": 0.98,
+    "mixed_type_columns_warn": 1,
+    "mixed_type_columns_fail": 5
+  },
+  "leak_suspects": [
+    {
+      "column": "leak_feature",
+      "reason": "exact_match",
+      "severity": "error",
+      "score": 1.0
+    },
+    {
+      "column": "leak_feature",
+      "reason": "high_correlation",
+      "severity": "warning",
+      "score": 0.9999999999999999
+    },
+    {
+      "column": "feature",
+      "reason": "high_correlation",
+      "severity": "warning",
+      "score": 0.9942496415943639
+    }
+  ],
+  "leak_summary": {
+    "available": true,
+    "exact_match": [
+      {
+        "column": "leak_feature"
+      }
+    ],
+    "near_match": [],
+    "correlation_top": [
+      {
+        "column": "leak_feature",
+        "corr": 0.9999999999999999
+      },
+      {
+        "column": "feature",
+        "corr": 0.9942496415943639
+      },
+      {
+        "column": "record_id",
+        "corr": 0.13152571537203592
+      }
+    ],
+    "mapping_suspects": [],
+    "thresholds": {
+      "near_match": 0.98,
+      "correlation": 0.98,
+      "mapping_accuracy": 0.98
+    }
+  },
+  "quality_issues": [
+    {
+      "type": "high_cardinality",
+      "severity": "warn",
+      "count": 2,
+      "detail": {
+        "columns": [
+          {
+            "column": "record_id",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          },
+          {
+            "column": "cat_high",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "id_like",
+      "severity": "warn",
+      "count": 4,
+      "detail": {
+        "columns": [
+          {
+            "column": "record_id",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          },
+          {
+            "column": "cat_high",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          },
+          {
+            "column": "feature",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          },
+          {
+            "column": "leak_feature",
+            "unique_count": 120,
+            "unique_ratio": 1.0,
+            "missing_rate": 0.0,
+            "declared_id": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "name_suspect",
+      "severity": "warn",
+      "count": 1,
+      "detail": {
+        "columns": [
+          {
+            "column": "record_id",
+            "kind": "id_suspect",
+            "patterns": [
+              "id"
+            ],
+            "declared_id": false
+          }
+        ]
+      }
+    },
+    {
+      "type": "leak",
+      "severity": "fail",
+      "count": 1,
+      "detail": {
+        "columns": [
+          {
+            "column": "leak_feature",
+            "reason": "exact_match",
+            "severity": "error",
+            "score": 1.0
+          }
+        ]
+      }
+    },
+    {
+      "type": "leak",
+      "severity": "warn",
+      "count": 2,
+      "detail": {
+        "columns": [
+          {
+            "column": "leak_feature",
+            "reason": "high_correlation",
+            "severity": "warning",
+            "score": 0.9999999999999999
+          },
+          {
+            "column": "feature",
+            "reason": "high_correlation",
+            "severity": "warning",
+            "score": 0.9942496415943639
+          }
+        ]
+      }
+    }
+  ],
+  "quality_status": "fail",
+  "quality_issue_count": 10
+}

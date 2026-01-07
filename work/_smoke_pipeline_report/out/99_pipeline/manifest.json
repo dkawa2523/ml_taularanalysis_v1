@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-01T17:51:48Z",
+  "inputs": {
+    "run_dataset_register": true,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": false
+  },
+  "outputs": {
+    "grid_run_id": "cbcb21d97bb744aab4d0be10124cbec7",
+    "pipeline_run_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_pipeline_report/out/99_pipeline/pipeline_run.json"
+  },
+  "hashes": {
+    "config_hash": "c4bf3d72fe00694a5976d2efcbe4c57a077faad896b04b8733d9398e3f3e45a2",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

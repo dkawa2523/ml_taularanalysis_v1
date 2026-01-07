@@ -1,0 +1,7 @@
+{
+  "predictions_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/04_infer/prediction.json",
+  "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/04_infer/input_preview.json",
+  "mode": "single",
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/03_train_model/model_bundle.joblib",
+  "train_task_id": null
+}

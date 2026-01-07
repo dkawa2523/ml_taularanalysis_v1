@@ -1,0 +1,8 @@
+{
+  "model_id": "model_challenger",
+  "best_score": 0.8,
+  "primary_metric": "accuracy",
+  "processed_dataset_id": "ds_local",
+  "split_hash": "split_local",
+  "task_type": "classification"
+}

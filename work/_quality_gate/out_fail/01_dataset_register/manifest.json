@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-01T18:55:57Z",
+  "inputs": {
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_quality_gate/tmp/quality_fail.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "local:3f8fa9f28b5d67ce2b4ed3eafa4bbc16d5fe39966f7fb5db240f80b918f7508d",
+    "raw_dataset_hash": "3f8fa9f28b5d67ce2b4ed3eafa4bbc16d5fe39966f7fb5db240f80b918f7508d"
+  },
+  "hashes": {
+    "config_hash": "8203da7c93e3a93c36aa34e5b1a656bfbea30b14db8482798402ec52ac12fca4",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

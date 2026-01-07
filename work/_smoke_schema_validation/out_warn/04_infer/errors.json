@@ -1,0 +1,8 @@
+{
+  "missing_columns": [
+    "num2"
+  ],
+  "extra_columns": [],
+  "dtype_mismatch": [],
+  "coerce_failures": []
+}

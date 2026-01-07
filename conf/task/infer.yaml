@@ -2,9 +2,27 @@
 task:
   name: infer
   stage: "04_infer"
-  project_name: "${run.clearml.project_root}/${run.usecase_id}/04_infer"
+  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/04_infer"
 
 infer:
   model_id: null
   train_task_id: null
   mode: single
+  input_path: null
+  input_json: null
+
+  validation:
+    # warn|strict|coerce
+    mode: warn
+
+  batch:
+    # Chunked batch infer settings
+    chunk_size: 50000
+    output_format: csv
+    write_mode: overwrite
+    max_rows: null
+
+  drift:
+    enabled: false
+    psi_warn_threshold: 0.2
+    psi_fail_threshold: 0.4

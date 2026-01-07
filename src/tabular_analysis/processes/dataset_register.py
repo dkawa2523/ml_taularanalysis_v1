@@ -8,19 +8,21 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from ..clearml.datasets import create_raw_dataset, get_raw_dataset_local_copy
+from ..clearml.hparams import connect_dataset_register_hparams
 from ..platform_adapter import (
-    get_dataset_local_copy,
     hash_config,
     hash_recipe,
     hash_split,
     init_task_context,
     is_clearml_enabled,
-    register_dataset,
     resolve_version_props,
     save_config_resolved,
     write_manifest,
     write_out_json,
 )
+from ..ops.clearml_identity import apply_clearml_identity
+from ..ops.data_quality import raise_on_quality_fail, run_data_quality_gate
 
 _TABULAR_SUFFIXES = (".csv", ".parquet", ".pq")
 
@@ -41,6 +43,13 @@ def _normalize_str(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text or None
+
+
+def _normalize_task_type(value: Any) -> str:
+    key = _normalize_str(value)
+    if key in ("classification", "classifier", "class"):
+        return "classification"
+    return "regression"
 
 
 def _select_tabular_file(path: Path) -> Path:
@@ -84,27 +93,43 @@ def _build_schema(df) -> dict[str, Any]:
     return {"rows": rows, "columns": cols, "fields": fields}
 
 
-def _infer_schema(path: Path, output_dir: Path) -> dict[str, Any]:
+def _infer_schema(path: Path, output_dir: Path):
     df = _load_dataframe(path)
     schema = _build_schema(df)
     preview_path = output_dir / "preview.csv"
     df.head(5).to_csv(preview_path, index=False)
     schema_path = output_dir / "schema.json"
     schema_path.write_text(json.dumps(schema, ensure_ascii=False, indent=2), encoding="utf-8")
-    return schema
+    return df, schema
 
 
 def run(cfg: Any) -> None:
-    ctx = init_task_context(cfg, stage=cfg.task.stage, task_name="dataset_register")
+    identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
+    ctx = init_task_context(
+        cfg,
+        stage=cfg.task.stage,
+        task_name="dataset_register",
+        tags=identity.tags,
+        properties=identity.user_properties,
+    )
     save_config_resolved(ctx, cfg)
 
     clearml_enabled = is_clearml_enabled(cfg)
     dataset_path_value = _normalize_str(getattr(cfg.data, "dataset_path", None))
     raw_dataset_id_input = _normalize_str(getattr(cfg.data, "raw_dataset_id", None))
+    target_column = _normalize_str(getattr(getattr(cfg, "data", None), "target_column", None))
+
+    connect_dataset_register_hparams(
+        ctx,
+        cfg,
+        dataset_path=dataset_path_value,
+        target_column=target_column,
+    )
 
     raw_dataset_id: str | None = None
     raw_dataset_hash: str | None = None
     raw_schema: dict[str, Any] | None = None
+    raw_df = None
 
     dataset_path: Path | None = None
     if dataset_path_value:
@@ -120,14 +145,14 @@ def run(cfg: Any) -> None:
     if dataset_path is not None:
         dataset_file = _select_tabular_file(dataset_path)
         raw_dataset_hash = _hash_file(dataset_file)
-        raw_schema = _infer_schema(dataset_file, ctx.output_dir)
+        raw_df, raw_schema = _infer_schema(dataset_file, ctx.output_dir)
         if clearml_enabled:
             usecase_id = _normalize_str(getattr(getattr(cfg, "run", None), "usecase_id", None)) or "unknown"
             schema_version = _normalize_str(getattr(getattr(cfg, "run", None), "schema_version", None)) or "unknown"
             dataset_name = f"{usecase_id}__raw__{dataset_file.stem}"
             dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
             dataset_tags = [f"usecase:{usecase_id}", "process:dataset_register", f"schema:{schema_version}"]
-            raw_dataset_id = register_dataset(
+            raw_dataset_id = create_raw_dataset(
                 cfg,
                 dataset_path=dataset_file,
                 dataset_name=dataset_name,
@@ -145,10 +170,10 @@ def run(cfg: Any) -> None:
                 raise ValueError("raw_dataset_id local:<hash> must include a hash.")
             raw_schema = {"rows": None, "columns": None, "fields": {}}
         elif clearml_enabled:
-            local_copy = get_dataset_local_copy(cfg, raw_dataset_id_input)
+            local_copy = get_raw_dataset_local_copy(cfg, raw_dataset_id_input)
             dataset_file = _select_tabular_file(local_copy)
             raw_dataset_hash = _hash_file(dataset_file)
-            raw_schema = _infer_schema(dataset_file, ctx.output_dir)
+            raw_df, raw_schema = _infer_schema(dataset_file, ctx.output_dir)
             raw_dataset_id = raw_dataset_id_input
         else:
             raise ValueError("data.dataset_path is required when ClearML is disabled and raw_dataset_id is not local.")
@@ -158,10 +183,29 @@ def run(cfg: Any) -> None:
     if raw_dataset_id is None or raw_dataset_hash is None or raw_schema is None:
         raise RuntimeError("dataset_register failed to resolve raw_dataset outputs.")
 
+    task_type = _normalize_task_type(getattr(getattr(cfg, "eval", None), "task_type", None))
+    target_column = _normalize_str(getattr(getattr(cfg, "data", None), "target_column", None))
+    id_columns = getattr(getattr(cfg, "data", None), "id_columns", []) or []
+    quality_result = run_data_quality_gate(
+        cfg=cfg,
+        ctx=ctx,
+        df=raw_df,
+        target_column=target_column,
+        task_type=task_type,
+        id_columns=id_columns,
+        output_dir=ctx.output_dir,
+        schema=raw_schema if isinstance(raw_schema, dict) else None,
+    )
+    data_quality = quality_result["payload"]
+    quality_summary = quality_result["summary"]
+    gate = quality_result["gate"]
+    data_quality_path = quality_result["paths"]["json"]
+
     out = {
         "raw_dataset_id": raw_dataset_id,
         "raw_dataset_hash": raw_dataset_hash,
         "raw_schema": raw_schema,
+        "data_quality_summary": quality_summary,
     }
     write_out_json(ctx, out)
 
@@ -187,3 +231,11 @@ def run(cfg: Any) -> None:
         "hashes": hashes,
     }
     write_manifest(ctx, manifest)
+
+    raise_on_quality_fail(
+        cfg=cfg,
+        ctx=ctx,
+        gate=gate,
+        payload=data_quality,
+        json_path=data_quality_path,
+    )

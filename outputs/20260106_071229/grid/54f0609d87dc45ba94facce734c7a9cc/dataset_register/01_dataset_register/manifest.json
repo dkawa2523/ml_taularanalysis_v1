@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-05T22:12:33Z",
+  "inputs": {
+    "dataset_path": "/tmp/ta_rehearsal/toy.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "817e11ce55ac40bf868130b16cd70afd",
+    "raw_dataset_hash": "fcfa2ceafb95bd3c789f8748accb6c57a15688a4119ba8e90c88a3d794aff181"
+  },
+  "hashes": {
+    "config_hash": "6e9c22600023e12249bc054ed9d94170eba7bd7eaf1cc00d50a383119c6f8e1f",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-01T16:22:46Z",
+  "inputs": {
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/tmp/toy.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "local:4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae",
+    "raw_dataset_hash": "4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae"
+  },
+  "hashes": {
+    "config_hash": "99fc56387628bd34120d6ac6da9a8e0e7dfd060a16c4fa539eb834c833facbea",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

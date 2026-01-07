@@ -2,9 +2,18 @@
 task:
   name: preprocess
   stage: "02_preprocess"
-  project_name: "${run.clearml.project_root}/${run.usecase_id}/02_preprocess"
+  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/02_preprocess"
 
 preprocess:
   variant: ${preprocess_variant.name}
   numeric_impute: mean
   categorical_impute: most_frequent
+
+  categorical:
+    encoding: onehot
+    auto_onehot_max_categories: 50
+    hashing:
+      n_features: 128
+    target_mean_oof:
+      folds: 5
+      smoothing: 10.0

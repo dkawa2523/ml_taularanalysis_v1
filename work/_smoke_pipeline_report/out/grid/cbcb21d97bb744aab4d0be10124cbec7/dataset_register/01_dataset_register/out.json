@@ -1,0 +1,40 @@
+{
+  "raw_dataset_id": "local:15be20c63de64d1e60d9aa14d0d01ef282f5f3cb248aa148c2ec4bd9fe852704",
+  "raw_dataset_hash": "15be20c63de64d1e60d9aa14d0d01ef282f5f3cb248aa148c2ec4bd9fe852704",
+  "raw_schema": {
+    "rows": 160,
+    "columns": 4,
+    "fields": {
+      "num1": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num2": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "cat": {
+        "dtype": "object",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "target": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      }
+    }
+  },
+  "data_quality_summary": {
+    "rows": 160,
+    "columns": 4,
+    "missing_columns": 0,
+    "missing_rate_max": null,
+    "duplicates_count": 0,
+    "leak_suspect_count": 0,
+    "leak_suspects": [],
+    "leak_error": false
+  }
+}

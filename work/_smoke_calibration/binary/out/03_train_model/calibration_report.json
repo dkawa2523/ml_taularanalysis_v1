@@ -1,0 +1,68 @@
+{
+  "n_samples": 44,
+  "n_bins": 10,
+  "mode": "binary_positive",
+  "ece": 0.07938035114563187,
+  "curve": [
+    {
+      "bin": 0,
+      "count": 9,
+      "mean_confidence": 0.01938613246819663,
+      "mean_accuracy": 0.0
+    },
+    {
+      "bin": 1,
+      "count": 6,
+      "mean_confidence": 0.13046916135368972,
+      "mean_accuracy": 0.0
+    },
+    {
+      "bin": 2,
+      "count": 3,
+      "mean_confidence": 0.261866444274336,
+      "mean_accuracy": 0.0
+    },
+    {
+      "bin": 3,
+      "count": 2,
+      "mean_confidence": 0.3147355960629296,
+      "mean_accuracy": 0.5
+    },
+    {
+      "bin": 4,
+      "count": 2,
+      "mean_confidence": 0.4900854703106369,
+      "mean_accuracy": 0.5
+    },
+    {
+      "bin": 5,
+      "count": 1,
+      "mean_confidence": 0.5843189151937487,
+      "mean_accuracy": 1.0
+    },
+    {
+      "bin": 6,
+      "count": 3,
+      "mean_confidence": 0.652245439960367,
+      "mean_accuracy": 0.6666666666666666
+    },
+    {
+      "bin": 7,
+      "count": 2,
+      "mean_confidence": 0.7936133030494866,
+      "mean_accuracy": 1.0
+    },
+    {
+      "bin": 8,
+      "count": 1,
+      "mean_confidence": 0.8826735718902995,
+      "mean_accuracy": 1.0
+    },
+    {
+      "bin": 9,
+      "count": 15,
+      "mean_confidence": 0.9753037664626573,
+      "mean_accuracy": 1.0
+    }
+  ]
+}

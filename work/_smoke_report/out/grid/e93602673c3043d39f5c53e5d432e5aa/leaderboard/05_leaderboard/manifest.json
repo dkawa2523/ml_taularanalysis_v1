@@ -1,0 +1,32 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-01T14:31:40Z",
+  "inputs": {
+    "train_task_refs": [
+      "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/e93602673c3043d39f5c53e5d432e5aa/train__stdscaler_ohe__ridge/03_train_model"
+    ],
+    "require_comparable": true,
+    "top_k": 10,
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "seed": 42,
+    "task_type": "regression",
+    "processed_dataset_id": "local:288a3dda65df1da880d1a7ab7977491d0864bd9ffe4a5591a493304d64fc1308",
+    "split_hash": "03ab4e4731489ffde249a4a5ecafb978fcdd192ab0d5d240e1ce0c4b72969603",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  },
+  "outputs": {
+    "leaderboard_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/e93602673c3043d39f5c53e5d432e5aa/leaderboard/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": null,
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/e93602673c3043d39f5c53e5d432e5aa/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "eae5def4334729742e57f581e14e1a0b1217204cfd2197aa86793c5cf4cea53b",
+    "split_hash": "03ab4e4731489ffde249a4a5ecafb978fcdd192ab0d5d240e1ce0c4b72969603",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

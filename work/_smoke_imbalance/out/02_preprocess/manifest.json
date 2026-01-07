@@ -1,0 +1,22 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-01T11:31:04Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_imbalance/tmp/toy_imbalance.csv"
+  },
+  "outputs": {
+    "processed_dataset_id": "local:9a7e2ed7a7caf251c216596d7874cd600568a0bf36c7204192eb5958152b585c",
+    "split_hash": "6b3a975664d4a62da0dacd4506222aa1d186c76a8c409449707655e0e28cb2e6",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  },
+  "hashes": {
+    "config_hash": "7f55bde138fc3978397b4ef13c1c6921665297d34a7fc308b77b9a6c48b0a82c",
+    "split_hash": "6b3a975664d4a62da0dacd4506222aa1d186c76a8c409449707655e0e28cb2e6",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

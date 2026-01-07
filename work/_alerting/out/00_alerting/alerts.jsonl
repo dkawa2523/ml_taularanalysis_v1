@@ -1,0 +1,1 @@
+{"timestamp": "2026-01-01T18:07:29Z", "kind": "data_quality", "severity": "error", "title": "Data quality gate failed", "message": "duplicates_count>0", "task_name": "alerting_test", "project_name": "local", "context": {"duplicates_count": 3}}

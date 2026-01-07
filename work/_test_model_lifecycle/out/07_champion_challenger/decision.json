@@ -1,0 +1,43 @@
+{
+  "winner": "challenger",
+  "primary_metric": "accuracy",
+  "direction": "maximize",
+  "champion_score": 0.65,
+  "challenger_score": 0.8,
+  "raw_delta": 0.15000000000000002,
+  "directional_delta": 0.15000000000000002,
+  "decision_threshold": 0.0,
+  "rationale": "challenger selected: delta=0.15 (accuracy, maximize), threshold=0",
+  "comparability": {
+    "processed_dataset_id_match": true,
+    "split_hash_match": true
+  },
+  "champion": {
+    "role": "champion",
+    "model_id": "model_previous",
+    "best_score": 0.65,
+    "primary_metric": "accuracy",
+    "direction": "maximize",
+    "task_type": "classification",
+    "processed_dataset_id": "ds_local",
+    "split_hash": "split_local",
+    "recipe_hash": null,
+    "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/previous",
+    "train_task_id": null
+  },
+  "challenger": {
+    "role": "challenger",
+    "model_id": "model_challenger",
+    "best_score": 0.8,
+    "primary_metric": "accuracy",
+    "direction": "maximize",
+    "task_type": "classification",
+    "processed_dataset_id": "ds_local",
+    "split_hash": "split_local",
+    "recipe_hash": null,
+    "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/challenger",
+    "train_task_id": null
+  },
+  "eval_dataset_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/previous",
+  "timestamp": "2026-01-01T17:30:30Z"
+}

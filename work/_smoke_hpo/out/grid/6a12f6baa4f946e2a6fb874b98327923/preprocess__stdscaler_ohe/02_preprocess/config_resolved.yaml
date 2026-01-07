@@ -1,0 +1,69 @@
+run:
+  usecase_id: TabularAnalysis
+  output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/6a12f6baa4f946e2a6fb874b98327923/preprocess__stdscaler_ohe
+  schema_version: v1
+  grid_run_id: 6a12f6baa4f946e2a6fb874b98327923
+  clearml:
+    enabled: false
+    execution: local
+    project_root: MFG
+    queue_name: null
+    clone_from_task_id: null
+    extra_tags: []
+data:
+  dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/tmp/toy_hpo.csv
+  raw_dataset_id: local:47b97e941a790f6f068d82313f79d6059cdae16e7b7466fe9bf2b810b9b93fff
+  processed_dataset_id: null
+  target_column: target
+  id_columns: []
+  drop_columns: []
+  split:
+    strategy: random
+    test_size: 0.2
+    seed: 42
+    group_column: null
+    time_column: null
+eval:
+  task_type: regression
+  primary_metric: rmse
+  direction: minimize
+  cv_folds: 5
+  seed: 42
+group:
+  preprocess:
+    preprocess_variant:
+      name: stdscaler_ohe
+      numeric_scaler: standard
+      categorical_encoder: onehot
+      handle_unknown: ignore
+  model:
+    model_variant:
+      name: ridge
+      framework: sklearn
+      class_path:
+        regression: sklearn.linear_model.Ridge
+        classification: sklearn.linear_model.RidgeClassifier
+      params:
+        alpha: 1.0
+        random_state: ${eval.seed}
+  split:
+    split_variant:
+      name: random
+      strategy: random
+  infer_mode:
+    infer_mode:
+      name: single
+      input_format: json
+task:
+  name: preprocess
+  stage: 02_preprocess
+  project_name: ${run.clearml.project_root}/${run.usecase_id}/02_preprocess
+preprocess:
+  variant: ${preprocess_variant.name}
+  numeric_impute: mean
+  categorical_impute: most_frequent
+preprocess_variant:
+  name: stdscaler_ohe
+  numeric_scaler: standard
+  categorical_encoder: onehot
+  handle_unknown: ignore

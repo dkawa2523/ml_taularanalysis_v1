@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-01T17:51:45Z",
+  "inputs": {
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_pipeline_report/tmp/toy.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "local:15be20c63de64d1e60d9aa14d0d01ef282f5f3cb248aa148c2ec4bd9fe852704",
+    "raw_dataset_hash": "15be20c63de64d1e60d9aa14d0d01ef282f5f3cb248aa148c2ec4bd9fe852704"
+  },
+  "hashes": {
+    "config_hash": "829f059ac533f4db4b6038fd3b5d8535d877454d8344e0eacb817af03df26f35",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

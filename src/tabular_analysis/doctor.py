@@ -3,45 +3,19 @@
 - ml_platform import/version check
 - ClearML connection check (when enabled)
 - solution structure check
-- UI contract lint for local run_dir
+- UI contract lint for local run outputs
 """
 
 from __future__ import annotations
 
 import argparse
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterable, Optional
 
 from . import platform_adapter
-
-
-_STAGE_TO_PROCESS = {
-    "01_dataset_register": "dataset_register",
-    "02_preprocess": "preprocess",
-    "03_train_model": "train_model",
-    "04_infer": "infer",
-    "05_leaderboard": "leaderboard",
-    "99_pipeline": "pipeline",
-}
-
-_REQUIRED_OUT_KEYS = {
-    "dataset_register": {"raw_dataset_id", "raw_schema"},
-    "preprocess": {"processed_dataset_id", "preprocess_variant", "split_hash", "recipe_hash"},
-    "train_model": {
-        "processed_dataset_id",
-        "split_hash",
-        "recipe_hash",
-        "train_task_id",
-        "model_id",
-        "best_score",
-        "primary_metric",
-    },
-    "leaderboard": {"leaderboard_csv", "recommended_train_task_id", "recommended_model_id", "excluded_count"},
-    "infer": {"predictions_path", "input_preview_path", "mode", "model_id"},
-    "pipeline": {"pipeline_run"},
-}
+from .ops import ui_contract_lint
+from .ops.clearml_identity import build_project_name, resolve_clearml_identity
 
 
 @dataclass
@@ -118,9 +92,12 @@ def _compose_config(config_dir: Path, overrides: Iterable[str]) -> Any:
         return compose(config_name="config", overrides=list(overrides))
 
 
-def _check_platform(cfg: Any, report: DoctorReport) -> None:
+def _check_platform(cfg: Any | None, report: DoctorReport) -> None:
+    base_cfg = cfg
+    if base_cfg is None:
+        base_cfg = {"run": {"schema_version": "unknown"}}
     try:
-        versions = platform_adapter.resolve_version_props(cfg, clearml_enabled=True)
+        versions = platform_adapter.resolve_version_props(base_cfg, clearml_enabled=True)
     except Exception as exc:
         report.error(f"ml_platform import/version check failed: {exc}")
         return
@@ -129,10 +106,9 @@ def _check_platform(cfg: Any, report: DoctorReport) -> None:
 
 
 def _clearml_project_name(cfg: Any) -> str:
-    project_root = _cfg_select(cfg, "run.clearml.project_root", "MFG")
-    usecase_id = _cfg_select(cfg, "run.usecase_id", "unknown")
     stage = _cfg_select(cfg, "task.stage", "doctor")
-    return f"{project_root}/{usecase_id}/{stage}"
+    identity = resolve_clearml_identity(cfg)
+    return build_project_name(identity.project_root, identity.usecase_id, stage)
 
 
 def _check_clearml_queue(queue_name: str, report: DoctorReport) -> None:
@@ -212,72 +188,27 @@ def _check_clearml(cfg: Any, report: DoctorReport) -> None:
             _check_clearml_clone_task(str(clone_from_task_id), report)
 
 
-def _load_json(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
-def _infer_process(run_dir: Path, config_path: Path | None, report: DoctorReport) -> str | None:
-    if config_path is not None and config_path.exists():
-        try:
-            from omegaconf import OmegaConf  # type: ignore
-
-            cfg = OmegaConf.load(config_path)
-            task_name = OmegaConf.select(cfg, "task.name")
-            if task_name:
-                return str(task_name)
-            stage = OmegaConf.select(cfg, "task.stage")
-            if stage and str(stage) in _STAGE_TO_PROCESS:
-                return _STAGE_TO_PROCESS[str(stage)]
-        except Exception as exc:
-            report.warn(f"Failed to parse config_resolved.yaml: {exc}")
-    stage_name = run_dir.name
-    return _STAGE_TO_PROCESS.get(stage_name)
-
-
-def _lint_run_dir(run_dir: Path, report: DoctorReport) -> None:
-    if not run_dir.exists():
-        report.error(f"lint-dir does not exist: {run_dir}")
-        return
-    if not run_dir.is_dir():
-        report.error(f"lint-dir is not a directory: {run_dir}")
-        return
-
-    config_path = run_dir / "config_resolved.yaml"
-    out_path = run_dir / "out.json"
-    manifest_path = run_dir / "manifest.json"
-
-    for path in (config_path, out_path, manifest_path):
-        if not path.exists():
-            report.error(f"Missing artifact: {path}")
-        else:
-            report.ok(f"Found artifact: {path.name}")
-
-    if not out_path.exists():
-        return
-
-    try:
-        out = _load_json(out_path)
-    except Exception as exc:
-        report.error(f"Failed to read out.json: {exc}")
-        return
-    if not isinstance(out, dict):
-        report.error("out.json must contain a JSON object.")
-        return
-
-    process = _infer_process(run_dir, config_path if config_path.exists() else None, report)
-    if not process:
-        report.warn("Could not infer process for contract lint.")
-        return
-
-    required = _REQUIRED_OUT_KEYS.get(process)
-    if not required:
-        report.warn(f"No required out.json keys defined for process: {process}")
-        return
-    missing = sorted([key for key in required if key not in out])
-    if missing:
-        report.error(f"out.json missing required keys for {process}: {missing}")
+def _merge_lint_report(report: DoctorReport, lint_report: ui_contract_lint.LintReport, mode: str) -> None:
+    for message in lint_report.oks:
+        report.ok(message)
+    for message in lint_report.warnings:
+        report.warn(message)
+    if mode == "fail":
+        for message in lint_report.errors:
+            report.error(message)
     else:
-        report.ok(f"out.json required keys satisfied for {process}.")
+        for message in lint_report.errors:
+            report.warn(message)
+
+
+def _check_conf_dir(config_dir: Optional[str], report: DoctorReport) -> Path | None:
+    try:
+        resolved = _resolve_config_dir(config_dir)
+    except Exception as exc:
+        report.error(f"conf directory check failed: {exc}")
+        return None
+    report.ok(f"Found conf directory: {resolved}")
+    return resolved
 
 
 def main() -> int:
@@ -287,6 +218,19 @@ def main() -> int:
         type=str,
         default=None,
         help="Path to a run_dir (e.g., outputs/<...>/03_train_model) for UI contract lint.",
+    )
+    parser.add_argument(
+        "--lint-run",
+        type=str,
+        default=None,
+        help="Path to a run.output_dir containing stage outputs for contract lint.",
+    )
+    parser.add_argument(
+        "--mode",
+        type=str,
+        choices=["warn", "fail"],
+        default="warn",
+        help="UI contract lint mode (warn: report only, fail: exit non-zero on violations).",
     )
     parser.add_argument(
         "--config-dir",
@@ -303,21 +247,26 @@ def main() -> int:
 
     report = DoctorReport()
 
+    config_dir = _check_conf_dir(args.config_dir, report)
     cfg = None
-    try:
-        config_dir = _resolve_config_dir(args.config_dir)
-        report.ok(f"Found conf directory: {config_dir}")
-        cfg = _compose_config(config_dir, overrides)
-        report.ok("Config composed successfully.")
-    except Exception as exc:
-        report.error(f"Config resolution failed: {exc}")
+    if config_dir is not None:
+        try:
+            cfg = _compose_config(config_dir, overrides)
+            report.ok("Config composed successfully.")
+        except Exception as exc:
+            report.error(f"Config resolution failed: {exc}")
+
+    _check_platform(cfg, report)
 
     if cfg is not None:
-        _check_platform(cfg, report)
         _check_clearml(cfg, report)
 
     if args.lint_dir:
-        _lint_run_dir(Path(args.lint_dir).expanduser().resolve(), report)
+        lint_report = ui_contract_lint.lint_run_dir(Path(args.lint_dir).expanduser().resolve())
+        _merge_lint_report(report, lint_report, args.mode)
+    if args.lint_run:
+        lint_report = ui_contract_lint.lint_run_root(Path(args.lint_run).expanduser().resolve())
+        _merge_lint_report(report, lint_report, args.mode)
 
     report.emit()
     return report.exit_code(strict=bool(args.strict))

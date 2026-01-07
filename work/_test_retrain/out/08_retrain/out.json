@@ -1,0 +1,14 @@
+{
+  "retrain_run_id": "489c9b9856ea4a05b986480c056a272b",
+  "grid_run_id": "e0e6eb8f673147f0b729c012f77c6c11",
+  "pipeline_run_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/99_pipeline/pipeline_run.json",
+  "leaderboard_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/leaderboard/05_leaderboard"
+  },
+  "decision_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/08_retrain/retrain_decision.json",
+  "summary_md": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/08_retrain/retrain_summary.md",
+  "retrain_run_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/08_retrain/retrain_run.json",
+  "auto_promote": false,
+  "promote_status": "skipped",
+  "champion_challenger_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/07_champion_challenger"
+}

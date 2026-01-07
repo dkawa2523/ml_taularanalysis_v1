@@ -24,6 +24,9 @@ tools/codex_loop/runtime.json
 # Codex loop runs
 work/runs/
 
+# Champion registry
+work/registry/
+
 # Codex loop state / lock / memo (do not version)
 work/state.json
 work/last_failure.md

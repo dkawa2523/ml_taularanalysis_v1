@@ -22,8 +22,13 @@
       "id": "T002",
       "title": "Hydra 設計: タスク単位 config + バリアント設計",
       "md": "work/tasks/T002_HYDRA_CONFIG.md",
-      "deps": ["T001"],
-      "must_change_globs": ["conf/**", "docs/05_PROCESS_CATALOG.md"],
+      "deps": [
+        "T001"
+      ],
+      "must_change_globs": [
+        "conf/**",
+        "docs/05_PROCESS_CATALOG.md"
+      ],
       "verify": [
         "python -m tabular_analysis.cli --print-config task=preprocess > /dev/null",
         "python -m tabular_analysis.cli --print-config task=train_model > /dev/null"
@@ -33,8 +38,13 @@
       "id": "T003",
       "title": "Platform 連携: platform_adapter を P201〜P204 に合わせて完成",
       "md": "work/tasks/T003_PLATFORM_ADAPTER.md",
-      "deps": ["T002"],
-      "must_change_globs": ["src/tabular_analysis/platform_adapter.py", "docs/13_PLATFORM_INTEGRATION.md"],
+      "deps": [
+        "T002"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/platform_adapter.py",
+        "docs/13_PLATFORM_INTEGRATION.md"
+      ],
       "verify": [
         "python tools/codex_loop/platform_scan.py > work/platform_api_summary.txt || true",
         "python -c \"import tabular_analysis.platform_adapter as a; print('ok')\""
@@ -44,8 +54,12 @@
       "id": "T004",
       "title": "dataset_register 実装: rawデータ登録 + schema + manifest/out",
       "md": "work/tasks/T004_DATASET_REGISTER.md",
-      "deps": ["T003"],
-      "must_change_globs": ["src/tabular_analysis/processes/dataset_register.py"],
+      "deps": [
+        "T003"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/dataset_register.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until dataset_register"
@@ -55,8 +69,14 @@
       "id": "T005",
       "title": "preprocess 実装: 前処理 + split固定 + bundle",
       "md": "work/tasks/T005_PREPROCESS.md",
-      "deps": ["T004"],
-      "must_change_globs": ["src/tabular_analysis/processes/preprocess.py", "src/tabular_analysis/registry/preprocessors.py", "src/tabular_analysis/io/*"],
+      "deps": [
+        "T004"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/preprocess.py",
+        "src/tabular_analysis/registry/preprocessors.py",
+        "src/tabular_analysis/io/*"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until preprocess"
@@ -66,8 +86,14 @@
       "id": "T006",
       "title": "train_model 実装: 学習 + model_bundle + metrics",
       "md": "work/tasks/T006_TRAIN_MODEL.md",
-      "deps": ["T005"],
-      "must_change_globs": ["src/tabular_analysis/processes/train_model.py", "src/tabular_analysis/registry/models.py", "src/tabular_analysis/registry/metrics.py"],
+      "deps": [
+        "T005"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/registry/models.py",
+        "src/tabular_analysis/registry/metrics.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until train_model"
@@ -77,8 +103,12 @@
       "id": "T007",
       "title": "leaderboard 実装: 比較可能性チェック + 推奨",
       "md": "work/tasks/T007_LEADERBOARD.md",
-      "deps": ["T006"],
-      "must_change_globs": ["src/tabular_analysis/processes/leaderboard.py"],
+      "deps": [
+        "T006"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/leaderboard.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until leaderboard"
@@ -88,8 +118,12 @@
       "id": "T008",
       "title": "infer 実装: single/batch（optimizeは任意）",
       "md": "work/tasks/T008_INFER.md",
-      "deps": ["T006"],
-      "must_change_globs": ["src/tabular_analysis/processes/infer.py"],
+      "deps": [
+        "T006"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/infer.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until infer"
@@ -99,8 +133,13 @@
       "id": "T009",
       "title": "pipeline 実装: grid 実行 + task_id 受け渡し",
       "md": "work/tasks/T009_PIPELINE.md",
-      "deps": ["T007", "T008"],
-      "must_change_globs": ["src/tabular_analysis/processes/pipeline.py"],
+      "deps": [
+        "T007",
+        "T008"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/pipeline.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/smoke_local.py --until pipeline"
@@ -110,11 +149,909 @@
       "id": "T010",
       "title": "doctor/contract lint: 実行前検査 + UI契約チェック",
       "md": "work/tasks/T010_DOCTOR_AND_LINT.md",
-      "deps": ["T009"],
-      "must_change_globs": ["src/tabular_analysis/doctor.py"],
+      "deps": [
+        "T009"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/doctor.py"
+      ],
       "verify": [
         "python -m compileall -q src",
         "python -m tabular_analysis.doctor --help > /dev/null"
+      ]
+    },
+    {
+      "id": "T011",
+      "title": "分類対応: eval.task_type + 分類メトリクス + infer/leaderboard 対応",
+      "md": "work/tasks/T011_CLASSIFICATION_FOUNDATION.md",
+      "deps": [
+        "T010"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "conf/group/model/logistic_regression.yaml",
+        "src/tabular_analysis/registry/metrics.py",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/processes/leaderboard.py",
+        "tools/tests/smoke_classification.py",
+        "docs/07_EVALUATION_PROTOCOL.md",
+        "docs/14_MODEL_CATALOG.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_classification.py --until leaderboard"
+      ]
+    },
+    {
+      "id": "T012",
+      "title": "stratified split + モデルの reg/clf 両対応（class_path マッピング）",
+      "md": "work/tasks/T012_STRATIFIED_AND_DUAL_CLASS_PATH.md",
+      "deps": [
+        "T011"
+      ],
+      "must_change_globs": [
+        "conf/group/split/stratified.yaml",
+        "src/tabular_analysis/processes/preprocess.py",
+        "src/tabular_analysis/registry/models.py",
+        "conf/group/model/ridge.yaml",
+        "tools/tests/smoke_classification.py",
+        "docs/05_PROCESS_CATALOG.md",
+        "docs/14_MODEL_CATALOG.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_classification.py --until train_model --split stratified --model ridge"
+      ]
+    },
+    {
+      "id": "T013",
+      "title": "モデル追加: LinearRegression / Lasso / ElasticNet（回帰ベースライン強化）",
+      "md": "work/tasks/T013_ADD_LINEAR_MODELS.md",
+      "deps": [
+        "T012"
+      ],
+      "must_change_globs": [
+        "conf/group/model/linear_regression.yaml",
+        "conf/group/model/lasso.yaml",
+        "conf/group/model/elasticnet.yaml",
+        "docs/14_MODEL_CATALOG.md",
+        "tools/tests/smoke_train_regression_model.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_train_regression_model.py --model linear_regression",
+        "python tools/tests/smoke_train_regression_model.py --model elasticnet"
+      ]
+    },
+    {
+      "id": "T014",
+      "title": "モデル追加: RandomForest / ExtraTrees / GradientBoosting + feature importance 統一",
+      "md": "work/tasks/T014_ADD_TREE_MODELS_AND_IMPORTANCE.md",
+      "deps": [
+        "T013"
+      ],
+      "must_change_globs": [
+        "conf/group/model/random_forest.yaml",
+        "conf/group/model/extra_trees.yaml",
+        "conf/group/model/gradient_boosting.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "docs/14_MODEL_CATALOG.md",
+        "tools/tests/smoke_train_regression_model.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_train_regression_model.py --model random_forest --expect-feature-importance"
+      ]
+    },
+    {
+      "id": "T015",
+      "title": "モデル追加: KNN / SVR/SVC / GaussianProcess / MLP（計算コスト注意）",
+      "md": "work/tasks/T015_ADD_NONLINEAR_MODELS.md",
+      "deps": [
+        "T014"
+      ],
+      "must_change_globs": [
+        "conf/group/model/knn.yaml",
+        "conf/group/model/svr.yaml",
+        "conf/group/model/svc.yaml",
+        "conf/group/model/gaussian_process.yaml",
+        "conf/group/model/mlp.yaml",
+        "docs/14_MODEL_CATALOG.md",
+        "tools/tests/smoke_model_build_only.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_model_build_only.py --task-type regression --models knn,svr,gaussian_process,mlp",
+        "python tools/tests/smoke_model_build_only.py --task-type classification --models svc,knn,gaussian_process,mlp"
+      ]
+    },
+    {
+      "id": "T016",
+      "title": "外部GBDT: LightGBM / XGBoost / CatBoost（optional deps + graceful error）",
+      "md": "work/tasks/T016_ADD_EXTERNAL_GBDT_MODELS.md",
+      "deps": [
+        "T015"
+      ],
+      "must_change_globs": [
+        "pyproject.toml",
+        "conf/group/model/lgbm.yaml",
+        "conf/group/model/xgboost.yaml",
+        "conf/group/model/catboost.yaml",
+        "src/tabular_analysis/registry/models.py",
+        "tools/tests/check_optional_models.py",
+        "docs/14_MODEL_CATALOG.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/check_optional_models.py --models lgbm,xgboost,catboost"
+      ]
+    },
+    {
+      "id": "T017",
+      "title": "TabPFN 追加（optional + 重み未取得時の扱いを契約化）",
+      "md": "work/tasks/T017_ADD_TABPFN.md",
+      "deps": [
+        "T016"
+      ],
+      "must_change_globs": [
+        "pyproject.toml",
+        "conf/group/model/tabpfn.yaml",
+        "src/tabular_analysis/registry/models.py",
+        "tools/tests/check_optional_models.py",
+        "docs/14_MODEL_CATALOG.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/check_optional_models.py --models tabpfn"
+      ]
+    },
+    {
+      "id": "T018",
+      "title": "HPO基盤: pipeline にパラメータグリッド探索を追加（小さく）",
+      "md": "work/tasks/T018_HPO_GRID_IN_PIPELINE.md",
+      "deps": [
+        "T017"
+      ],
+      "must_change_globs": [
+        "conf/task/pipeline/base.yaml",
+        "src/tabular_analysis/processes/pipeline.py",
+        "docs/10_OPERATION_MODES.md",
+        "tools/tests/smoke_hpo.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_hpo.py"
+      ]
+    },
+    {
+      "id": "T019",
+      "title": "レポート: pipeline 実行の summary/report.md を自動生成（ClearMLで見やすく）",
+      "md": "work/tasks/T019_REPORTING.md",
+      "deps": [
+        "T018"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/pipeline.py",
+        "src/tabular_analysis/reporting/report.py",
+        "docs/03_CLEARML_UI_CONTRACT.md",
+        "tools/tests/smoke_report.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_report.py"
+      ]
+    },
+    {
+      "id": "T020",
+      "title": "可視化: 重要度/残差/混同行列など軽量プロット（heavyはオプトイン）",
+      "md": "work/tasks/T020_VISUALIZATION.md",
+      "deps": [
+        "T019"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/viz/plots.py",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/leaderboard.py",
+        "docs/03_CLEARML_UI_CONTRACT.md",
+        "tools/tests/smoke_plots.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_plots.py"
+      ]
+    },
+    {
+      "id": "T021",
+      "title": "検証統合: verify_all.py（ローカルで1コマンド検証）",
+      "md": "work/tasks/T021_VERIFY_ALL.md",
+      "deps": [
+        "T020"
+      ],
+      "must_change_globs": [
+        "tools/tests/verify_all.py",
+        "docs/15_VERIFICATION.md",
+        "README.md",
+        "Makefile"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/verify_all.py --quick"
+      ]
+    },
+    {
+      "id": "T022",
+      "title": "doctor 強化: env check + contract lint を「失敗で落ちる」形にする",
+      "md": "work/tasks/T022_DOCTOR_LINT_HARDEN.md",
+      "deps": [
+        "T021"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/doctor.py",
+        "tools/tests/smoke_doctor_lint.py",
+        "tools/tests/verify_all.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_doctor_lint.py"
+      ]
+    },
+    {
+      "id": "T023",
+      "title": "データ品質: data_quality.json/md + ターゲットリーク検知（warn/fail 設定）",
+      "md": "work/tasks/T023_DATA_QUALITY_AND_LEAKAGE.md",
+      "deps": [
+        "T022"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/quality/**",
+        "src/tabular_analysis/processes/dataset_register.py",
+        "src/tabular_analysis/processes/preprocess.py",
+        "conf/data/base.yaml",
+        "tools/tests/smoke_data_quality.py",
+        "src/tabular_analysis/reporting/**"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_data_quality.py"
+      ]
+    },
+    {
+      "id": "T024",
+      "title": "分類の実務対応: しきい値最適化 +（任意）確率校正",
+      "md": "work/tasks/T024_CLASSIFICATION_THRESHOLDING.md",
+      "deps": [
+        "T023"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "tools/tests/smoke_thresholding.py",
+        "src/tabular_analysis/registry/metrics.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_thresholding.py"
+      ]
+    },
+    {
+      "id": "T025",
+      "title": "運用導線: promote_model タスク（推薦モデルを昇格）",
+      "md": "work/tasks/T025_PROMOTE_MODEL_TASK.md",
+      "deps": [
+        "T024"
+      ],
+      "must_change_globs": [
+        "conf/task/promote_model/**",
+        "src/tabular_analysis/processes/promote_model.py",
+        "src/tabular_analysis/cli.py",
+        "tools/tests/smoke_promote_model.py",
+        "docs/16_OPERATIONS_RUNBOOK.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_promote_model.py"
+      ]
+    },
+    {
+      "id": "T026",
+      "title": "推論の堅牢化: 入力スキーマ検証 + エラーレポート（strict/warn/coerce）",
+      "md": "work/tasks/T026_INFER_SCHEMA_VALIDATION.md",
+      "deps": [
+        "T025"
+      ],
+      "must_change_globs": [
+        "conf/task/infer/base.yaml",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/io/schema.py",
+        "tools/tests/smoke_infer_schema_validation.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_infer_schema_validation.py"
+      ]
+    },
+    {
+      "id": "T027",
+      "title": "監視の第一歩: drift_report（train vs infer の分布差）",
+      "md": "work/tasks/T027_DRIFT_REPORT.md",
+      "deps": [
+        "T026"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "tools/tests/smoke_drift_report.py",
+        "conf/task/infer/base.yaml"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_drift_report.py"
+      ]
+    },
+    {
+      "id": "T028",
+      "title": "品質ゲート: CI（GitHub Actions）+ 運用Runbook整備",
+      "md": "work/tasks/T028_CI_AND_RUNBOOK.md",
+      "deps": [
+        "T027"
+      ],
+      "must_change_globs": [
+        ".github/workflows/ci.yml",
+        "tools/tests/smoke_ci_config.py",
+        "docs/18_CONTRIBUTING.md"
+      ],
+      "verify": [
+        "python tools/tests/smoke_ci_config.py"
+      ]
+    },
+    {
+      "id": "T029",
+      "title": "分類拡張: 多クラス対応（train/infer/leaderboard/plots）",
+      "md": "work/tasks/T029_MULTICLASS_CLASSIFICATION.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/processes/leaderboard.py",
+        "src/tabular_analysis/registry/metrics.py",
+        "src/tabular_analysis/viz/plots.py",
+        "tools/tests/smoke_multiclass.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_multiclass.py"
+      ]
+    },
+    {
+      "id": "T030",
+      "title": "分類の実務対応: 不均衡データ（class_weight/PR-AUC/運用ノイズ抑制）",
+      "md": "work/tasks/T030_IMBALANCE_STRATEGIES.md",
+      "deps": [
+        "T029"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/registry/metrics.py",
+        "tools/tests/smoke_imbalance.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_imbalance.py"
+      ]
+    },
+    {
+      "id": "T031",
+      "title": "特徴量拡張: 高カーディナリティカテゴリ（frequency/hash/OOF mean encoding）",
+      "md": "work/tasks/T031_HIGH_CARDINALITY_CATEGORICAL.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/task/preprocess/base.yaml",
+        "src/tabular_analysis/processes/preprocess.py",
+        "src/tabular_analysis/feature_engineering/categorical.py",
+        "tools/tests/smoke_high_card_cat.py",
+        "docs/19_NEXT_PHASE_FEATURES.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_high_card_cat.py"
+      ]
+    },
+    {
+      "id": "T032",
+      "title": "回帰の不確かさ: Conformal prediction（split conformal の予測区間）",
+      "md": "work/tasks/T032_REGRESSION_UNCERTAINTY_CONFORMAL.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/uncertainty/conformal.py",
+        "src/tabular_analysis/viz/plots.py",
+        "tools/tests/smoke_uncertainty.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_uncertainty.py"
+      ]
+    },
+    {
+      "id": "T033",
+      "title": "分類の確率校正: 二値/多クラスの統一（CalibratedClassifier + reliability plot）",
+      "md": "work/tasks/T033_CALIBRATION_MULTICLASS.md",
+      "deps": [
+        "T029"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/viz/plots.py",
+        "tools/tests/smoke_calibration.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_calibration.py"
+      ]
+    },
+    {
+      "id": "T034",
+      "title": "評価の堅牢化: 指標の信頼区間（bootstrap CI）",
+      "md": "work/tasks/T034_METRIC_CONFIDENCE_INTERVALS.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/eval/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/leaderboard.py",
+        "tools/tests/smoke_metric_ci.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_metric_ci.py"
+      ]
+    },
+    {
+      "id": "T035",
+      "title": "意思決定支援: Model Card / Decision Summary の標準化（ClearML運用を壊さない）",
+      "md": "work/tasks/T035_MODEL_CARD_AND_DECISION_SUMMARY.md",
+      "deps": [
+        "T034"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/leaderboard.py",
+        "docs/03_CLEARML_UI_CONTRACT.md",
+        "tools/tests/smoke_decision_summary.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_decision_summary.py"
+      ]
+    },
+    {
+      "id": "T036",
+      "title": "ガバナンス: champion-challenger（promote/rollback を運用で使える形に）",
+      "md": "work/tasks/T036_CHAMPION_CHALLENGER_GOVERNANCE.md",
+      "deps": [
+        "T035"
+      ],
+      "must_change_globs": [
+        "conf/task/promote_model/base.yaml",
+        "src/tabular_analysis/processes/promote_model.py",
+        "docs/19_NEXT_PHASE_FEATURES.md",
+        "tools/tests/smoke_champion_registry.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_champion_registry.py"
+      ]
+    },
+    {
+      "id": "T037",
+      "title": "監視強化: train profile ↔ infer profile による drift 詳細化（opt-in）",
+      "md": "work/tasks/T037_MONITORING_ENHANCED_DRIFT.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/run/base.yaml",
+        "src/tabular_analysis/processes/train_model.py",
+        "src/tabular_analysis/processes/infer.py",
+        "src/tabular_analysis/processes/drift_report.py",
+        "tools/tests/smoke_drift_enhanced.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_drift_enhanced.py"
+      ]
+    },
+    {
+      "id": "T038",
+      "title": "スケール対応: chunked batch infer（大規模CSVでOOMしない）",
+      "md": "work/tasks/T038_LARGE_BATCH_INFERENCE_STREAMING.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "conf/task/infer/base.yaml",
+        "src/tabular_analysis/processes/infer.py",
+        "tools/tests/smoke_batch_chunked.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_batch_chunked.py"
+      ]
+    },
+    {
+      "id": "T039",
+      "title": "（任意）Serving: 推論APIスケルトン（FastAPI optional）",
+      "md": "work/tasks/T039_OPTIONAL_SERVING_API.md",
+      "deps": [
+        "T028"
+      ],
+      "must_change_globs": [
+        "pyproject.toml",
+        "src/tabular_analysis/serve/app.py",
+        "docs/22_SERVING.md",
+        "tools/tests/smoke_serve_import.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/smoke_serve_import.py"
+      ]
+    },
+    {
+      "id": "T040",
+      "title": "統合: verify_all / CI / docs 更新（新機能を運用に乗せる）",
+      "md": "work/tasks/T040_VERIFY_AND_DOCS_UPDATE.md",
+      "deps": [
+        "T039"
+      ],
+      "must_change_globs": [
+        "tools/tests/verify_all.py",
+        ".github/workflows/ci.yml",
+        "docs/15_VERIFICATION.md",
+        "docs/03_CLEARML_UI_CONTRACT.md",
+        "docs/19_NEXT_PHASE_FEATURES.md"
+      ],
+      "verify": [
+        "python tools/tests/verify_all.py --quick"
+      ]
+    },
+    {
+      "id": "T041",
+      "title": "ClearML UI契約 lint 強化（doctor/CIで逸脱を検知）",
+      "md": "work/tasks/T041_CLEARML_UI_CONTRACT_LINT.md",
+      "deps": [
+        "T040"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/ui_contract_lint.py",
+        "src/tabular_analysis/doctor.py",
+        "tools/tests/test_ui_contract_lint.py",
+        "tools/tests/verify_all.py",
+        "docs/03_CLEARML_UI_CONTRACT.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_ui_contract_lint.py",
+        "python tools/tests/verify_all.py --quick"
+      ]
+    },
+    {
+      "id": "T042",
+      "title": "ClearML テンプレ Task 運用の標準化（clone運用の安定化）",
+      "md": "work/tasks/T042_CLEARML_TEMPLATE_TASKS.md",
+      "deps": [
+        "T041"
+      ],
+      "must_change_globs": [
+        "conf/clearml/templates.yaml",
+        "tools/clearml_templates/manage_templates.py",
+        "tools/tests/test_template_specs.py",
+        "docs/21_CLEARML_TEMPLATE_TASKS.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_template_specs.py"
+      ]
+    },
+    {
+      "id": "T043",
+      "title": "実行ポリシー（queue/予算/上限）標準化で“タスク爆発”を防ぐ",
+      "md": "work/tasks/T043_EXEC_POLICY_AND_QUEUES.md",
+      "deps": [
+        "T042"
+      ],
+      "must_change_globs": [
+        "conf/run/exec_policy/base.yaml",
+        "src/tabular_analysis/processes/pipeline.py",
+        "tools/tests/test_exec_policy.py",
+        "docs/22_EXECUTION_POLICY.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_exec_policy.py"
+      ]
+    },
+    {
+      "id": "T044",
+      "title": "Model Lifecycle 完成（promote/rollback/champion-challenger）",
+      "md": "work/tasks/T044_MODEL_LIFECYCLE.md",
+      "deps": [
+        "T043"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/rollback_model.py",
+        "src/tabular_analysis/processes/champion_challenger.py",
+        "conf/task/rollback_model/base.yaml",
+        "conf/task/champion_challenger/base.yaml",
+        "tools/tests/test_model_lifecycle_local.py",
+        "docs/23_MODEL_LIFECYCLE.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_model_lifecycle_local.py"
+      ]
+    },
+    {
+      "id": "T045",
+      "title": "ClearML Report 統合（結論を1ページに集約）",
+      "md": "work/tasks/T045_CLEARML_REPORT_INTEGRATION.md",
+      "deps": [
+        "T044"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/reporting/pipeline_report.py",
+        "src/tabular_analysis/processes/pipeline.py",
+        "tools/tests/test_pipeline_report.py",
+        "docs/24_REPORTING.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_pipeline_report.py"
+      ]
+    },
+    {
+      "id": "T046",
+      "title": "Alerting（品質/ドリフト/失敗を運用へ通知）",
+      "md": "work/tasks/T046_ALERTING.md",
+      "deps": [
+        "T045"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/alerting.py",
+        "conf/run/alerts/base.yaml",
+        "tools/tests/test_alerting_logfile.py",
+        "docs/25_ALERTING.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_alerting_logfile.py"
+      ]
+    },
+    {
+      "id": "T047",
+      "title": "Reproducible Runtime（環境スナップショットと依存固定の土台）",
+      "md": "work/tasks/T047_REPRODUCIBLE_RUNTIME.md",
+      "deps": [
+        "T046"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/env_snapshot.py",
+        "docs/26_REPRODUCIBLE_RUNTIME.md",
+        "tools/tests/test_env_snapshot.py",
+        "requirements/lock.txt"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_env_snapshot.py"
+      ]
+    },
+    {
+      "id": "T048",
+      "title": "Data Quality Gate 強化（リーク疑い/ID列/高カーディナリティ）",
+      "md": "work/tasks/T048_DATA_QUALITY_GATE.md",
+      "deps": [
+        "T047"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/ops/data_quality.py",
+        "conf/data/quality/base.yaml",
+        "tools/tests/test_data_quality_gate.py",
+        "docs/27_DATA_QUALITY.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_data_quality_gate.py"
+      ]
+    },
+    {
+      "id": "T049",
+      "title": "Retrain Orchestration（監視→再学習→比較→任意promote）",
+      "md": "work/tasks/T049_RETRAIN_ORCHESTRATION.md",
+      "deps": [
+        "T048"
+      ],
+      "must_change_globs": [
+        "src/tabular_analysis/processes/retrain.py",
+        "conf/task/retrain/base.yaml",
+        "tools/tests/test_retrain_local.py",
+        "docs/28_RETRAIN.md"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_retrain_local.py"
+      ]
+    },
+    {
+      "id": "T050",
+      "title": "Serving Hardening（認証・ステージ選択・監査ログ・入力検証）",
+      "md": "work/tasks/T050_SERVING_HARDENING.md",
+      "deps": [
+        "T049"
+      ],
+      "must_change_globs": [
+        "serving/app.py",
+        "serving/auth.py",
+        "serving/model_loader.py",
+        "tools/tests/test_serving_app.py",
+        "docs/29_SERVING.md",
+        "tools/tests/verify_all.py"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/tests/test_serving_app.py",
+        "python tools/tests/verify_all.py --quick"
+      ]
+    },
+    {
+      "id": "T051",
+      "title": "試験段階: ClearML命名/タグ/Propertiesのポリシーをyamlで切替可能にする",
+      "deps": [
+        "T050"
+      ],
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python -m tabular_analysis.ops.print_clearml_identity --help"
+      ],
+      "md": "work/tasks/T051_TEST_PHASE_CLEARML_POLICY.md"
+    },
+    {
+      "id": "T052",
+      "title": "試験段階: ClearML運用検討をIssue(md)として残す枠組みを追加",
+      "deps": [
+        "T051"
+      ],
+      "must_change_globs": [
+        "docs/**"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python -c \"import pathlib; assert (pathlib.Path('docs/issues')/ 'README.md').exists()\""
+      ],
+      "md": "work/tasks/T052_CLEARML_ISSUES_AND_DECISIONS.md"
+    },
+    {
+      "id": "T053",
+      "title": "試験段階: ローカルClearML用リハーサル手順とスクリプトを整備",
+      "deps": [
+        "T052"
+      ],
+      "must_change_globs": [
+        "tools/**",
+        "docs/**"
+      ],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/rehearsal/run_rehearsal.py --help"
+      ],
+      "md": "work/tasks/T053_REHEARSAL_LOCAL_CLEARML.md"
+    },
+    {
+      "id": "T054",
+      "title": "試験段階: Template Task(将来)の作成・チェック手順をdocsに明文化",
+      "deps": [
+        "T053"
+      ],
+      "must_change_globs": [
+        "docs/**"
+      ],
+      "verify": [
+        "python -c \"import pathlib; assert (pathlib.Path('docs')/ '41_TEMPLATES_AND_ISSUE_FORMAT.md').exists()\""
+      ],
+      "md": "work/tasks/T054_TEMPLATE_TASK_CHECKLIST.md"
+    },
+    {
+      "id": "T055",
+      "title": "試験段階: 社内ClearMLへ移行するための差分チェックと微調整手順を整備",
+      "deps": [
+        "T054"
+      ],
+      "must_change_globs": [
+        "docs/**",
+        "tools/**",
+        "conf/**"
+      ],
+      "verify": [
+        "python tools/rehearsal/plan_migration.py --help"
+      ],
+      "md": "work/tasks/T055_REHEARSAL_INTERNAL_CLEARML.md"
+    },
+    {
+      "id": "T056",
+      "title": "ClearML Processed Dataset 管理を実装（preprocessでprocessed datasetを登録し、train/inferが復元して使う）",
+      "md": "work/tasks/T056_T056_ClearML_Processed_Dataset_preprocess_processed_dataset_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T057",
+      "title": "Scalars/Plots/Debug Samples を UI 契約通りに出す（png artifact偏重を改善）",
+      "md": "work/tasks/T057_T057_Scalars_Plots_Debug_Samples_UI_png_artifact_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T058",
+      "title": "PipelineController 実装（子タスク生成・grid実行）",
+      "md": "work/tasks/T058_T058_PipelineController_grid_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T059",
+      "title": "Template Task 作成/更新ツール整備（試験段階: local serverで簡単に作れる）",
+      "md": "work/tasks/T059_T059_Template_Task_local_server_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T060",
+      "title": "ClearML契約のリハーサル手順を更新（Datasets/Plots/Controllerが期待通りか検証する）",
+      "md": "work/tasks/T060_T060_ClearML_Datasets_Plots_Controller_.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
       ]
     }
   ]

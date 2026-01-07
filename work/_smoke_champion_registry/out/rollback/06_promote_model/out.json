@@ -1,0 +1,13 @@
+{
+  "promotion_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/rollback/06_promote_model/promotion.json",
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/train1/03_train_model/model_bundle.joblib",
+  "stage": "production",
+  "source": "rollback:champion_registry:SmokeChampionRegistry",
+  "promotion_status": "succeeded",
+  "set_champion": true,
+  "rollback": true,
+  "primary_metric": "rmse",
+  "best_score": 0.08233006555071108,
+  "champion_registry_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/registry/champions.json",
+  "champion_usecase_id": "SmokeChampionRegistry"
+}

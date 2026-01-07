@@ -1,0 +1,9 @@
+{
+  "predicted_label": 1,
+  "pred_label": 1,
+  "prediction": 1,
+  "predicted_proba": {
+    "0": 0.019905413585945886,
+    "1": 0.9800945864140541
+  }
+}

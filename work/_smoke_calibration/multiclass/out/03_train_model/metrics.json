@@ -1,0 +1,37 @@
+{
+  "primary_metric": "logloss",
+  "direction": "minimize",
+  "task_type": "classification",
+  "holdout": {
+    "accuracy": 0.9090909090909091,
+    "f1_macro": 0.9109518120270809,
+    "logloss": 0.260570301395803,
+    "train_rows": 176,
+    "val_rows": 44
+  },
+  "n_classes": 3,
+  "cv": {
+    "folds": 5,
+    "seed": 42,
+    "scores": [
+      0.26587378545483215,
+      0.09369499529246755,
+      0.24994679760442132,
+      0.15903433303849512,
+      0.12160327502913171
+    ],
+    "mean": 0.17803063728386956,
+    "std": 0.06862326149630191
+  },
+  "calibration": {
+    "enabled": true,
+    "method": "sigmoid",
+    "mode": "prefit"
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

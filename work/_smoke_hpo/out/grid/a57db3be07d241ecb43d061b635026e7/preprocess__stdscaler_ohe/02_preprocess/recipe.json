@@ -1,0 +1,29 @@
+{
+  "variant": {
+    "name": "stdscaler_ohe",
+    "numeric_scaler": "standard",
+    "categorical_encoder": "onehot",
+    "handle_unknown": "ignore"
+  },
+  "impute": {
+    "numeric": "mean",
+    "categorical": "most_frequent"
+  },
+  "columns": {
+    "feature_columns": [
+      "num1",
+      "num2",
+      "cat"
+    ],
+    "numeric_features": [
+      "num1",
+      "num2"
+    ],
+    "categorical_features": [
+      "cat"
+    ],
+    "target_column": "target",
+    "id_columns": [],
+    "drop_columns": []
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "raw_dataset_id": "local:5737bfdb12f75fff43a67e277dc41037d6952d311055ba6097bcef566a31a11a",
+  "raw_dataset_hash": "5737bfdb12f75fff43a67e277dc41037d6952d311055ba6097bcef566a31a11a",
+  "raw_schema": {
+    "rows": 120,
+    "columns": 5,
+    "fields": {
+      "record_id": {
+        "dtype": "int64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "cat_high": {
+        "dtype": "object",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "feature": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "leak_feature": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "target": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      }
+    }
+  },
+  "data_quality_summary": {
+    "rows": 120,
+    "columns": 5,
+    "missing_columns": 0,
+    "missing_rate_max": null,
+    "duplicates_count": 0,
+    "high_cardinality_count": 2,
+    "id_like_count": 4,
+    "mixed_type_count": 0,
+    "name_suspect_count": 1,
+    "leak_suspect_count": 2,
+    "leak_suspects": [
+      "leak_feature",
+      "feature"
+    ],
+    "leak_error": false,
+    "quality_status": "warn",
+    "quality_issue_count": 9
+  }
+}
