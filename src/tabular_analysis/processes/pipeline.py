@@ -1146,8 +1146,8 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
                         overrides["infer.model_id"] = fallback_model
                     elif fallback_task:
                         overrides["infer.train_task_id"] = fallback_task
-                else:
-                    raise ValueError("infer requires model_id or train_task_id.")
+                    else:
+                        raise ValueError("infer requires model_id or train_task_id.")
             args = ["task=infer", *_overrides_to_args(overrides)]
             _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
             infer_ref = _build_ref(run_dir=step["run_dir"])
