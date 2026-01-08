@@ -15,7 +15,7 @@ import shutil
 from pathlib import Path
 from typing import Any, Iterable
 
-from ..clearml.hparams import connect_leaderboard_hparams
+from ..clearml.hparams import connect_leaderboard
 from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
 from ..io.bundle_io import load_bundle
 from ..ops.clearml_identity import apply_clearml_identity
@@ -31,6 +31,12 @@ from ..platform_adapter import (
     upload_artifact,
     write_manifest,
     write_out_json,
+)
+from ..viz.leaderboard_plots import (
+    build_leaderboard_table,
+    build_pareto_scatter,
+    build_top_k_bar,
+    write_top_k_bar_png,
 )
 
 
@@ -90,6 +96,26 @@ def _ensure_list(values: Any) -> list[str]:
     return [str(values)]
 
 
+def _to_mapping(value: Any) -> dict[str, Any]:
+    if value is None:
+        return {}
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception:
+        OmegaConf = None
+    if OmegaConf is not None and OmegaConf.is_config(value):
+        try:
+            container = OmegaConf.to_container(value, resolve=True)
+        except Exception:
+            container = None
+        if isinstance(container, dict):
+            return dict(container)
+        return {}
+    if isinstance(value, dict):
+        return dict(value)
+    return {}
+
+
 def _normalize_int(value: Any) -> int | None:
     if value is None:
         return None
@@ -118,6 +144,50 @@ def _format_float(value: Any) -> str:
     return f"{num:.6g}"
 
 
+def _quantile(values: list[float], q: float) -> float:
+    if not values:
+        return float("nan")
+    ordered = sorted(values)
+    if len(ordered) == 1:
+        return ordered[0]
+    pos = (len(ordered) - 1) * q
+    lower = int(math.floor(pos))
+    upper = int(math.ceil(pos))
+    if lower == upper:
+        return ordered[lower]
+    return ordered[lower] + (ordered[upper] - ordered[lower]) * (pos - lower)
+
+
+def _normalize_metric_values(
+    values: list[float | None],
+    *,
+    normalization: str,
+) -> list[float | None]:
+    valid = [value for value in values if value is not None]
+    if not valid:
+        return [None for _ in values]
+    if normalization == "robust":
+        low = _quantile(valid, 0.1)
+        high = _quantile(valid, 0.9)
+    else:
+        low = min(valid)
+        high = max(valid)
+    if not math.isfinite(low) or not math.isfinite(high) or high == low:
+        return [0.0 if value is not None else None for value in values]
+    normalized: list[float | None] = []
+    for value in values:
+        if value is None:
+            normalized.append(None)
+            continue
+        score = (value - low) / (high - low)
+        if score < 0.0:
+            score = 0.0
+        elif score > 1.0:
+            score = 1.0
+        normalized.append(float(score))
+    return normalized
+
+
 def _format_ci_interval(interval: dict[str, Any] | None) -> str | None:
     if not isinstance(interval, dict):
         return None
@@ -127,6 +197,50 @@ def _format_ci_interval(interval: dict[str, Any] | None) -> str | None:
     if low is None and mid is None and high is None:
         return None
     return f"[{_format_float(low)}, {_format_float(mid)}, {_format_float(high)}]"
+
+
+def _resolve_scoring_config(cfg: Any) -> tuple[list[str], dict[str, float], str, list[str]]:
+    warnings: list[str] = []
+    metrics = _ensure_list(_cfg_value(cfg, "leaderboard.scoring.metrics", None))
+    if not metrics:
+        metrics = ["r2", "rmse", "mae", "mse"]
+        warnings.append("leaderboard.scoring.metrics is empty; defaulting to r2/rmse/mae/mse.")
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for name in metrics:
+        if name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+    metrics = deduped
+    weights_raw = _to_mapping(_cfg_value(cfg, "leaderboard.scoring.weights", None))
+    weights: dict[str, float] = {}
+    for metric in metrics:
+        weight = _to_float(weights_raw.get(metric))
+        if weight is None:
+            weights[metric] = 1.0
+            warnings.append(f"leaderboard.scoring.weights.{metric} is missing; defaulting to 1.0.")
+        else:
+            weights[metric] = weight
+    normalization = _normalize_str(_cfg_value(cfg, "leaderboard.scoring.normalization", None)) or "minmax"
+    if normalization not in ("minmax", "robust"):
+        warnings.append(f"Unknown normalization '{normalization}'; falling back to minmax.")
+        normalization = "minmax"
+    return metrics, weights, normalization, warnings
+
+
+def _extract_holdout_metrics(metrics_payload: dict[str, Any] | None) -> dict[str, float | None]:
+    if not isinstance(metrics_payload, dict):
+        return {}
+    holdout = metrics_payload.get("holdout")
+    if not isinstance(holdout, dict):
+        return {}
+    metrics: dict[str, float | None] = {}
+    for key, value in holdout.items():
+        if key in ("train_rows", "val_rows"):
+            continue
+        metrics[str(key)] = _to_float(value)
+    return metrics
 
 
 def _stringify_payload(value: Any) -> Any:
@@ -205,6 +319,7 @@ def _build_entry(
     *,
     out: dict[str, Any],
     manifest: dict[str, Any] | None,
+    metrics_payload: dict[str, Any] | None,
     train_task_ref: str,
     model_bundle_path: Path | None,
     expected_primary_metric: str | None,
@@ -285,6 +400,8 @@ def _build_entry(
     imbalance_payload = out.get("imbalance") if isinstance(out.get("imbalance"), dict) else None
     uncertainty_payload = out.get("uncertainty") if isinstance(out.get("uncertainty"), dict) else None
 
+    metrics = _extract_holdout_metrics(metrics_payload)
+
     entry = {
         "train_task_ref": train_task_ref,
         "train_task_id": _normalize_str(out.get("train_task_id")) or None,
@@ -309,6 +426,7 @@ def _build_entry(
         "uncertainty": uncertainty_payload,
         "n_classes": _normalize_int(out.get("n_classes")),
         "class_labels": out.get("class_labels"),
+        "metrics": metrics,
     }
     return entry, warnings, []
 
@@ -335,15 +453,22 @@ def _compare_comparability(entry: dict[str, Any], ref: dict[str, Any]) -> list[s
     return mismatches
 
 
-def _write_leaderboard_csv(path: Path, rows: Iterable[dict[str, Any]]) -> None:
+def _write_leaderboard_csv(
+    path: Path,
+    rows: Iterable[dict[str, Any]],
+    *,
+    metric_names: Iterable[str] = (),
+) -> None:
     fieldnames = [
         "rank",
+        "composite_score",
         "best_score",
         "primary_metric_ci_low",
         "primary_metric_ci_mid",
         "primary_metric_ci_high",
         "primary_metric",
         "task_type",
+        *[name for name in metric_names],
         "model_id",
         "preprocess_variant",
         "model_variant",
@@ -356,76 +481,6 @@ def _write_leaderboard_csv(path: Path, rows: Iterable[dict[str, Any]]) -> None:
         writer.writeheader()
         for row in rows:
             writer.writerow(row)
-
-
-def _build_top_k_plotly(rows: list[dict[str, Any]], *, metric_name: str | None) -> Any | None:
-    try:
-        import plotly.graph_objects as go  # type: ignore
-    except Exception:
-        return None
-    labels: list[str] = []
-    scores: list[float] = []
-    for row in rows:
-        label = (
-            row.get("model_variant")
-            or row.get("model_id")
-            or row.get("train_task_ref")
-            or row.get("rank")
-        )
-        label_text = str(label) if label is not None else "unknown"
-        if len(label_text) > 30:
-            label_text = label_text[:27] + "..."
-        labels.append(f"{row.get('rank')}:{label_text}")
-        scores.append(float(row.get("best_score")))
-    title = f"Top-K {metric_name}" if metric_name else "Top-K Scores"
-    fig = go.Figure(go.Bar(x=labels, y=scores, marker_color="#4C78A8"))
-    fig.update_layout(
-        title=title,
-        xaxis_title="rank/model",
-        yaxis_title=metric_name or "score",
-        margin=dict(l=40, r=20, t=40, b=80),
-    )
-    return fig
-
-
-def _write_top_k_bar_png(
-    rows: list[dict[str, Any]],
-    output_path: Path,
-    *,
-    metric_name: str | None,
-) -> Path | None:
-    try:
-        import matplotlib
-
-        matplotlib.use("Agg", force=True)
-        import matplotlib.pyplot as plt  # type: ignore
-    except Exception:
-        return None
-    labels: list[str] = []
-    scores: list[float] = []
-    for row in rows:
-        label = (
-            row.get("model_variant")
-            or row.get("model_id")
-            or row.get("train_task_ref")
-            or row.get("rank")
-        )
-        label_text = str(label) if label is not None else "unknown"
-        if len(label_text) > 30:
-            label_text = label_text[:27] + "..."
-        labels.append(f"{row.get('rank')}:{label_text}")
-        scores.append(float(row.get("best_score")))
-    fig, ax = plt.subplots(figsize=(8, 4.5))
-    ax.bar(range(len(scores)), scores, color="#4C78A8")
-    ax.set_ylabel(metric_name or "score")
-    ax.set_title(f"Top-K {metric_name}" if metric_name else "Top-K Scores")
-    ax.set_xticks(range(len(labels)))
-    ax.set_xticklabels(labels, rotation=45, ha="right")
-    fig.tight_layout()
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig.savefig(output_path, dpi=150)
-    plt.close(fig)
-    return output_path
 
 
 def _copy_recommended_plot(
@@ -489,14 +544,15 @@ def run(cfg: Any) -> None:
     train_run_dirs = _ensure_list(getattr(lb_cfg, "train_run_dirs", None))
     require_comparable = bool(getattr(lb_cfg, "require_comparable", True))
     top_k = int(getattr(lb_cfg, "top_k", 10) or 0)
+    dry_run = bool(getattr(lb_cfg, "dry_run", False))
 
     if clearml_enabled:
         refs = train_task_ids
-        if not refs:
+        if not refs and not dry_run:
             raise ValueError("leaderboard.train_task_ids is required when ClearML is enabled.")
     else:
         refs = train_run_dirs or train_task_ids
-        if not refs:
+        if not refs and not dry_run:
             raise ValueError(
                 "leaderboard.train_run_dirs (or train_task_ids) is required when ClearML is disabled."
             )
@@ -506,7 +562,7 @@ def run(cfg: Any) -> None:
     expected_seed = _normalize_int(getattr(getattr(cfg, "eval", None), "seed", None))
     expected_task_type = _normalize_str(getattr(getattr(cfg, "eval", None), "task_type", None)) or "regression"
 
-    connect_leaderboard_hparams(
+    connect_leaderboard(
         ctx,
         cfg,
         primary_metric=expected_primary_metric,
@@ -524,6 +580,195 @@ def run(cfg: Any) -> None:
         "seed": expected_seed,
         "task_type": expected_task_type,
     }
+
+    if dry_run and not refs:
+        scoring_metrics, scoring_weights, scoring_normalization, scoring_warnings = _resolve_scoring_config(cfg)
+        ranking_score_key = "composite_score"
+        ranking_direction = "maximize"
+
+        leaderboard_path = ctx.output_dir / "leaderboard.csv"
+        _write_leaderboard_csv(leaderboard_path, [], metric_names=scoring_metrics)
+
+        recommendation = {
+            "recommended_train_task_ref": None,
+            "recommended_model_id": None,
+            "recommended_best_score": None,
+            "recommended_primary_metric": expected_primary_metric,
+            "recommended_composite_score": None,
+            "recommended_metrics": {},
+            "ranking_score_key": ranking_score_key,
+            "ranking_direction": ranking_direction,
+            "scoring": {
+                "metrics": scoring_metrics,
+                "weights": scoring_weights,
+                "normalization": scoring_normalization,
+            },
+        }
+        recommendation_path = ctx.output_dir / "recommendation.json"
+        recommendation_path.write_text(
+            json.dumps(recommendation, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
+
+        summary_lines = [
+            "# Leaderboard Summary",
+            "",
+            "- dry_run: true",
+            f"- total_runs: {len(refs)}",
+            "- included: 0",
+            "- excluded: 0",
+            f"- require_comparable: {require_comparable}",
+            f"- ranking_score_key: {ranking_score_key}",
+            f"- ranking_direction: {ranking_direction}",
+            f"- scoring.normalization: {scoring_normalization}",
+            f"- primary_metric: {expected_primary_metric or 'unknown'}",
+            f"- direction: {expected_direction or 'unknown'}",
+            f"- task_type: {expected_task_type or 'unknown'}",
+        ]
+        if scoring_warnings:
+            summary_lines.extend(["", "## Warnings"])
+            summary_lines.extend([f"- {line}" for line in scoring_warnings])
+        summary_path = ctx.output_dir / "summary.md"
+        summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+
+        decision_lines = [
+            "# Decision Summary",
+            "",
+            "## Recommendation",
+            "- recommended_model_id: n/a",
+            "- train_task_ref: n/a",
+            f"- primary_metric: {expected_primary_metric or 'unknown'} ({expected_direction or 'unknown'})",
+            "- best_score: n/a",
+            f"- ranking_score_key: {ranking_score_key} ({ranking_direction})",
+            "",
+            "## Scoring",
+            f"- normalization: {scoring_normalization}",
+            f"- metrics: {', '.join(scoring_metrics)}",
+            f"- weights: {', '.join([f'{k}={scoring_weights.get(k)}' for k in scoring_metrics])}",
+        ]
+        decision_summary_path = ctx.output_dir / "decision_summary.md"
+        decision_summary_path.write_text("\n".join(decision_lines) + "\n", encoding="utf-8")
+
+        decision_payload = {
+            "recommended": {
+                "model_id": None,
+                "train_task_ref": None,
+                "train_task_id": None,
+                "best_score": None,
+                "primary_metric": expected_primary_metric,
+                "primary_metric_ci": None,
+                "composite_score": None,
+                "metrics": {},
+                "task_type": expected_task_type,
+            },
+            "scoring": {
+                "metrics": scoring_metrics,
+                "weights": scoring_weights,
+                "normalization": scoring_normalization,
+                "ranking_score_key": ranking_score_key,
+                "ranking_direction": ranking_direction,
+            },
+            "comparability": {
+                "require_comparable": require_comparable,
+                "processed_dataset_id": ref_values.get("processed_dataset_id"),
+                "split_hash": ref_values.get("split_hash"),
+                "recipe_hash": ref_values.get("recipe_hash"),
+                "primary_metric": ref_values.get("primary_metric"),
+                "direction": expected_direction,
+                "task_type": ref_values.get("task_type"),
+                "seed": ref_values.get("seed"),
+            },
+            "leaderboard_csv": str(leaderboard_path),
+            "top_models": [],
+            "excluded_count": 0,
+            "warning_count": len(scoring_warnings),
+        }
+        decision_summary_json_path = ctx.output_dir / "decision_summary.json"
+        decision_summary_json_path.write_text(
+            json.dumps(_stringify_payload(decision_payload), ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+        if clearml_enabled:
+            for name, path in [
+                ("leaderboard.csv", leaderboard_path),
+                ("recommendation.json", recommendation_path),
+                ("summary.md", summary_path),
+                ("decision_summary.md", decision_summary_path),
+                ("decision_summary.json", decision_summary_json_path),
+            ]:
+                upload_artifact(ctx, name, path)
+            selection_policy = f"composite_score:{scoring_normalization}"
+            update_task_properties(
+                ctx,
+                {
+                    "recommended_train_task_id": None,
+                    "recommended_model_id": None,
+                    "excluded_count": 0,
+                    "selection_policy": selection_policy,
+                },
+            )
+
+        out = {
+            "leaderboard_csv": str(leaderboard_path),
+            "recommended_train_task_id": None,
+            "recommended_train_task_ref": None,
+            "recommended_model_id": None,
+            "recommended_best_score": None,
+            "recommended_primary_metric": expected_primary_metric,
+            "recommended_composite_score": None,
+            "ranking_score_key": ranking_score_key,
+            "ranking_direction": ranking_direction,
+            "excluded_count": 0,
+        }
+        if scoring_warnings:
+            out["warnings"] = scoring_warnings
+        write_out_json(ctx, out)
+
+        versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
+        inputs = {
+            "train_task_refs": [],
+            "require_comparable": require_comparable,
+            "top_k": top_k,
+            "scoring": {
+                "metrics": scoring_metrics,
+                "weights": scoring_weights,
+                "normalization": scoring_normalization,
+                "ranking_score_key": ranking_score_key,
+                "ranking_direction": ranking_direction,
+            },
+            "primary_metric": ref_values.get("primary_metric"),
+            "direction": expected_direction,
+            "seed": ref_values.get("seed"),
+            "task_type": ref_values.get("task_type"),
+            "processed_dataset_id": ref_values.get("processed_dataset_id"),
+            "split_hash": ref_values.get("split_hash"),
+            "recipe_hash": ref_values.get("recipe_hash"),
+        }
+        outputs = {
+            "leaderboard_csv": str(leaderboard_path),
+            "recommended_train_task_id": None,
+            "recommended_model_id": None,
+            "recommended_composite_score": None,
+            "excluded_count": 0,
+        }
+        split_hash = ref_values.get("split_hash") or "unknown"
+        recipe_hash = ref_values.get("recipe_hash") or "unknown"
+        manifest = {
+            "schema_version": versions.get("schema_version", "unknown"),
+            "code_version": versions.get("code_version", "unknown"),
+            "platform_version": versions.get("platform_version", "unknown"),
+            "process": "leaderboard",
+            "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "inputs": inputs,
+            "outputs": outputs,
+            "hashes": {
+                "config_hash": hash_config(cfg),
+                "split_hash": split_hash,
+                "recipe_hash": recipe_hash,
+            },
+        }
+        write_manifest(ctx, manifest)
+        return
 
     entries: list[dict[str, Any]] = []
     excluded: list[str] = []
@@ -545,14 +790,23 @@ def run(cfg: Any) -> None:
             if out_path is not None and manifest_path is not None:
                 out = _load_json(out_path)
                 manifest = _load_json(manifest_path)
+                metrics_payload = None
                 model_bundle_path = None
                 try:
                     model_bundle_path = get_task_artifact_local_copy(cfg, ref, "model_bundle.joblib")
                 except PlatformAdapterError as exc:
                     entry_warnings.append(str(exc))
+                try:
+                    metrics_path = get_task_artifact_local_copy(cfg, ref, "metrics.json")
+                except PlatformAdapterError as exc:
+                    entry_warnings.append(str(exc))
+                    metrics_path = None
+                if metrics_path is not None:
+                    metrics_payload = _load_json(metrics_path)
                 entry, build_warnings, entry_errors = _build_entry(
                     out=out,
                     manifest=manifest,
+                    metrics_payload=metrics_payload,
                     train_task_ref=str(ref),
                     model_bundle_path=model_bundle_path,
                     expected_primary_metric=expected_primary_metric,
@@ -572,12 +826,19 @@ def run(cfg: Any) -> None:
                 else:
                     out = _load_json(out_path)
                     manifest = _load_json(manifest_path)
+                    metrics_payload = None
                     model_bundle_path = _resolve_model_bundle_path(run_dir, _normalize_str(out.get("model_id")))
                     if model_bundle_path is None:
                         entry_warnings.append(f"model_bundle.joblib not found under {run_dir}")
+                    metrics_path = run_dir / "metrics.json"
+                    if metrics_path.exists():
+                        metrics_payload = _load_json(metrics_path)
+                    else:
+                        entry_warnings.append(f"metrics.json not found under {run_dir}")
                     entry, build_warnings, entry_errors = _build_entry(
                         out=out,
                         manifest=manifest,
+                        metrics_payload=metrics_payload,
                         train_task_ref=str(run_dir),
                         model_bundle_path=model_bundle_path,
                         expected_primary_metric=expected_primary_metric,
@@ -627,48 +888,109 @@ def run(cfg: Any) -> None:
     if not entries:
         raise ValueError("No comparable train runs found for leaderboard.")
 
+    scoring_metrics, scoring_weights, scoring_normalization, scoring_warnings = _resolve_scoring_config(cfg)
+    warnings.extend(scoring_warnings)
+
+    metric_values: dict[str, list[float | None]] = {name: [] for name in scoring_metrics}
+    for entry in entries:
+        metrics_map = entry.get("metrics") or {}
+        for name in scoring_metrics:
+            metric_values[name].append(_to_float(metrics_map.get(name)))
+
+    normalized_values: dict[str, list[float | None]] = {}
+    for name, values in metric_values.items():
+        if not any(value is not None for value in values):
+            warnings.append(f"metric '{name}' missing in all runs; skipping in composite score.")
+            normalized_values[name] = [None for _ in values]
+            continue
+        normalized_values[name] = _normalize_metric_values(values, normalization=scoring_normalization)
+
+    for idx, entry in enumerate(entries):
+        for name in scoring_metrics:
+            entry[name] = metric_values[name][idx]
+
+        score_sum = 0.0
+        weight_sum = 0.0
+        used = False
+        for name in scoring_metrics:
+            weight = scoring_weights.get(name, 0.0)
+            if weight == 0.0:
+                continue
+            normalized = normalized_values[name][idx]
+            if normalized is None:
+                continue
+            score_sum += weight * normalized
+            weight_sum += abs(weight)
+            used = True
+        entry["composite_score"] = score_sum / weight_sum if used and weight_sum > 0 else None
+
+    use_composite = any(entry.get("composite_score") is not None for entry in entries)
+    if not use_composite:
+        warnings.append("Composite scoring unavailable; falling back to primary metric ranking.")
+
     direction = _normalize_direction(ref_values.get("direction")) or "minimize"
     if direction not in ("minimize", "maximize"):
         warnings.append(f"Invalid direction {direction}; defaulting to minimize.")
         direction = "minimize"
 
+    ranking_score_key = "composite_score" if use_composite else "best_score"
+    ranking_direction = "maximize" if use_composite else direction
+
+    def _sort_key(item: dict[str, Any]) -> float:
+        value = _to_float(item.get(ranking_score_key))
+        if value is None:
+            return -math.inf if ranking_direction == "maximize" else math.inf
+        return value
+
     entries_sorted = sorted(
         entries,
-        key=lambda item: item["best_score"],
-        reverse=direction == "maximize",
+        key=_sort_key,
+        reverse=ranking_direction == "maximize",
     )
 
     if top_k <= 0:
         top_k = len(entries_sorted)
     rows = []
     for idx, entry in enumerate(entries_sorted[:top_k], start=1):
-        rows.append(
-            {
-                "rank": idx,
-                "best_score": entry["best_score"],
-                "primary_metric_ci_low": entry.get("primary_metric_ci_low"),
-                "primary_metric_ci_mid": entry.get("primary_metric_ci_mid"),
-                "primary_metric_ci_high": entry.get("primary_metric_ci_high"),
-                "primary_metric": entry["primary_metric"],
-                "task_type": entry.get("task_type"),
-                "model_id": entry["model_id"],
-                "preprocess_variant": entry["preprocess_variant"],
-                "model_variant": entry["model_variant"],
-                "train_task_ref": entry["train_task_ref"],
-                "processed_dataset_id": entry["processed_dataset_id"],
-                "split_hash": entry["split_hash"],
-            }
-        )
+        row = {
+            "rank": idx,
+            "composite_score": entry.get("composite_score"),
+            "best_score": entry["best_score"],
+            "primary_metric_ci_low": entry.get("primary_metric_ci_low"),
+            "primary_metric_ci_mid": entry.get("primary_metric_ci_mid"),
+            "primary_metric_ci_high": entry.get("primary_metric_ci_high"),
+            "primary_metric": entry["primary_metric"],
+            "task_type": entry.get("task_type"),
+            "model_id": entry["model_id"],
+            "preprocess_variant": entry["preprocess_variant"],
+            "model_variant": entry["model_variant"],
+            "train_task_ref": entry["train_task_ref"],
+            "processed_dataset_id": entry["processed_dataset_id"],
+            "split_hash": entry["split_hash"],
+        }
+        for name in scoring_metrics:
+            row[name] = entry.get(name)
+        rows.append(row)
 
     leaderboard_path = ctx.output_dir / "leaderboard.csv"
-    _write_leaderboard_csv(leaderboard_path, rows)
+    _write_leaderboard_csv(leaderboard_path, rows, metric_names=scoring_metrics)
 
     recommended = entries_sorted[0]
+    recommended_metrics = {name: recommended.get(name) for name in scoring_metrics}
     recommendation = {
         "recommended_train_task_ref": recommended["train_task_ref"],
         "recommended_model_id": recommended["model_id"],
         "recommended_best_score": recommended["best_score"],
         "recommended_primary_metric": recommended["primary_metric"],
+        "recommended_composite_score": recommended.get("composite_score"),
+        "recommended_metrics": recommended_metrics,
+        "ranking_score_key": ranking_score_key,
+        "ranking_direction": ranking_direction,
+        "scoring": {
+            "metrics": scoring_metrics,
+            "weights": scoring_weights,
+            "normalization": scoring_normalization,
+        },
     }
     recommendation_path = ctx.output_dir / "recommendation.json"
     recommendation_path.write_text(
@@ -682,6 +1004,9 @@ def run(cfg: Any) -> None:
         f"- included: {len(entries_sorted)}",
         f"- excluded: {len(excluded)}",
         f"- require_comparable: {require_comparable}",
+        f"- ranking_score_key: {ranking_score_key}",
+        f"- ranking_direction: {ranking_direction}",
+        f"- scoring.normalization: {scoring_normalization}",
         f"- primary_metric: {ref_values.get('primary_metric') or 'unknown'}",
         f"- direction: {direction}",
         f"- task_type: {ref_values.get('task_type') or 'unknown'}",
@@ -696,6 +1021,8 @@ def run(cfg: Any) -> None:
             f"- rank {row['rank']}: best_score={row['best_score']} model_id={row['model_id']} "
             f"train_task_ref={row['train_task_ref']}"
         )
+        if row.get("composite_score") is not None:
+            line += f" composite_score={_format_float(row.get('composite_score'))}"
         if row["rank"] == 1:
             ci_low = row.get("primary_metric_ci_low")
             ci_high = row.get("primary_metric_ci_high")
@@ -709,20 +1036,65 @@ def run(cfg: Any) -> None:
     summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
 
     if clearml_enabled and rows:
-        best_score = recommended.get("best_score")
-        if best_score is not None:
-            log_scalar(ctx.task, "leaderboard", "best_score", best_score, step=0)
-        metric_name = ref_values.get("primary_metric") or recommended.get("primary_metric")
-        top_k_fig = _build_top_k_plotly(rows, metric_name=metric_name)
+        ranking_score_label = (
+            "Composite Score"
+            if use_composite
+            else (ref_values.get("primary_metric") or recommended.get("primary_metric") or "score")
+        )
+        best_primary_score = recommended.get("best_score")
+        best_composite_score = recommended.get("composite_score")
+        if use_composite and best_composite_score is not None:
+            log_scalar(ctx.task, "leaderboard", "best_score", best_composite_score, step=0)
+            if best_primary_score is not None:
+                log_scalar(
+                    ctx.task,
+                    "leaderboard",
+                    "best_primary_score",
+                    best_primary_score,
+                    step=0,
+                )
+        elif best_primary_score is not None:
+            log_scalar(ctx.task, "leaderboard", "best_score", best_primary_score, step=0)
+
+        table_fig = build_leaderboard_table(
+            rows,
+            metric_names=scoring_metrics,
+            score_key=ranking_score_key,
+            score_label=ranking_score_label,
+            title="Leaderboard",
+        )
+        if table_fig is not None:
+            log_plotly(ctx.task, "leaderboard", "table", table_fig, step=0)
+        else:
+            log_debug_table(
+                ctx.task,
+                "leaderboard",
+                "table",
+                rows[: min(10, len(rows))],
+                step=0,
+            )
+
+        top_k_fig = build_top_k_bar(
+            rows,
+            score_key=ranking_score_key,
+            score_label=ranking_score_label,
+            title=f"Top-K {ranking_score_label}",
+        )
         fallback_path = None
         if top_k_fig is None:
-            fallback_path = _write_top_k_bar_png(
+            fallback_path = write_top_k_bar_png(
                 rows,
                 ctx.output_dir / "top_k_scores.png",
-                metric_name=metric_name,
+                score_key=ranking_score_key,
+                score_label=ranking_score_label,
+                title=f"Top-K {ranking_score_label}",
             )
         log_plotly(ctx.task, "leaderboard", "top_k_scores", top_k_fig or fallback_path, step=0)
         log_debug_table(ctx.task, "leaderboard", "top_k_table", rows[: min(10, len(rows))], step=0)
+
+        pareto_fig = build_pareto_scatter(rows, x_metric="r2", y_metric="rmse")
+        if pareto_fig is not None:
+            log_plotly(ctx.task, "leaderboard", "pareto", pareto_fig, step=0)
 
     max_models = min(5, len(rows))
     decision_rows = rows[:max_models]
@@ -735,9 +1107,14 @@ def run(cfg: Any) -> None:
         f"- train_task_ref: {recommended.get('train_task_ref')}",
         f"- primary_metric: {recommended.get('primary_metric')} ({direction})",
         f"- best_score: {_format_float(recommended.get('best_score'))}",
+        f"- ranking_score_key: {ranking_score_key} ({ranking_direction})",
     ]
     if recommended_ci:
         decision_lines.append(f"- primary_metric_ci: {recommended_ci}")
+    if recommended.get("composite_score") is not None:
+        decision_lines.append(
+            f"- composite_score: {_format_float(recommended.get('composite_score'))}"
+        )
     if recommended.get("task_type"):
         decision_lines.append(f"- task_type: {recommended.get('task_type')}")
     if recommended.get("n_classes") is not None:
@@ -762,11 +1139,16 @@ def run(cfg: Any) -> None:
     decision_lines.extend(
         [
             "",
+            "## Scoring",
+            f"- normalization: {scoring_normalization}",
+            f"- metrics: {', '.join(scoring_metrics)}",
+            f"- weights: {', '.join([f'{k}={scoring_weights.get(k)}' for k in scoring_metrics])}",
+            "",
             "## Top Models",
             f"- source: {leaderboard_path.name}",
             "",
-            "| rank | model_variant | preprocess_variant | best_score | primary_metric | ci |",
-            "| --- | --- | --- | --- | --- | --- |",
+            "| rank | model_variant | preprocess_variant | composite_score | best_score | primary_metric | ci |",
+            "| --- | --- | --- | --- | --- | --- | --- |",
         ]
     )
     for row in decision_rows:
@@ -778,10 +1160,11 @@ def run(cfg: Any) -> None:
             }
         ) or "n/a"
         decision_lines.append(
-            "| {rank} | {model_variant} | {preprocess_variant} | {best_score} | {metric} | {ci} |".format(
+            "| {rank} | {model_variant} | {preprocess_variant} | {composite} | {best_score} | {metric} | {ci} |".format(
                 rank=row.get("rank"),
                 model_variant=row.get("model_variant") or "unknown",
                 preprocess_variant=row.get("preprocess_variant") or "unknown",
+                composite=_format_float(row.get("composite_score")),
                 best_score=_format_float(row.get("best_score")),
                 metric=row.get("primary_metric") or "unknown",
                 ci=ci,
@@ -849,6 +1232,8 @@ def run(cfg: Any) -> None:
             "best_score": recommended.get("best_score"),
             "primary_metric": recommended.get("primary_metric"),
             "primary_metric_ci": recommended.get("primary_metric_ci"),
+            "composite_score": recommended.get("composite_score"),
+            "metrics": recommended_metrics,
             "task_type": recommended.get("task_type"),
             "n_classes": recommended.get("n_classes"),
             "class_labels": recommended.get("class_labels"),
@@ -856,6 +1241,13 @@ def run(cfg: Any) -> None:
             "calibration": recommended.get("calibration"),
             "imbalance": recommended.get("imbalance"),
             "uncertainty": recommended.get("uncertainty"),
+        },
+        "scoring": {
+            "metrics": scoring_metrics,
+            "weights": scoring_weights,
+            "normalization": scoring_normalization,
+            "ranking_score_key": ranking_score_key,
+            "ranking_direction": ranking_direction,
         },
         "comparability": {
             "require_comparable": require_comparable,
@@ -897,14 +1289,20 @@ def run(cfg: Any) -> None:
             ("decision_summary.json", decision_summary_json_path),
         ]:
             upload_artifact(ctx, name, path)
-        update_task_properties(
-            ctx,
-            {
-                "recommended_train_task_id": recommended.get("train_task_id") or None,
-                "recommended_model_id": recommended.get("model_id"),
-                "excluded_count": len(excluded),
-            },
+        selection_policy = (
+            f"composite_score:{scoring_normalization}"
+            if use_composite
+            else f"primary_metric:{ref_values.get('primary_metric') or 'unknown'}"
         )
+        properties_payload = {
+            "recommended_train_task_id": recommended.get("train_task_id") or None,
+            "recommended_model_id": recommended.get("model_id"),
+            "excluded_count": len(excluded),
+            "selection_policy": selection_policy,
+        }
+        if recommended.get("composite_score") is not None:
+            properties_payload["recommended_composite_score"] = recommended.get("composite_score")
+        update_task_properties(ctx, properties_payload)
 
     out = {
         "leaderboard_csv": str(leaderboard_path),
@@ -913,6 +1311,9 @@ def run(cfg: Any) -> None:
         "recommended_model_id": recommended.get("model_id"),
         "recommended_best_score": recommended.get("best_score"),
         "recommended_primary_metric": recommended.get("primary_metric"),
+        "recommended_composite_score": recommended.get("composite_score"),
+        "ranking_score_key": ranking_score_key,
+        "ranking_direction": ranking_direction,
         "excluded_count": len(excluded),
     }
     if non_comparable:
@@ -926,6 +1327,13 @@ def run(cfg: Any) -> None:
         "train_task_refs": [str(ref) for ref in refs],
         "require_comparable": require_comparable,
         "top_k": top_k,
+        "scoring": {
+            "metrics": scoring_metrics,
+            "weights": scoring_weights,
+            "normalization": scoring_normalization,
+            "ranking_score_key": ranking_score_key,
+            "ranking_direction": ranking_direction,
+        },
         "primary_metric": ref_values.get("primary_metric"),
         "direction": direction,
         "seed": ref_values.get("seed"),
@@ -938,6 +1346,7 @@ def run(cfg: Any) -> None:
         "leaderboard_csv": str(leaderboard_path),
         "recommended_train_task_id": recommended.get("train_task_id") or None,
         "recommended_model_id": recommended.get("model_id"),
+        "recommended_composite_score": recommended.get("composite_score"),
         "excluded_count": len(excluded),
     }
     manifest = {

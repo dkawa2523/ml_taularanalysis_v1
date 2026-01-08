@@ -20,6 +20,7 @@ import uuid
 from ..clearml.templates import resolve_template_task_id
 from ..clearml.ui_logger import log_scalar
 from ..platform_adapter import (
+    clearml_task_type_controller,
     create_pipeline_controller,
     hash_config,
     hash_recipe,
@@ -588,6 +589,24 @@ def _collect_data_overrides(cfg: Any) -> dict[str, Any]:
     return overrides
 
 
+def _build_downstream_data_overrides(
+    data_overrides: Mapping[str, Any],
+    *,
+    raw_dataset_id: str | None,
+) -> dict[str, Any]:
+    overrides = dict(data_overrides)
+    if not raw_dataset_id:
+        return overrides
+    overrides["data.raw_dataset_id"] = raw_dataset_id
+    dataset_path_value = _normalize_str(overrides.get("data.dataset_path"))
+    if raw_dataset_id.startswith("local:"):
+        if not dataset_path_value:
+            raise ValueError("data.dataset_path is required when data.raw_dataset_id is local.")
+    else:
+        overrides.pop("data.dataset_path", None)
+    return overrides
+
+
 def _collect_eval_overrides(cfg: Any) -> dict[str, Any]:
     eval_cfg = getattr(cfg, "eval", None)
     overrides: dict[str, Any] = {}
@@ -662,15 +681,89 @@ def _run_cli_task(args: list[str], *, cwd: Path, config_dir: Path | None) -> Non
         )
 
 
+def _load_model_set_payload(path: Path) -> Any:
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception as exc:  # pragma: no cover - omegaconf is expected in runtime
+        raise RuntimeError("OmegaConf is required to load model_set configs.") from exc
+    try:
+        cfg = OmegaConf.load(path)
+    except Exception as exc:
+        raise ValueError(f"Failed to load model_set config: {path}") from exc
+    try:
+        return OmegaConf.to_container(cfg, resolve=False)
+    except Exception:
+        return cfg
+
+
+def _normalize_model_set_name(value: str) -> str:
+    name = value.strip()
+    if not name:
+        return ""
+    if Path(name).name != name:
+        raise ValueError(f"Invalid pipeline.model_set name: {value}")
+    return name
+
+
+def _resolve_model_set_variants(model_set: str) -> list[str]:
+    name = _normalize_model_set_name(model_set)
+    if not name:
+        return []
+    repo_root = _resolve_repo_root()
+    path = repo_root / "conf" / "pipeline" / "model_sets" / f"{name}.yaml"
+    if not path.exists():
+        raise ValueError(f"pipeline.model_set '{name}' not found: {path}")
+    payload = _load_model_set_payload(path)
+    variants: list[str] = []
+    if isinstance(payload, Mapping):
+        variants = _to_list(payload.get("variants"))
+        auto = bool(payload.get("auto"))
+        task_type = _normalize_str(payload.get("task_type"))
+        if auto and not task_type:
+            raise ValueError(f"model_set '{name}' requires task_type when auto=true.")
+        if auto or (task_type and not variants):
+            from ..registry.models import list_model_variants
+
+            variants = list_model_variants(task_type=task_type)
+        exclude = set(_to_list(payload.get("exclude")))
+        if exclude:
+            variants = [item for item in variants if item not in exclude]
+    elif isinstance(payload, list):
+        variants = _to_list(payload)
+    else:
+        raise ValueError(f"model_set config must be mapping or list: {path}")
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in variants:
+        name = _normalize_str(item)
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+    return deduped
+
+
 def _resolve_variants(cfg: Any) -> tuple[list[str], list[str]]:
-    preprocess_variants = _to_list(_cfg_value(cfg, "pipeline.grid.preprocess_variants"))
+    preprocess_variants = _to_list(_cfg_value(cfg, "pipeline.preprocess_variants"))
+    if not preprocess_variants:
+        single = _normalize_str(_cfg_value(cfg, "pipeline.preprocess_variant"))
+        if single:
+            preprocess_variants = [single]
+    if not preprocess_variants:
+        preprocess_variants = _to_list(_cfg_value(cfg, "pipeline.grid.preprocess_variants"))
     if not preprocess_variants:
         fallback = _normalize_str(_cfg_value(cfg, "preprocess_variant.name")) or _normalize_str(
             _cfg_value(cfg, "group.preprocess.preprocess_variant.name")
         )
         if fallback:
             preprocess_variants = [fallback]
-    model_variants = _to_list(_cfg_value(cfg, "pipeline.grid.model_variants"))
+    model_set = _normalize_str(_cfg_value(cfg, "pipeline.model_set"))
+    if model_set:
+        model_variants = _resolve_model_set_variants(model_set)
+    else:
+        model_variants = _to_list(_cfg_value(cfg, "pipeline.model_variants"))
+        if not model_variants:
+            model_variants = _to_list(_cfg_value(cfg, "pipeline.grid.model_variants"))
     if not model_variants:
         fallback = _normalize_str(_cfg_value(cfg, "model_variant.name")) or _normalize_str(
             _cfg_value(cfg, "group.model.model_variant.name")
@@ -860,11 +953,20 @@ def _build_pipeline_plan(
 ) -> dict[str, Any]:
     base_output_dir = Path(getattr(cfg.run, "output_dir", "outputs")).expanduser().resolve()
     pipeline_cfg = getattr(cfg, "pipeline", None)
-    run_dataset_register = bool(getattr(pipeline_cfg, "run_dataset_register", True))
+    run_dataset_register = bool(getattr(pipeline_cfg, "run_dataset_register", False))
     run_preprocess = bool(getattr(pipeline_cfg, "run_preprocess", True))
     run_train = bool(getattr(pipeline_cfg, "run_train", True))
     run_leaderboard = bool(getattr(pipeline_cfg, "run_leaderboard", True))
     run_infer = bool(getattr(pipeline_cfg, "run_infer", False))
+
+    raw_dataset_id = _normalize_str(_cfg_value(cfg, "data.raw_dataset_id"))
+    dataset_path_value = _normalize_str(_cfg_value(cfg, "data.dataset_path"))
+    if run_preprocess and not run_dataset_register and not raw_dataset_id:
+        raise ValueError(
+            "data.raw_dataset_id is required when pipeline.run_dataset_register is false."
+        )
+    if run_preprocess and raw_dataset_id and raw_dataset_id.startswith("local:") and not dataset_path_value:
+        raise ValueError("data.dataset_path is required when data.raw_dataset_id is local.")
 
     preprocess_variants, model_variants = _resolve_variants(cfg)
     hpo_enabled, hpo_trials_by_model, hpo_params_cfg = _resolve_hpo_trials(cfg, model_variants)
@@ -899,6 +1001,12 @@ def _build_pipeline_plan(
 
     run_overrides = _collect_run_overrides(cfg, grid_run_id, child_execution=child_execution)
     data_overrides = _collect_data_overrides(cfg)
+    if run_preprocess:
+        downstream_data_overrides = _build_downstream_data_overrides(
+            data_overrides, raw_dataset_id=raw_dataset_id
+        )
+    else:
+        downstream_data_overrides = dict(data_overrides)
     eval_overrides = _collect_eval_overrides(cfg)
 
     preprocess_targets = preprocess_variants
@@ -950,6 +1058,7 @@ def _build_pipeline_plan(
         "preprocess_targets": preprocess_targets,
         "run_overrides": run_overrides,
         "data_overrides": data_overrides,
+        "downstream_data_overrides": downstream_data_overrides,
         "eval_overrides": eval_overrides,
         "base_extra_tags": base_extra_tags,
         "queues": queues,
@@ -1009,6 +1118,7 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
     config_dir = repo_root / "conf"
     run_overrides = dict(plan["run_overrides"])
     data_overrides = dict(plan["data_overrides"])
+    downstream_data_overrides = dict(plan["downstream_data_overrides"])
     eval_overrides = plan["eval_overrides"]
     steps = plan["steps"]
 
@@ -1033,12 +1143,16 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
             raw_dataset_id = _normalize_str(dataset_out.get("raw_dataset_id"))
             if raw_dataset_id:
                 data_overrides["data.raw_dataset_id"] = raw_dataset_id
+                if plan["run_preprocess"]:
+                    downstream_data_overrides = _build_downstream_data_overrides(
+                        data_overrides, raw_dataset_id=raw_dataset_id
+                    )
 
         preprocess_outputs: dict[str, dict[str, Any]] = {}
         if plan["run_preprocess"]:
             for step in steps["preprocess"]:
                 preprocess_variant = step.get("preprocess_variant")
-                overrides = _merge_overrides(run_overrides, data_overrides, step["overrides"])
+                overrides = _merge_overrides(run_overrides, downstream_data_overrides, step["overrides"])
                 args = ["task=preprocess", *_overrides_to_args(overrides)]
                 _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
                 out = _load_json(step["run_dir"] / "out.json")
@@ -1065,7 +1179,7 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
                 processed_dataset_id = _normalize_str(preprocess_out.get("processed_dataset_id"))
                 overrides = _merge_overrides(
                     run_overrides,
-                    data_overrides,
+                    downstream_data_overrides,
                     eval_overrides,
                     step["overrides"],
                 )
@@ -1186,11 +1300,15 @@ def _run_clearml_pipeline(
     grid_run_id: str,
     *,
     use_templates: bool,
+    controller_execution: str | None = None,
 ) -> dict[str, Any]:
     child_execution = "logging" if use_templates else None
+    controller_execution = _normalize_str(controller_execution) or ""
+    run_controller_locally = controller_execution != "pipeline_controller"
     plan = _build_pipeline_plan(cfg, grid_run_id, child_execution=child_execution)
     run_overrides = plan["run_overrides"]
     data_overrides = plan["data_overrides"]
+    downstream_data_overrides = plan["downstream_data_overrides"]
     eval_overrides = plan["eval_overrides"]
     queues = plan["queues"]
     steps = plan["steps"]
@@ -1255,7 +1373,7 @@ def _run_clearml_pipeline(
 
         if plan["run_preprocess"]:
             for step in steps["preprocess"]:
-                overrides = _merge_overrides(run_overrides, data_overrides, step["overrides"])
+                overrides = _merge_overrides(run_overrides, downstream_data_overrides, step["overrides"])
                 _add_pipeline_step(
                     controller,
                     name=step["step_name"],
@@ -1271,7 +1389,12 @@ def _run_clearml_pipeline(
             if not steps["train"]:
                 raise ValueError("preprocess outputs are required before train.")
             for step in steps["train"]:
-                overrides = _merge_overrides(run_overrides, data_overrides, eval_overrides, step["overrides"])
+                overrides = _merge_overrides(
+                    run_overrides,
+                    downstream_data_overrides,
+                    eval_overrides,
+                    step["overrides"],
+                )
                 _add_pipeline_step(
                     controller,
                     name=step["step_name"],
@@ -1334,7 +1457,19 @@ def _run_clearml_pipeline(
                 **_base_task_kwargs(step["task_name"]),
             )
 
-        controller.start_locally(run_pipeline_steps_locally=False)
+        if run_controller_locally:
+            starter = getattr(controller, "start_locally", None)
+            if not callable(starter):
+                raise AttributeError("Pipeline controller does not support start_locally.")
+            starter(run_pipeline_steps_locally=False)
+        else:
+            starter = getattr(controller, "start", None)
+            if not callable(starter):
+                raise AttributeError("Pipeline controller does not support start.")
+            if queue_name:
+                starter(queue=queue_name)
+            else:
+                starter()
         step_task_ids = _collect_step_task_ids(controller)
         executed_jobs = len(steps["train"])
 
@@ -1418,22 +1553,37 @@ def _run_clearml_pipeline(
 def run(cfg: Any) -> None:
     grid_run_id = _ensure_grid_run_id(cfg)
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
+    execution = _normalize_str(_cfg_value(cfg, "run.clearml.execution")) or "local"
+    controller_execution = execution in ("pipeline_controller", "pipeline_controller_local")
+    task_type = clearml_task_type_controller() if controller_execution else None
+    system_tags = ["pipeline"] if controller_execution else None
     ctx = init_task_context(
         cfg,
         stage=cfg.task.stage,
         task_name="pipeline",
         tags=identity.tags,
         properties=identity.user_properties,
+        task_type=task_type,
+        system_tags=system_tags,
     )
     save_config_resolved(ctx, cfg)
 
     clearml_enabled = is_clearml_enabled(cfg)
-    execution = _normalize_str(_cfg_value(cfg, "run.clearml.execution")) or "local"
 
-    if clearml_enabled and execution == "pipeline_controller":
-        pipeline_run = _run_clearml_pipeline(cfg, grid_run_id, use_templates=True)
+    if clearml_enabled and execution in ("pipeline_controller", "pipeline_controller_local"):
+        pipeline_run = _run_clearml_pipeline(
+            cfg,
+            grid_run_id,
+            use_templates=True,
+            controller_execution=execution,
+        )
     elif clearml_enabled and execution in ("agent", "clone"):
-        pipeline_run = _run_clearml_pipeline(cfg, grid_run_id, use_templates=False)
+        pipeline_run = _run_clearml_pipeline(
+            cfg,
+            grid_run_id,
+            use_templates=False,
+            controller_execution=execution,
+        )
     else:
         pipeline_run = _run_local_pipeline(cfg, grid_run_id, clearml_enabled=clearml_enabled)
 
@@ -1491,7 +1641,7 @@ def run(cfg: Any) -> None:
         "process": "pipeline",
         "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "inputs": {
-            "run_dataset_register": bool(getattr(getattr(cfg, "pipeline", None), "run_dataset_register", True)),
+            "run_dataset_register": bool(getattr(getattr(cfg, "pipeline", None), "run_dataset_register", False)),
             "run_preprocess": bool(getattr(getattr(cfg, "pipeline", None), "run_preprocess", True)),
             "run_train": bool(getattr(getattr(cfg, "pipeline", None), "run_train", True)),
             "run_leaderboard": bool(getattr(getattr(cfg, "pipeline", None), "run_leaderboard", True)),

@@ -2,7 +2,7 @@
 task_type: regression  # regression | classification
 
 # primary metric（leaderboard はこれで順位付け）
-primary_metric: rmse  # rmse | mae | r2
+primary_metric: rmse  # rmse | mae | r2 | mse
 
 # minimize / maximize / auto
 direction: auto
@@ -53,6 +53,8 @@ classification:
   top_k: 1
 
 metrics:
+  # metrics for regression
+  regression: [r2, mse, rmse, mae]
   # metrics for multiclass classification
   classification_multiclass: [accuracy, f1_macro, logloss]
   # extra metrics when imbalance handling is enabled (binary classification)

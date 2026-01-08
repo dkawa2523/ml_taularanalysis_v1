@@ -114,6 +114,40 @@ def log_plotly(task: Any, title: str, series: str, fig: Any, step: int = 0) -> b
     return log_debug_text(task, title, series, payload, step=step)
 
 
+def report_plotly(task: Any, title: str, series: str, fig: Any, step: int = 0) -> bool:
+    return log_plotly(task, title, series, fig, step=step)
+
+
+def report_input_output_table(
+    task: Any,
+    title: str,
+    series: str,
+    input_sample: Any,
+    output_sample: Any,
+    *,
+    max_rows: int = 5,
+    max_input_columns: int = 20,
+    max_output_columns: int = 12,
+    output_path: str | Path | None = None,
+    step: int = 0,
+) -> bool:
+    try:
+        from ..viz.infer_plots import build_input_output_table
+    except Exception:
+        return False
+    fig = build_input_output_table(
+        input_sample,
+        output_sample,
+        max_rows=max_rows,
+        max_input_columns=max_input_columns,
+        max_output_columns=max_output_columns,
+        output_path=_as_path(output_path) if output_path is not None else None,
+    )
+    if fig is None:
+        return False
+    return log_plotly(task, title, series, fig, step=step)
+
+
 def log_debug_text(task: Any, title: str, series: str, text: Any, step: int = 0) -> bool:
     logger = _get_logger(task)
     if logger is None or text is None:

@@ -186,6 +186,8 @@ def get_metric(name: str, task_type: str = "regression", **kwargs: Any) -> Calla
 
     if key in ("rmse", "root_mean_squared_error"):
         return lambda y_true, y_pred, y_proba=None: float(np.sqrt(mean_squared_error(y_true, y_pred)))
+    if key in ("mse", "mean_squared_error"):
+        return lambda y_true, y_pred, y_proba=None: float(mean_squared_error(y_true, y_pred))
     if key in ("mae", "mean_absolute_error"):
         return lambda y_true, y_pred, y_proba=None: float(mean_absolute_error(y_true, y_pred))
     if key in ("r2", "r2_score"):

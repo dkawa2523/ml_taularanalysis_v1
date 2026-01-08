@@ -9,7 +9,8 @@ from pathlib import Path
 from typing import Any
 
 from ..clearml.datasets import create_raw_dataset, get_raw_dataset_local_copy
-from ..clearml.hparams import connect_dataset_register_hparams
+from ..clearml.hparams import connect_dataset_register
+from ..clearml.ui_logger import log_scalar, report_plotly
 from ..platform_adapter import (
     hash_config,
     hash_recipe,
@@ -23,8 +24,33 @@ from ..platform_adapter import (
 )
 from ..ops.clearml_identity import apply_clearml_identity
 from ..ops.data_quality import raise_on_quality_fail, run_data_quality_gate
+from ..registry.preprocessors import infer_feature_types
+from ..viz.data_profile import (
+    build_categorical_topk_bars,
+    build_head_table,
+    build_missingness_bar,
+    build_numeric_histograms,
+    build_target_distribution,
+    summarize_dataframe,
+)
 
 _TABULAR_SUFFIXES = (".csv", ".parquet", ".pq")
+_PROFILE_SETTINGS = {
+    "max_numeric": 4,
+    "max_categorical": 4,
+    "max_categories": 10,
+    "max_columns": 30,
+    "sample_rows": 5000,
+    "table_rows": 5,
+    "table_columns": 20,
+}
+
+
+def _series_name(prefix: str, name: Any, max_len: int = 48) -> str:
+    text = str(name).replace("/", "_").replace(" ", "_")
+    if len(text) > max_len:
+        text = text[: max_len - 3] + "..."
+    return f"{prefix}_{text}"
 
 
 def _hash_file(path: Path) -> str:
@@ -103,6 +129,76 @@ def _infer_schema(path: Path, output_dir: Path):
     return df, schema
 
 
+def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: list[Any]) -> None:
+    summary = summarize_dataframe(df)
+    log_scalar(ctx.task, "dataset_register", "rows", summary.get("rows"), step=0)
+    log_scalar(ctx.task, "dataset_register", "columns", summary.get("columns"), step=0)
+    log_scalar(ctx.task, "dataset_register", "missing_rate", summary.get("missing_rate"), step=0)
+
+    exclude = {str(value) for value in id_columns if value is not None}
+    if target_column:
+        exclude.add(str(target_column))
+    columns = list(getattr(df, "columns", []))
+    feature_columns = [col for col in columns if str(col) not in exclude]
+    if not feature_columns:
+        feature_columns = columns
+
+    numeric_features, categorical_features = infer_feature_types(df, feature_columns)
+
+    head_fig = build_head_table(
+        df,
+        max_rows=_PROFILE_SETTINGS["table_rows"],
+        max_columns=_PROFILE_SETTINGS["table_columns"],
+        output_dir=ctx.output_dir,
+    )
+    report_plotly(ctx.task, "dataset_register", "head_table", head_fig, step=0)
+
+    missing_fig = build_missingness_bar(
+        df,
+        columns=columns,
+        max_columns=_PROFILE_SETTINGS["max_columns"],
+        output_dir=ctx.output_dir,
+    )
+    report_plotly(ctx.task, "dataset_register", "missingness", missing_fig, step=0)
+
+    for col, fig in build_numeric_histograms(
+        df,
+        numeric_features,
+        max_columns=_PROFILE_SETTINGS["max_numeric"],
+        sample_rows=_PROFILE_SETTINGS["sample_rows"],
+        output_dir=ctx.output_dir,
+        title_prefix="Numeric Histogram",
+    ):
+        report_plotly(ctx.task, "dataset_register", _series_name("numeric_hist", col), fig, step=0)
+
+    for col, fig in build_categorical_topk_bars(
+        df,
+        categorical_features,
+        max_columns=_PROFILE_SETTINGS["max_categorical"],
+        top_k=_PROFILE_SETTINGS["max_categories"],
+        sample_rows=_PROFILE_SETTINGS["sample_rows"],
+        output_dir=ctx.output_dir,
+        title_prefix="Top Categories",
+    ):
+        report_plotly(
+            ctx.task,
+            "dataset_register",
+            _series_name("categorical_topk", col),
+            fig,
+            step=0,
+        )
+
+    target_fig = build_target_distribution(
+        df,
+        str(target_column) if target_column else "",
+        bins=30,
+        top_k=_PROFILE_SETTINGS["max_categories"],
+        sample_rows=_PROFILE_SETTINGS["sample_rows"],
+        output_dir=ctx.output_dir,
+    )
+    report_plotly(ctx.task, "dataset_register", "target_distribution", target_fig, step=0)
+
+
 def run(cfg: Any) -> None:
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
     ctx = init_task_context(
@@ -119,11 +215,12 @@ def run(cfg: Any) -> None:
     raw_dataset_id_input = _normalize_str(getattr(cfg.data, "raw_dataset_id", None))
     target_column = _normalize_str(getattr(getattr(cfg, "data", None), "target_column", None))
 
-    connect_dataset_register_hparams(
+    connect_dataset_register(
         ctx,
         cfg,
         dataset_path=dataset_path_value,
         target_column=target_column,
+        raw_dataset_id=raw_dataset_id_input,
     )
 
     raw_dataset_id: str | None = None
@@ -200,6 +297,14 @@ def run(cfg: Any) -> None:
     quality_summary = quality_result["summary"]
     gate = quality_result["gate"]
     data_quality_path = quality_result["paths"]["json"]
+
+    if clearml_enabled and raw_df is not None:
+        _log_data_profile(
+            ctx,
+            raw_df,
+            target_column=target_column,
+            id_columns=id_columns,
+        )
 
     out = {
         "raw_dataset_id": raw_dataset_id,

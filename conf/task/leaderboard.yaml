@@ -1,4 +1,7 @@
 # @package _global_
+defaults:
+  - /leaderboard/scoring
+  - _self_
 task:
   name: leaderboard
   stage: "05_leaderboard"
@@ -10,3 +13,4 @@ leaderboard:
   require_comparable: true
 
   top_k: ${exec_policy.limits.max_models}
+  dry_run: false

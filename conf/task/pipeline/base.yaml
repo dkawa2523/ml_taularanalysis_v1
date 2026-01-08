@@ -6,12 +6,13 @@ task:
 
 pipeline:
   # どの工程を実行するか
-  run_dataset_register: true
+  run_dataset_register: false
   run_preprocess: true
   run_train: true
   run_leaderboard: true
   run_infer: false
   plan_only: false
+  dry_run: false
 
   # grid 実行（前処理×モデルなど）
   grid:

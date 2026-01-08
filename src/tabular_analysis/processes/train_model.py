@@ -18,10 +18,12 @@ from typing import Any
 import warnings
 
 from ..clearml.datasets import get_processed_dataset_local_copy, get_raw_dataset_local_copy
-from ..clearml.hparams import connect_train_hparams
+from ..clearml.hparams import connect_train_model
+from ..clearml.naming import apply_train_model_naming
 from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
 from ..feature_engineering.categorical import encode_target_for_mean
 from ..io.bundle_io import load_bundle, save_bundle
+from ..metrics.regression import REGRESSION_METRIC_ORDER, compute_regression_metrics
 from ..monitoring.drift import build_train_profile
 from .drift_report import annotate_profile, resolve_drift_settings, sample_frame
 from ..ops.clearml_identity import apply_clearml_identity
@@ -53,6 +55,11 @@ from ..viz.plots import (
     plot_regression_residuals,
     plot_roc_curve,
     write_confusion_matrix_csv,
+)
+from ..viz.regression_plots import (
+    build_regression_metrics_table,
+    build_residuals_plot,
+    build_true_pred_scatter,
 )
 
 _TABULAR_SUFFIXES = (".csv", ".parquet", ".pq")
@@ -159,6 +166,22 @@ def _resolve_classification_metrics(
         if not key:
             continue
         if key in seen:
+            continue
+        seen.add(key)
+        ordered.append(key)
+    return ordered
+
+
+def _resolve_regression_metrics(cfg: Any) -> list[str]:
+    metrics = list(REGRESSION_METRIC_ORDER)
+    extras = _ensure_str_list(_cfg_value(cfg, "eval.metrics.regression", None))
+    if extras:
+        metrics.extend(extras)
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for name in metrics:
+        key = _normalize_key(name)
+        if not key or key in seen:
             continue
         seen.add(key)
         ordered.append(key)
@@ -756,6 +779,45 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _resolve_preprocess_provenance(
+    preprocess_run_dir: Path,
+    assets_dir: Path | None,
+    preprocess_out: dict[str, Any] | None,
+    preprocess_bundle: Any,
+) -> dict[str, Any]:
+    raw_dataset_id = None
+    preprocess_variant = None
+    if isinstance(preprocess_out, dict):
+        preprocess_variant = _normalize_str(preprocess_out.get("preprocess_variant"))
+    if preprocess_variant is None and isinstance(preprocess_bundle, dict):
+        preprocess_variant = _normalize_str(preprocess_bundle.get("preprocess_variant"))
+
+    for candidate in (assets_dir, preprocess_run_dir):
+        if candidate is None:
+            continue
+        meta_path = candidate / "meta.json"
+        if not meta_path.exists():
+            continue
+        meta_payload = _load_json(meta_path)
+        if raw_dataset_id is None:
+            raw_dataset_id = _normalize_str(meta_payload.get("raw_dataset_id"))
+        if preprocess_variant is None:
+            preprocess_variant = _normalize_str(meta_payload.get("preprocess_variant"))
+        break
+
+    manifest_path = preprocess_run_dir / "manifest.json"
+    if manifest_path.exists():
+        manifest_payload = _load_json(manifest_path)
+        inputs = manifest_payload.get("inputs") or {}
+        if raw_dataset_id is None:
+            raw_dataset_id = _normalize_str(inputs.get("raw_dataset_id"))
+
+    return {
+        "raw_dataset_id": raw_dataset_id,
+        "preprocess_variant": preprocess_variant,
+    }
+
+
 def _stringify_payload(value: Any) -> Any:
     if isinstance(value, dict):
         return {str(k): _stringify_payload(v) for k, v in value.items()}
@@ -856,6 +918,20 @@ def _select_tabular_file(path: Path) -> Path:
     raise FileNotFoundError(str(path))
 
 
+def _find_latest_preprocess_dir(search_root: Path) -> Path | None:
+    if not search_root.exists():
+        return None
+    candidates: list[Path] = []
+    for path in search_root.glob("*/02_preprocess/out.json"):
+        candidates.append(path.parent)
+    if not candidates:
+        return None
+    try:
+        return max(candidates, key=lambda item: item.stat().st_mtime)
+    except Exception:
+        return candidates[-1]
+
+
 def _resolve_preprocess_run_dir(cfg: Any, processed_ref_path: Path | None) -> Path:
     candidate: str | None = None
     try:
@@ -893,6 +969,9 @@ def _resolve_preprocess_run_dir(cfg: Any, processed_ref_path: Path | None) -> Pa
     for candidate in candidates:
         if candidate.exists():
             return candidate
+    latest = _find_latest_preprocess_dir(base_output_dir.parent)
+    if latest is not None:
+        return latest
     return resolve_output_dir(cfg, "02_preprocess")
 
 
@@ -1397,6 +1476,7 @@ def _record_model_failure(
 def run(cfg: Any) -> None:
     _ensure_variant_cfg(cfg)
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
+    apply_train_model_naming(cfg)
     ctx = init_task_context(
         cfg,
         stage=cfg.task.stage,
@@ -1660,7 +1740,7 @@ def run(cfg: Any) -> None:
         direction = metric_direction(primary_metric, task_type)
     direction = direction.lower()
 
-    connect_train_hparams(
+    connect_train_model(
         ctx,
         cfg,
         processed_dataset_id=processed_dataset_id,
@@ -1701,6 +1781,7 @@ def run(cfg: Any) -> None:
             }
 
         metrics_holdout: dict[str, float] = {}
+        regression_metrics: dict[str, float] | None = None
         y_val_pred = predictor.predict(X_val)
         y_val_proba = None
         if task_type == "classification" and hasattr(predictor, "predict_proba"):
@@ -1776,10 +1857,9 @@ def run(cfg: Any) -> None:
                     metric_fn(y_val, y_val_pred, y_val_proba)
                 )
         else:
-            metric_names = ["rmse", "mae", "r2"]
-            for name in metric_names:
-                metric_fn = get_metric(name, task_type)
-                metrics_holdout[name] = float(metric_fn(y_val, y_val_pred))
+            metric_names = _resolve_regression_metrics(cfg)
+            regression_metrics = compute_regression_metrics(y_val, y_val_pred, metrics=metric_names)
+            metrics_holdout.update(regression_metrics)
             if primary_metric not in metrics_holdout:
                 metrics_holdout[primary_metric] = float(
                     get_metric(primary_metric, task_type)(y_val, y_val_pred)
@@ -1833,48 +1913,51 @@ def run(cfg: Any) -> None:
         cv_summary: dict[str, Any] | None = None
         if cv_folds and cv_folds > 1:
             if len(train_idx) < cv_folds:
-                raise ValueError("eval.cv_folds is larger than the training split size.")
-            try:
-                import numpy as np  # type: ignore
-                from sklearn.model_selection import KFold  # type: ignore
-            except Exception as exc:
-                raise RuntimeError("scikit-learn is required for cross-validation.") from exc
+                warnings.warn(
+                    "eval.cv_folds is larger than the training split size; skipping CV."
+                )
+            else:
+                try:
+                    import numpy as np  # type: ignore
+                    from sklearn.model_selection import KFold  # type: ignore
+                except Exception as exc:
+                    raise RuntimeError("scikit-learn is required for cross-validation.") from exc
 
-            kf = KFold(n_splits=cv_folds, shuffle=True, random_state=cv_seed)
-            scores: list[float] = []
-            metric_fn = get_metric(primary_metric, task_type, n_classes=n_classes, beta=fbeta_beta)
-            X_train_full = X.iloc[train_idx]
-            y_train_full = y[train_idx]
-            needs_proba = metric_requires_proba(primary_metric, task_type)
-            for fold_train_idx, fold_val_idx in kf.split(X_train_full):
-                fold_X_train = X_train_full.iloc[fold_train_idx]
-                fold_y_train = y_train_full[fold_train_idx]
-                if resample_strategy:
-                    fold_X_train, fold_y_train, _, _ = _apply_resampling(
-                        resample_strategy,
-                        fold_X_train,
-                        fold_y_train,
-                        seed=cv_seed,
-                    )
-                fold_model = build_model(model_variant_fit, task_type=task_type)
-                fold_model.fit(fold_X_train, fold_y_train)
-                fold_pred = fold_model.predict(X_train_full.iloc[fold_val_idx])
-                fold_proba = None
-                if needs_proba:
-                    if not hasattr(fold_model, "predict_proba"):
-                        raise ValueError(
-                            f"primary_metric '{primary_metric}' requires predict_proba "
-                            "but model does not support it."
+                kf = KFold(n_splits=cv_folds, shuffle=True, random_state=cv_seed)
+                scores: list[float] = []
+                metric_fn = get_metric(primary_metric, task_type, n_classes=n_classes, beta=fbeta_beta)
+                X_train_full = X.iloc[train_idx]
+                y_train_full = y[train_idx]
+                needs_proba = metric_requires_proba(primary_metric, task_type)
+                for fold_train_idx, fold_val_idx in kf.split(X_train_full):
+                    fold_X_train = X_train_full.iloc[fold_train_idx]
+                    fold_y_train = y_train_full[fold_train_idx]
+                    if resample_strategy:
+                        fold_X_train, fold_y_train, _, _ = _apply_resampling(
+                            resample_strategy,
+                            fold_X_train,
+                            fold_y_train,
+                            seed=cv_seed,
                         )
-                    fold_proba = fold_model.predict_proba(X_train_full.iloc[fold_val_idx])
-                scores.append(float(metric_fn(y_train_full[fold_val_idx], fold_pred, fold_proba)))
-            cv_summary = {
-                "folds": cv_folds,
-                "seed": cv_seed,
-                "scores": scores,
-                "mean": float(np.mean(scores)) if scores else None,
-                "std": float(np.std(scores)) if scores else None,
-            }
+                    fold_model = build_model(model_variant_fit, task_type=task_type)
+                    fold_model.fit(fold_X_train, fold_y_train)
+                    fold_pred = fold_model.predict(X_train_full.iloc[fold_val_idx])
+                    fold_proba = None
+                    if needs_proba:
+                        if not hasattr(fold_model, "predict_proba"):
+                            raise ValueError(
+                                f"primary_metric '{primary_metric}' requires predict_proba "
+                                "but model does not support it."
+                            )
+                        fold_proba = fold_model.predict_proba(X_train_full.iloc[fold_val_idx])
+                    scores.append(float(metric_fn(y_train_full[fold_val_idx], fold_pred, fold_proba)))
+                cv_summary = {
+                    "folds": cv_folds,
+                    "seed": cv_seed,
+                    "scores": scores,
+                    "mean": float(np.mean(scores)) if scores else None,
+                    "std": float(np.std(scores)) if scores else None,
+                }
     except ModelWeightsUnavailableError as exc:
         _record_model_failure(
             ctx=ctx,
@@ -1945,6 +2028,22 @@ def run(cfg: Any) -> None:
             json.dumps(postprocess_payload, ensure_ascii=False, indent=2), encoding="utf-8"
         )
 
+    train_task_id = _resolve_task_id(ctx)
+    preprocess_provenance = _resolve_preprocess_provenance(
+        preprocess_run_dir,
+        assets_dir,
+        preprocess_out,
+        preprocess_bundle,
+    )
+    provenance_payload = {
+        "train_task_id": train_task_id,
+        "raw_dataset_id": preprocess_provenance.get("raw_dataset_id"),
+        "processed_dataset_id": processed_dataset_id,
+        "preprocess_variant": preprocess_provenance.get("preprocess_variant"),
+        "split_hash": split_hash,
+        "recipe_hash": recipe_hash,
+    }
+
     model_bundle = {
         "model": model,
         "calibrated_model": calibrated_model,
@@ -1967,6 +2066,7 @@ def run(cfg: Any) -> None:
             **uncertainty_payload,
             "use_abs_residual": uncertainty_cfg.get("use_abs_residual"),
         },
+        "provenance": {key: value for key, value in provenance_payload.items() if value is not None},
     }
     if train_profile is not None:
         model_bundle["train_profile"] = train_profile
@@ -2047,7 +2147,13 @@ def run(cfg: Any) -> None:
                 )
 
     if clearml_enabled:
-        if best_score is not None:
+        if task_type == "regression":
+            for name in REGRESSION_METRIC_ORDER:
+                if name in metrics_holdout:
+                    log_scalar(ctx.task, "metrics", name, metrics_holdout[name], step=0)
+        if best_score is not None and (
+            task_type != "regression" or primary_metric not in REGRESSION_METRIC_ORDER
+        ):
             log_scalar(ctx.task, "metrics", primary_metric, best_score, step=0)
         if debug_sample is not None:
             log_debug_table(ctx.task, "train_model", "prediction_sample", debug_sample, step=0)
@@ -2066,7 +2172,32 @@ def run(cfg: Any) -> None:
                     step=0,
                 )
             if task_type == "regression":
-                fig = _build_plotly_residuals(y_val, y_val_pred)
+                metrics_table = build_regression_metrics_table(regression_metrics or metrics_holdout)
+                log_plotly(
+                    ctx.task,
+                    "train_model",
+                    "metrics_table",
+                    metrics_table,
+                    step=0,
+                )
+                scatter = build_true_pred_scatter(
+                    y_val,
+                    y_val_pred,
+                    r2=metrics_holdout.get("r2"),
+                    max_points=viz_settings["max_points"],
+                )
+                log_plotly(
+                    ctx.task,
+                    "train_model",
+                    "true_vs_pred",
+                    scatter,
+                    step=0,
+                )
+                fig = build_residuals_plot(
+                    y_val,
+                    y_val_pred,
+                    max_points=viz_settings["max_points"],
+                )
                 log_plotly(
                     ctx.task,
                     "train_model",
@@ -2099,7 +2230,6 @@ def run(cfg: Any) -> None:
                     )
 
     model_id = str(model_bundle_path)
-    train_task_id = _resolve_task_id(ctx)
 
     versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
     recipe_payload: dict[str, Any] = {}

@@ -281,6 +281,28 @@ def _existing_user_properties(task: Any) -> dict[str, Any]:
     return {}
 
 
+def clearml_task_type_controller() -> str:
+    return "controller"
+
+
+def _apply_clearml_system_tags(task: Any, system_tags: Iterable[str] | None) -> None:
+    if not system_tags:
+        return
+    getter = getattr(task, "get_system_tags", None)
+    setter = getattr(task, "set_system_tags", None)
+    if not callable(getter) or not callable(setter):
+        raise PlatformAdapterError("ClearML Task.set_system_tags is not available.")
+    try:
+        current = getter() or []
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to read ClearML system tags: {exc}") from exc
+    merged = _dedupe_tags([*current, *system_tags])
+    try:
+        setter(merged)
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to set ClearML system tags: {exc}") from exc
+
+
 def hash_config(payload: Any) -> str:
     try:
         from ml_platform.artifacts import hash_config as platform_hash_config  # type: ignore
@@ -342,6 +364,8 @@ def init_task_context(
     task_name: str,
     tags: Optional[list[str]] = None,
     properties: Optional[dict] = None,
+    task_type: str | None = None,
+    system_tags: Optional[Iterable[str]] = None,
 ) -> TaskContext:
     """platform の task_factory を呼び出して Task を作る。
 
@@ -400,7 +424,11 @@ def init_task_context(
             extra_tags=_cfg_value(cfg, "run.clearml.extra_tags") or [],
             tags=tags,
         )
-        task = task_factory(cfg, tags=merged_tags)
+        try:
+            task = task_factory(cfg, tags=merged_tags, task_type=task_type)
+        except TypeError:
+            task = task_factory(cfg, tags=merged_tags)
+        _apply_clearml_system_tags(task, system_tags)
         setter = getattr(platform_clearml, "set_user_properties", None)
         if setter is None:
             raise PlatformAdapterError("ml_platform.integrations.clearml.set_user_properties not found.")
@@ -492,15 +520,24 @@ def update_task_properties(ctx: TaskContext, props: Mapping[str, Any]) -> None:
         raise PlatformAdapterError(f"Failed to update user properties via ml_platform: {exc}") from exc
 
 
-def connect_hyperparameters(ctx: TaskContext, hparams: Mapping[str, Any]) -> None:
+def connect_hyperparameters(
+    ctx: TaskContext,
+    hparams: Mapping[str, Any],
+    *,
+    name: str | None = None,
+) -> None:
     """Connect minimal HyperParameters to ClearML task."""
     if ctx.task is None:
         return
     connector = getattr(ctx.task, "connect", None)
     if not callable(connector):
         raise PlatformAdapterError("ClearML Task.connect is not available.")
+    payload = dict(hparams)
     try:
-        connector(dict(hparams))
+        if name:
+            connector(payload, name=name)
+        else:
+            connector(payload)
     except Exception as exc:
         raise PlatformAdapterError(f"Failed to connect HyperParameters via ClearML: {exc}") from exc
 
@@ -1028,6 +1065,101 @@ def get_clearml_task_args(task_id: str) -> dict[str, str]:
             continue
         args[key[5:]] = "" if value is None else str(value)
     return args
+
+
+def clone_clearml_task(
+    *,
+    source_task_id: str | None = None,
+    source_task: Any | None = None,
+    task_name: str | None = None,
+    parent_task_id: str | None = None,
+) -> str:
+    if not source_task_id and source_task is None:
+        raise PlatformAdapterError("source_task_id or source_task is required to clone a task.")
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml is required to clone ClearML tasks.") from exc
+    source = source_task if source_task is not None else str(source_task_id)
+    try:
+        cloned = ClearMLTask.clone(
+            source_task=source,
+            name=task_name,
+            parent=parent_task_id,
+        )
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to clone ClearML task: {exc}") from exc
+    task_id = getattr(cloned, "id", None) or getattr(cloned, "task_id", None)
+    if not task_id:
+        raise PlatformAdapterError("Cloned ClearML task id is missing.")
+    _CLEARML_TASK_CACHE[str(task_id)] = cloned
+    return str(task_id)
+
+
+def set_clearml_task_parameters(
+    task_id: str,
+    parameters: Mapping[str, Any],
+    *,
+    section: str = "Args",
+) -> bool:
+    if not parameters:
+        return False
+    task = _get_clearml_task(task_id)
+    normalized = {str(key): "" if value is None else str(value) for key, value in parameters.items()}
+    getter = getattr(task, "get_parameters_as_dict", None)
+    existing = None
+    if callable(getter):
+        try:
+            existing = getter(cast=False)
+        except Exception:
+            existing = None
+    payload: dict[str, Any] = {}
+    if isinstance(existing, Mapping):
+        payload.update(existing)
+    section_values: dict[str, Any] = {}
+    if isinstance(payload.get(section), Mapping):
+        section_values.update(dict(payload.get(section)))
+    section_values.update(normalized)
+    payload[section] = section_values
+    setter = getattr(task, "set_parameters_as_dict", None)
+    if callable(setter):
+        setter(payload)
+        return True
+    setter = getattr(task, "set_parameter", None)
+    if callable(setter):
+        for key, value in section_values.items():
+            setter(f"{section}/{key}", value)
+        return True
+    raise PlatformAdapterError("ClearML Task.set_parameters_as_dict is not available.")
+
+
+def enqueue_clearml_task(task_id: str, queue_name: str, *, force: bool = False) -> None:
+    if not queue_name:
+        raise PlatformAdapterError("queue_name is required to enqueue a ClearML task.")
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml is required to enqueue ClearML tasks.") from exc
+    try:
+        ClearMLTask.enqueue(task=str(task_id), queue_name=str(queue_name), force=bool(force))
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to enqueue ClearML task: {exc}") from exc
+
+
+def get_clearml_task_status(task_id: str) -> str | None:
+    task = _get_clearml_task(task_id)
+    status = getattr(task, "status", None)
+    if status:
+        return str(status)
+    getter = getattr(task, "get_status", None)
+    if callable(getter):
+        try:
+            status = getter()
+        except Exception:
+            status = None
+        if status:
+            return str(status)
+    return None
 
 
 def ensure_clearml_task_tags(task_id: str, tags: Iterable[str]) -> bool:

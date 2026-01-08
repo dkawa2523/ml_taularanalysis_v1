@@ -22,7 +22,8 @@ from ..clearml.datasets import (
     get_raw_dataset_local_copy,
     resolve_dataset_version,
 )
-from ..clearml.hparams import connect_preprocess_hparams
+from ..clearml.hparams import connect_preprocess
+from ..clearml.ui_logger import report_plotly
 from ..io.bundle_io import save_bundle
 from ..io.schema import infer_schema
 from ..ops.clearml_identity import apply_clearml_identity
@@ -47,6 +48,11 @@ from ..feature_engineering.categorical import (
     normalize_encoding,
 )
 from ..registry.preprocessors import infer_feature_types
+from ..viz.data_profile import (
+    build_missing_rate_comparison_bar,
+    build_profile_comparison_table,
+    build_profile_summary,
+)
 
 _TABULAR_SUFFIXES = (".csv", ".parquet", ".pq")
 
@@ -210,6 +216,49 @@ def _missing_stats(df, columns: Iterable[str]) -> dict[str, Any]:
         "missing_rate": missing_rate,
         "missing_columns": missing_columns,
     }
+
+
+def _log_preprocess_profile(
+    ctx: Any,
+    *,
+    df,
+    processed_df,
+    feature_columns: list[str],
+    numeric_features: list[str],
+    categorical_features: list[str],
+    processed_feature_columns: list[str],
+) -> None:
+    processed_numeric, processed_categorical = infer_feature_types(
+        processed_df, processed_feature_columns
+    )
+    raw_summary = build_profile_summary(
+        df,
+        feature_columns=feature_columns,
+        numeric_features=numeric_features,
+        categorical_features=categorical_features,
+    )
+    processed_summary = build_profile_summary(
+        processed_df,
+        feature_columns=processed_feature_columns,
+        numeric_features=processed_numeric,
+        categorical_features=processed_categorical,
+    )
+
+    table_fig = build_profile_comparison_table(
+        raw_summary,
+        processed_summary,
+        output_dir=ctx.output_dir,
+        title="Raw vs Processed Summary",
+    )
+    report_plotly(ctx.task, "preprocess", "raw_vs_processed_summary", table_fig, step=0)
+
+    missing_fig = build_missing_rate_comparison_bar(
+        float(raw_summary.get("missing_rate", 0.0)),
+        float(processed_summary.get("missing_rate", 0.0)),
+        output_dir=ctx.output_dir,
+        title="Missing Rate (raw vs processed)",
+    )
+    report_plotly(ctx.task, "preprocess", "missing_rate", missing_fig, step=0)
 
 
 def _split_indices(
@@ -398,7 +447,7 @@ def run(cfg: Any) -> None:
     preprocess_variant_name = _normalize_str(preprocess_variant.get("name")) or _normalize_str(
         getattr(getattr(cfg, "preprocess", None), "variant", None)
     ) or "unknown"
-    connect_preprocess_hparams(
+    connect_preprocess(
         ctx,
         cfg,
         raw_dataset_id=raw_dataset_id_input,
@@ -525,6 +574,17 @@ def run(cfg: Any) -> None:
     quality_after_path.write_text(
         json.dumps(quality_after, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+    if clearml_enabled:
+        _log_preprocess_profile(
+            ctx,
+            df=df,
+            processed_df=processed_df,
+            feature_columns=feature_columns,
+            numeric_features=numeric_features,
+            categorical_features=categorical_features,
+            processed_feature_columns=processed_feature_columns,
+        )
 
     processed_path = ctx.output_dir / "processed_dataset.parquet"
     processed_df.to_parquet(processed_path, index=False)

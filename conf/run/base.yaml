@@ -19,12 +19,13 @@ clearml:
   # enabled=false の時は ClearML SDK を使わずローカルで処理する（開発・デバッグ用）
   enabled: false
 
-  # 実行モード：local | logging | agent | clone | pipeline_controller
+  # 実行モード：local | logging | agent | clone | pipeline_controller | pipeline_controller_local
   # local: ClearMLなし
   # logging: ローカル実行しつつ ClearML に記録
   # agent: Task.execute_remotely で投入
   # clone: テンプレTaskから clone して投入
-  # pipeline_controller: PipelineController で子タスク生成
+  # pipeline_controller: PipelineController を agent で実行して子タスク生成
+  # pipeline_controller_local: controller はローカル、子タスクは queue に投入
   execution: local
 
   # project のルート（例: MFG/<UseCase>/<Stage>）
