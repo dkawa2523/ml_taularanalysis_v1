@@ -4,7 +4,7 @@ templates:
   dataset_register:
     project_name: "{project_root}/{usecase_id}/01_dataset_register"
     task_name_template: "dataset_register"
-    entrypoint: "python -m tabular_analysis.cli task=dataset_register"
+    entrypoint: "python tools/clearml_entrypoint.py task=dataset_register"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -25,7 +25,7 @@ templates:
   preprocess:
     project_name: "{project_root}/{usecase_id}/02_preprocess"
     task_name_template: "preprocess"
-    entrypoint: "python -m tabular_analysis.cli task=preprocess"
+    entrypoint: "python tools/clearml_entrypoint.py task=preprocess"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -46,7 +46,7 @@ templates:
   train_model:
     project_name: "{project_root}/{usecase_id}/03_train_model"
     task_name_template: "train_model"
-    entrypoint: "python -m tabular_analysis.cli task=train_model"
+    entrypoint: "python tools/clearml_entrypoint.py task=train_model"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -67,7 +67,7 @@ templates:
   infer:
     project_name: "{project_root}/{usecase_id}/04_infer"
     task_name_template: "infer"
-    entrypoint: "python -m tabular_analysis.cli task=infer"
+    entrypoint: "python tools/clearml_entrypoint.py task=infer"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -88,7 +88,7 @@ templates:
   leaderboard:
     project_name: "{project_root}/{usecase_id}/05_leaderboard"
     task_name_template: "leaderboard"
-    entrypoint: "python -m tabular_analysis.cli task=leaderboard"
+    entrypoint: "python tools/clearml_entrypoint.py task=leaderboard"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -109,7 +109,7 @@ templates:
   pipeline:
     project_name: "{project_root}/{usecase_id}/99_pipeline"
     task_name_template: "pipeline"
-    entrypoint: "python -m tabular_analysis.cli task=pipeline"
+    entrypoint: "python tools/clearml_entrypoint.py task=pipeline"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
@@ -130,7 +130,7 @@ templates:
   promote_model:
     project_name: "{project_root}/{usecase_id}/06_promote_model"
     task_name_template: "promote_model"
-    entrypoint: "python -m tabular_analysis.cli task=promote_model"
+    entrypoint: "python tools/clearml_entrypoint.py task=promote_model"
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"

@@ -95,6 +95,11 @@ def main(argv: Optional[list[str]] = None) -> int:
         identity=identity,
         clearml_enabled=False,
     )
+    from .. import platform_adapter
+
+    code_repo, code_branch = platform_adapter.resolve_clearml_code_reference(cfg)
+    metadata["code_repository"] = code_repo
+    metadata["code_branch"] = code_branch
     usecase_policy = getattr(getattr(cfg, "run", None), "usecase_id_policy", None)
     clearml_policy = getattr(getattr(getattr(cfg, "run", None), "clearml", None), "policy", None)
     metadata["policies"] = {
@@ -108,6 +113,8 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     print(f"project_root: {metadata['project_root']}")
     print(f"project_name: {metadata['project_name']}")
+    print(f"code_repository: {metadata.get('code_repository')}")
+    print(f"code_branch: {metadata.get('code_branch')}")
     print(f"usecase_id: {metadata['usecase_id']}")
     print("tags:")
     for tag in metadata["tags"]:

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import argparse
 import os
-import subprocess
 from pathlib import Path
 from typing import Iterable, Optional
 
 from ..clearml import template_manager
 from ..platform_adapter import (
     create_clearml_task,
+    detect_git_branch,
+    detect_git_repository_url,
     ensure_clearml_task_args,
     ensure_clearml_task_properties,
     ensure_clearml_task_requirements,
@@ -49,43 +50,6 @@ def _clearml_config_present(repo_root: Path) -> bool:
         if candidate.exists():
             return True
     return False
-
-
-def _detect_repo_url(repo_root: Path) -> str | None:
-    candidates = [
-        ["git", "config", "--get", "remote.origin.url"],
-        ["git", "remote", "get-url", "origin"],
-    ]
-    for cmd in candidates:
-        proc = subprocess.run(
-            cmd,
-            cwd=str(repo_root),
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-        if proc.returncode == 0:
-            value = proc.stdout.strip()
-            if value:
-                return value
-    return None
-
-
-def _detect_branch(repo_root: Path) -> str | None:
-    cmd = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
-    proc = subprocess.run(
-        cmd,
-        cwd=str(repo_root),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    )
-    if proc.returncode != 0:
-        return None
-    value = proc.stdout.strip()
-    if not value or value == "HEAD":
-        return None
-    return value
 
 
 def _normalize_text(value: Optional[str]) -> str:
@@ -290,8 +254,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         print("ClearML config not detected; run clearml-init or set CLEARML_CONFIG_FILE.")
         return 1
 
-    repo = args.repo or _detect_repo_url(repo_root)
-    branch = args.branch or _detect_branch(repo_root)
+    repo = args.repo or detect_git_repository_url(repo_root)
+    branch = args.branch or detect_git_branch(repo_root)
     if not repo:
         print("Warning: repository not detected; pass --repo for agent clone.")
 

@@ -28,6 +28,11 @@ clearml:
   # pipeline_controller_local: controller はローカル、子タスクは queue に投入
   execution: local
 
+  # ClearML Task Script の repository/branch を指定する
+  # "auto" は conf/ を含むリポジトリルートから git を検出する
+  code_repository: "auto"
+  code_branch: "auto"
+
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
 

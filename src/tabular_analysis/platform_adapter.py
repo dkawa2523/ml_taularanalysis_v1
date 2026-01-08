@@ -17,10 +17,13 @@ Codex タスクでは、まずこの adapter を platform 実装に合わせて�
 
 from __future__ import annotations
 
+from collections.abc import Iterable as IterableABC
 from datetime import datetime, timezone
 import json
 from dataclasses import dataclass
 from pathlib import Path
+import re
+import subprocess
 from typing import Any, Iterable, Mapping, Optional
 
 
@@ -153,6 +156,292 @@ def _normalize_requirement_lines(values: Any) -> list[str]:
             continue
         normalized.append(text)
     return normalized
+
+
+def _resolve_repo_root() -> Path:
+    candidates = [Path.cwd(), Path(__file__).resolve()]
+    for base in candidates:
+        for parent in [base, *base.parents]:
+            if (parent / "conf").exists():
+                return parent
+    return Path.cwd()
+
+
+def _run_git_command(cmd: Iterable[str]) -> str | None:
+    try:
+        proc = subprocess.run(
+            list(cmd),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except Exception:
+        return None
+    if proc.returncode != 0:
+        return None
+    value = proc.stdout.strip()
+    return value or None
+
+
+def _normalize_git_remote_url(value: str) -> str:
+    text = value.strip()
+    if text.startswith("git@") and ":" in text:
+        host_part, path = text.split(":", 1)
+        host = host_part.split("@", 1)[-1]
+        text = f"https://{host}/{path}"
+    elif text.startswith("ssh://") and "@" in text:
+        rest = text[len("ssh://") :]
+        host_part, _, path = rest.partition("/")
+        host = host_part.split("@", 1)[-1]
+        text = f"https://{host}/{path}"
+    if text.endswith(".git"):
+        text = text[:-4]
+    return text
+
+
+def detect_git_repository_url(repo_root: Path) -> str | None:
+    value = _run_git_command(["git", "-C", str(repo_root), "remote", "get-url", "origin"])
+    if not value:
+        return None
+    return _normalize_git_remote_url(value)
+
+
+def detect_git_branch(repo_root: Path) -> str | None:
+    value = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "--abbrev-ref", "HEAD"])
+    if not value or value == "HEAD":
+        return None
+    return value
+
+
+def _normalize_code_ref(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def hydra_list(values: list[str]) -> str:
+    return "[" + ",".join(values) + "]"
+
+
+def _parse_json_list(text: str) -> list[Any] | None:
+    if not (text.startswith("[") and text.endswith("]")):
+        return None
+    try:
+        parsed = json.loads(text)
+    except Exception:
+        return None
+    if isinstance(parsed, list):
+        return parsed
+    return None
+
+
+def _split_bracket_list(text: str) -> list[str] | None:
+    if not (text.startswith("[") and text.endswith("]")):
+        return None
+    inner = text[1:-1].strip()
+    if not inner:
+        return []
+    items: list[str] = []
+    for item in inner.split(","):
+        cleaned = item.strip().strip("'\"").strip()
+        if cleaned:
+            items.append(cleaned)
+    return items
+
+
+def _coerce_hydra_list_value(value: Any) -> list[str]:
+    if value is None:
+        return []
+    items: list[Any]
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return []
+        parsed = _parse_json_list(text)
+        if parsed is None:
+            parsed = _split_bracket_list(text)
+        items = parsed if parsed is not None else [text]
+    elif isinstance(value, Mapping):
+        return []
+    elif isinstance(value, (list, tuple, set)):
+        items = list(value)
+    elif isinstance(value, IterableABC):
+        items = list(value)
+    else:
+        items = [value]
+    normalized: list[str] = []
+    for item in items:
+        if item is None:
+            continue
+        text = str(item).strip()
+        if not text:
+            continue
+        normalized.append(text)
+    return normalized
+
+
+_ENTRYPOINT_OVERRIDE_RE = re.compile(r"\s[+~]?[^\s=]+=")
+
+
+def _split_entry_point_command(entry_point: str) -> tuple[str, str]:
+    text = str(entry_point).strip()
+    if not text:
+        return ("", "")
+    match = _ENTRYPOINT_OVERRIDE_RE.search(text)
+    if not match:
+        return (text, "")
+    idx = match.start()
+    return (text[:idx].strip(), text[idx:].strip())
+
+
+def _swap_entry_point_command(entry_point: str, new_command: str) -> str:
+    _, args = _split_entry_point_command(entry_point)
+    if not new_command:
+        return entry_point
+    if args:
+        return f"{new_command.strip()} {args}"
+    return new_command.strip()
+
+
+def _replace_or_append_override(entry_point: str, key: str, value: str) -> str:
+    if not entry_point:
+        return f"{key}={value}"
+    list_pattern = re.compile(
+        rf"(?<!\S)({re.escape(key)}=)(['\"]?\[[^\]]*\]['\"]?)"
+    )
+    if list_pattern.search(entry_point):
+        return list_pattern.sub(rf"\1{value}", entry_point)
+    scalar_pattern = re.compile(rf"(?<!\S)({re.escape(key)}=)([^\s]+)")
+    if scalar_pattern.search(entry_point):
+        return scalar_pattern.sub(rf"\1{value}", entry_point)
+    return f"{entry_point} {key}={value}"
+
+
+def _canonicalize_pipeline_entrypoint(
+    cfg: Any,
+    entry_point: str | None,
+    fallback: str | None,
+) -> str | None:
+    task_name = _normalize_code_ref(_cfg_value(cfg, "task.name"))
+    if task_name != "pipeline":
+        return entry_point
+    preprocess_variants = _coerce_hydra_list_value(
+        _cfg_value(cfg, "pipeline.grid.preprocess_variants")
+    )
+    model_variants = _coerce_hydra_list_value(
+        _cfg_value(cfg, "pipeline.grid.model_variants")
+    )
+    if not preprocess_variants and not model_variants:
+        return entry_point
+    base = entry_point or fallback or "tools/clearml_entrypoint.py"
+    updated = base
+    if preprocess_variants:
+        updated = _replace_or_append_override(
+            updated,
+            "pipeline.grid.preprocess_variants",
+            hydra_list(preprocess_variants),
+        )
+    if model_variants:
+        updated = _replace_or_append_override(
+            updated,
+            "pipeline.grid.model_variants",
+            hydra_list(model_variants),
+        )
+    return updated
+
+
+def _resolve_clearml_entrypoint(
+    cfg: Any,
+    current_entry_point: Any,
+    entry_point_override: str | None,
+) -> str | None:
+    current_text = _normalize_code_ref(current_entry_point)
+    base = current_text
+    if entry_point_override is not None:
+        override_text = str(entry_point_override).strip()
+        if current_text:
+            base = _swap_entry_point_command(current_text, override_text)
+        else:
+            base = override_text
+    return _canonicalize_pipeline_entrypoint(cfg, base, entry_point_override or current_text)
+
+
+def resolve_clearml_code_reference(cfg: Any) -> tuple[str | None, str | None]:
+    repo_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_repository"))
+    branch_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_branch"))
+    repo_root = _resolve_repo_root()
+    if repo_value and repo_value.lower() == "auto":
+        repo_value = detect_git_repository_url(repo_root)
+    if branch_value and branch_value.lower() == "auto":
+        branch_value = detect_git_branch(repo_root)
+    return repo_value, branch_value
+
+
+def _resolve_clearml_entrypoint_override(cfg: Any) -> str | None:
+    execution_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.execution"))
+    if execution_value is None:
+        return None
+    execution = execution_value.lower()
+    if execution in {"agent", "clone", "pipeline_controller", "pipeline_controller_local"}:
+        return "tools/clearml_entrypoint.py"
+    return None
+
+
+def _resolve_clearml_task(target: Any) -> Any:
+    for name in ("task", "_task", "pipeline_task"):
+        if hasattr(target, name):
+            value = getattr(target, name)
+            if value is not None:
+                return value
+    return target
+
+
+def _apply_clearml_task_script_override(target: Any, cfg: Any) -> bool:
+    repo_value, branch_value = resolve_clearml_code_reference(cfg)
+    entry_point_override = _resolve_clearml_entrypoint_override(cfg)
+    task = _resolve_clearml_task(target)
+    current = _task_script(task)
+    current_repo = current.get("repository")
+    current_branch = current.get("branch")
+    current_entry_point = current.get("entry_point")
+    desired_entry_point = _resolve_clearml_entrypoint(cfg, current_entry_point, entry_point_override)
+    if (
+        repo_value is None
+        and branch_value is None
+        and entry_point_override is None
+        and desired_entry_point is None
+    ):
+        return False
+    changed = False
+    if repo_value is not None and str(current_repo or "") != str(repo_value):
+        changed = True
+    if branch_value is not None and str(current_branch or "") != str(branch_value):
+        changed = True
+    if desired_entry_point is not None and str(current_entry_point or "") != str(desired_entry_point):
+        changed = True
+    if not changed:
+        return False
+    setter = getattr(task, "set_script", None)
+    if not callable(setter):
+        raise PlatformAdapterError("ClearML Task.set_script is not available.")
+    payload: dict[str, Any] = {}
+    repo_to_set = repo_value if repo_value is not None else current_repo
+    branch_to_set = branch_value if branch_value is not None else current_branch
+    if repo_to_set is not None:
+        payload["repository"] = str(repo_to_set)
+    if branch_to_set is not None:
+        payload["branch"] = str(branch_to_set)
+    entry_point = desired_entry_point if desired_entry_point is not None else current_entry_point
+    if entry_point is not None:
+        payload["entry_point"] = str(entry_point)
+    working_dir = current.get("working_dir")
+    if working_dir is not None:
+        payload["working_dir"] = working_dir
+    if not payload:
+        return False
+    setter(**payload)
+    return True
 
 
 def _resolve_version_props(cfg: Any, *, clearml_enabled: bool) -> dict[str, str]:
@@ -428,6 +717,7 @@ def init_task_context(
             task = task_factory(cfg, tags=merged_tags, task_type=task_type)
         except TypeError:
             task = task_factory(cfg, tags=merged_tags)
+        _apply_clearml_task_script_override(task, cfg)
         _apply_clearml_system_tags(task, system_tags)
         setter = getattr(platform_clearml, "set_user_properties", None)
         if setter is None:
@@ -1496,12 +1786,14 @@ def create_pipeline_controller(
     pipeline_utils = _load_clearml_pipeline_utils(clearml_enabled=True)
     if pipeline_utils is None:
         raise PlatformAdapterError("pipeline_utils is not available.")
-    return pipeline_utils.create_controller(
+    controller = pipeline_utils.create_controller(
         cfg,
         name=name,
         tags=tags,
         default_queue=default_queue,
     )
+    _apply_clearml_task_script_override(controller, cfg)
+    return controller
 
 
 def pipeline_require_clearml_agent(queue_name: str | None = None) -> None:

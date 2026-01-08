@@ -109,7 +109,7 @@ def _validate_spec(repo: Path) -> None:
         if not isinstance(props, dict):
             raise AssertionError(f"template {name} properties_minimal must be a mapping")
 
-        if "tabular_analysis.cli" not in entrypoint or f"task={name}" not in entrypoint:
+        if "clearml_entrypoint.py" not in entrypoint or f"task={name}" not in entrypoint:
             raise AssertionError(f"template {name} entrypoint must include task={name}")
 
         _assert_overrides([str(item) for item in overrides])

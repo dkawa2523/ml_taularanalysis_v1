@@ -40,6 +40,8 @@ python -m tabular_analysis.cli task=pipeline \
   data.raw_dataset_id=<RAW_DATASET_ID> \
   pipeline.preprocess_variant=stdscaler_ohe pipeline.model_set=regression_all
 ```
+※ grid override を入れる場合は Hydra list 形式（スペース/クォートなし）で指定する。\
+例: `pipeline.grid.model_variants=[ridge,lasso] pipeline.grid.preprocess_variants=[stdscaler_ohe]`
 
 ### ローカル（ClearML 無効）
 ```bash
