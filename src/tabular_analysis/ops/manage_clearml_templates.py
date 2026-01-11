@@ -188,6 +188,10 @@ def _apply_templates(
             if not task_id:
                 continue
             tags = clearml_task_tags(task)
+            status = (clearml_task_status_from_obj(task) or "").lower()
+            if status == "failed":
+                _deprecate_template_task(task_id, reason="status=failed")
+                continue
             if "template:deprecated" in tags:
                 continue
             script = clearml_task_script(task)
@@ -198,10 +202,6 @@ def _apply_templates(
             script_mismatches = clearml_script_mismatches(spec, script)
             mismatches = [*tag_mismatches, *script_mismatches]
             if mismatches:
-                status = (clearml_task_status_from_obj(task) or "").lower()
-                if status == "failed":
-                    _deprecate_template_task(task_id, reason=", ".join(mismatches))
-                    continue
                 if script_mismatches:
                     try:
                         ensure_clearml_task_script(
