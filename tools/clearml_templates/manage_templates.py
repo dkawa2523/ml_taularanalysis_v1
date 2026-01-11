@@ -327,6 +327,7 @@ def _apply_templates(
                     entry_point=script_spec.entry_point,
                     working_dir=script_spec.working_dir,
                     version_num=script_spec.version_num,
+                    diff="",
                 ):
                     print(f"Update template {spec.name}: script")
                 else:
@@ -354,6 +355,7 @@ def _apply_templates(
             entry_point=script_spec.entry_point,
             working_dir=script_spec.working_dir,
             version_num=script_spec.version_num,
+            diff="",
         )
         lock_templates[spec.name] = {
             "task_id": task_id,

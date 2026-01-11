@@ -211,6 +211,7 @@ def _apply_templates(
                             entry_point=spec.entry_point,
                             working_dir=spec.working_dir,
                             version_num=spec.version_num,
+                            diff="",
                         )
                     except Exception as exc:
                         _deprecate_template_task(task_id, reason=f"script update failed: {exc}")
@@ -224,6 +225,16 @@ def _apply_templates(
             if selected_task_id is None:
                 selected_task_id = task_id
                 changes: list[str] = []
+                if ensure_clearml_task_script(
+                    task_id,
+                    repo=spec.repository,
+                    branch=spec.branch,
+                    entry_point=spec.entry_point,
+                    working_dir=spec.working_dir,
+                    version_num=spec.version_num,
+                    diff="",
+                ):
+                    changes.append("script")
                 if ensure_clearml_task_tags(task_id, target.tags):
                     changes.append("tags")
                 if ensure_clearml_task_requirements(task_id, target.requirements):
@@ -259,6 +270,7 @@ def _apply_templates(
                 entry_point=spec.entry_point,
                 working_dir=spec.working_dir,
                 version_num=spec.version_num,
+                diff="",
             )
             print(f"[create] {target.name}: {task_id}")
 

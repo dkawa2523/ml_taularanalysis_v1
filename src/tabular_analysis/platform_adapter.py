@@ -1630,6 +1630,7 @@ def _task_script(task: Any) -> dict[str, Any]:
             "entry_point": getattr(script_obj, "entry_point", None),
             "working_dir": getattr(script_obj, "working_dir", None),
             "version_num": getattr(script_obj, "version_num", None),
+            "diff": getattr(script_obj, "diff", None),
         }
         for key, value in fallback.items():
             if key not in script or script[key] is None:
@@ -1948,6 +1949,7 @@ def ensure_clearml_task_script(
     entry_point: str | None,
     working_dir: str | None,
     version_num: str | None = None,
+    diff: str | None = None,
 ) -> bool:
     if (
         repo is None
@@ -1955,6 +1957,7 @@ def ensure_clearml_task_script(
         and entry_point is None
         and working_dir is None
         and version_num is None
+        and diff is None
     ):
         return False
     task = _get_clearml_task(task_id)
@@ -1970,6 +1973,8 @@ def ensure_clearml_task_script(
         changed = True
     if version_num is not None and str(current.get("version_num") or "") != str(version_num):
         changed = True
+    if diff is not None and str(current.get("diff") or "") != str(diff):
+        changed = True
     if not changed:
         return False
     payload: dict[str, Any] = {
@@ -1980,6 +1985,8 @@ def ensure_clearml_task_script(
     }
     if version_num is not None:
         payload["version_num"] = version_num
+    if diff is not None:
+        payload["diff"] = diff
     _set_clearml_task_script(task, payload)
     return True
 
