@@ -6,6 +6,7 @@ leaderboard は、次の条件が一致する train だけを同じ土俵で比�
 一致必須：
 - `processed_dataset_id`
 - `split_hash`
+- `eval.task_type`
 - `eval.primary_metric` と `eval.direction`
 - `eval.seed`（必要なら）
 

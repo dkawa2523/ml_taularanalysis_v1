@@ -1,0 +1,25 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "champion_challenger",
+  "created_at": "2026-01-01T19:15:56Z",
+  "inputs": {
+    "champion_model_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/03_train_model",
+    "challenger_model_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/train__stdscaler_ohe__ridge/03_train_model",
+    "eval_dataset_ref": null,
+    "decision_threshold": 0.0,
+    "usecase_id": "RetrainLocal"
+  },
+  "outputs": {
+    "champion_challenger_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/07_champion_challenger/champion_challenger.csv",
+    "decision_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/07_champion_challenger/decision.json",
+    "summary_md": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/07_champion_challenger/summary.md",
+    "winner": "tie"
+  },
+  "hashes": {
+    "config_hash": "8ec05958e9acb55ebbc89ec8a912f537341d8889e93aa1149554fb2697af7ea6",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

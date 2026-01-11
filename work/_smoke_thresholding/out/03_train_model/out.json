@@ -1,0 +1,14 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out/03_train_model/model_bundle.joblib",
+  "train_task_id": null,
+  "best_score": 0.9454545454545454,
+  "primary_metric": "f1",
+  "processed_dataset_id": "local:196c80d5a57a487f7755c6d1a18067fcb96fdb30a0ee10efe2fa528f4733c8da",
+  "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+  "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0",
+  "task_type": "classification",
+  "n_classes": 2,
+  "best_threshold": 0.25,
+  "threshold_metric": "f1",
+  "threshold_score": 0.9454545454545454
+}

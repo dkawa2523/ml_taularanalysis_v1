@@ -1,0 +1,27 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/03_train_model/model_bundle.joblib",
+  "train_task_id": null,
+  "best_score": 0.8111623143881208,
+  "primary_metric": "f1_macro",
+  "processed_dataset_id": "local:3c67b1e6e13ceb5c9c3c863fc9b7afa85eac6a743d5ea8883417c6eff17b4cda",
+  "split_hash": "0bdc9a83dcef87e758d84dedcb5a3561f6b3272088ff1a98bf3c381999d789a0",
+  "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2",
+  "task_type": "classification",
+  "n_classes": 3,
+  "class_labels": [
+    "0",
+    "1",
+    "2"
+  ],
+  "imbalance": {
+    "enabled": false,
+    "strategy": "class_weight",
+    "applied": false
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

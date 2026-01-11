@@ -1,0 +1,70 @@
+{
+  "pipeline_run": {
+    "grid_run_id": "54f0609d87dc45ba94facce734c7a9cc",
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "dataset_register_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260106_071229/grid/54f0609d87dc45ba94facce734c7a9cc/dataset_register/01_dataset_register"
+    },
+    "preprocess_ref": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260106_071229/grid/54f0609d87dc45ba94facce734c7a9cc/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe",
+        "processed_dataset_id": "b94338318a234f34a19dc845646d74f5",
+        "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+        "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+      }
+    ],
+    "train_refs": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260106_071229/grid/54f0609d87dc45ba94facce734c7a9cc/train__stdscaler_ohe__ridge/03_train_model",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge",
+        "train_task_id": "5bc70c49bf9b465dba6a6ec00cd9466c",
+        "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260106_071229/grid/54f0609d87dc45ba94facce734c7a9cc/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+        "best_score": 0.33033994322626664,
+        "primary_metric": "rmse"
+      }
+    ],
+    "leaderboard_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260106_071229/grid/54f0609d87dc45ba94facce734c7a9cc/leaderboard/05_leaderboard"
+    },
+    "infer_ref": null,
+    "grid": {
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge"
+      ],
+      "max_jobs": 50,
+      "max_hpo_trials": 0,
+      "hpo": {
+        "enabled": false,
+        "params": {
+          "ridge": {
+            "alpha": [
+              0.1,
+              1.0,
+              10.0
+            ]
+          }
+        }
+      }
+    },
+    "policy": {
+      "limits": {
+        "max_jobs": 50,
+        "max_models": 10,
+        "max_hpo_trials": 0
+      },
+      "selection": {
+        "calibration": false,
+        "uncertainty": false,
+        "ci": false
+      }
+    }
+  }
+}

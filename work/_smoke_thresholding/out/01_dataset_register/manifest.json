@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-01T05:07:24Z",
+  "inputs": {
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/tmp/toy_thresholding.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "local:abfd2d9099cb0f0bded87da05b9c70b75bf08f3b0bc4bf2a80a65f99e92943a3",
+    "raw_dataset_hash": "abfd2d9099cb0f0bded87da05b9c70b75bf08f3b0bc4bf2a80a65f99e92943a3"
+  },
+  "hashes": {
+    "config_hash": "50f2671d00a025d851e9721f5c96268a4c8a674ae6ee68f2c7bfceaec8e3a808",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

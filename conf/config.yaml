@@ -6,8 +6,15 @@
 defaults:
   - _self_
   - run: base
+  - run/alerts: base
+  - ops/usecase_id_policy: test_dataset_timestamp
+  - ops/clearml_policy: test_minimal
+  - ops/processed_dataset: base
+  - exec_policy: base
+  - monitor: base
   - data: base
   - eval: base
+  - viz: base
 
   # バリアント（Hydra config group）
   # 例: group/model=lgbm group/preprocess=stdscaler_ohe group/split=random

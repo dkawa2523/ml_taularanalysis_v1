@@ -1,0 +1,4 @@
+# @package run.clearml.policy
+name: test_minimal
+tags: []
+properties: {}

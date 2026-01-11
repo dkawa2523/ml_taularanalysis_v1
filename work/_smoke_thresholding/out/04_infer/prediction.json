@@ -1,0 +1,9 @@
+{
+  "predicted_label": 1,
+  "prediction": 1,
+  "threshold_used": 0.25,
+  "predicted_proba": {
+    "0": 0.08524440575296377,
+    "1": 0.9147555942470362
+  }
+}

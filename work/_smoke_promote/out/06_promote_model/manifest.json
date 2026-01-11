@@ -1,0 +1,25 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "promote_model",
+  "created_at": "2026-01-01T05:22:10Z",
+  "inputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/03_train_model/model_bundle.joblib",
+    "stage": "staging",
+    "source": "leaderboard_dir:/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/05_leaderboard",
+    "train_task_id": null,
+    "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/03_train_model",
+    "primary_metric": "rmse"
+  },
+  "outputs": {
+    "promotion_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_promote/out/06_promote_model/promotion.json",
+    "registry_model_id": null,
+    "promotion_status": "succeeded"
+  },
+  "hashes": {
+    "config_hash": "cb267bbe3cdca00179a1a875c730f0c68fcc21bec86a7938dcd46bf94ae03bb6",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

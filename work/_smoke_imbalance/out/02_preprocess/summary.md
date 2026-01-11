@@ -1,0 +1,9 @@
+# Preprocess Summary
+
+- variant: stdscaler_ohe
+- rows: 400
+- features: 3 (numeric=2, categorical=1)
+- split: train=320 val=80 strategy=stratified
+- processed_dataset_id: local:9a7e2ed7a7caf251c216596d7874cd600568a0bf36c7204192eb5958152b585c
+- split_hash: 6b3a975664d4a62da0dacd4506222aa1d186c76a8c409449707655e0e28cb2e6
+- recipe_hash: bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0

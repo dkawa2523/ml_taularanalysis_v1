@@ -1,0 +1,12 @@
+{
+  "primary_metric": "rmse",
+  "direction": "minimize",
+  "task_type": "regression",
+  "holdout": {
+    "rmse": 0.07537177379896452,
+    "mae": 0.056043763066419984,
+    "r2": 0.9832698665339342,
+    "train_rows": 160,
+    "val_rows": 40
+  }
+}

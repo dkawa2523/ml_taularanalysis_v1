@@ -1,3 +1,8 @@
+# データ品質チェック
+defaults:
+  - quality: base
+  - _self_
+
 # ローカル CSV/Parquet などのパス（dataset_register で利用）
 dataset_path: null
 
@@ -20,7 +25,7 @@ drop_columns: []
 
 # split を preprocess が生成し固定する（train は再分割禁止）
 split:
-  strategy: random  # random | group | time
+  strategy: random  # random | group | time | stratified
   test_size: 0.2
   seed: 42
   group_column: null

@@ -1,0 +1,59 @@
+{
+  "grid_run_id": "e0e6eb8f673147f0b729c012f77c6c11",
+  "plan_only": false,
+  "planned_jobs": 1,
+  "executed_jobs": 1,
+  "skipped_due_to_policy": 0,
+  "dataset_register_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/dataset_register/01_dataset_register"
+  },
+  "preprocess_ref": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe",
+      "processed_dataset_id": "local:a5527dfd7b0ac70425e63e2e105b913099f7817e63efbf9290a3a6f1d1b79f7c",
+      "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+      "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+    }
+  ],
+  "train_refs": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/train__stdscaler_ohe__ridge/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+      "best_score": 0.10457267357429041,
+      "primary_metric": "rmse"
+    }
+  ],
+  "leaderboard_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/grid/e0e6eb8f673147f0b729c012f77c6c11/leaderboard/05_leaderboard"
+  },
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": false,
+      "params": {}
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    }
+  }
+}

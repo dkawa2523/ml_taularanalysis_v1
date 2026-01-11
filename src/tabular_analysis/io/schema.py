@@ -1,13 +1,12 @@
 """Schema utilities.
 
-T005 で実装予定。
 - 入力データの型/列情報を抽出し schema.json として保存
 - infer 時に schema を使って入力検証する
 """
 
 from __future__ import annotations
 
-from typing import Any, Dict
+from typing import Any, Dict, Mapping
 
 
 def infer_schema(df) -> Dict[str, Any]:
@@ -25,3 +24,20 @@ def infer_schema(df) -> Dict[str, Any]:
             "null_rate": rate,
         }
     return {"rows": rows, "columns": cols, "fields": fields}
+
+
+def extract_schema_dtypes(schema: Mapping[str, Any]) -> Dict[str, str]:
+    fields = schema.get("fields")
+    if not isinstance(fields, Mapping):
+        return {}
+    dtypes: Dict[str, str] = {}
+    for name, info in fields.items():
+        dtype = None
+        if isinstance(info, Mapping):
+            dtype = info.get("dtype")
+        elif info is not None:
+            dtype = info
+        if dtype is None:
+            continue
+        dtypes[str(name)] = str(dtype)
+    return dtypes

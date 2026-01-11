@@ -1,0 +1,9 @@
+# Model variant: TabPFN (optional dependency: pip install -e ".[tabpfn]")
+model_variant:
+  name: tabpfn
+  framework: tabpfn
+  class_path:
+    regression: tabular_analysis.registry.tabpfn.TabPFNRegressor
+    classification: tabular_analysis.registry.tabpfn.TabPFNClassifier
+  params:
+    auto_download: true

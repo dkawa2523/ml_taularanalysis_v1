@@ -1,0 +1,181 @@
+{
+  "report_version": 1,
+  "created_at": "2026-01-01T05:53:44Z",
+  "rows": 180,
+  "thresholds": {
+    "warn": 0.1,
+    "fail": null
+  },
+  "numeric": {
+    "num__num1": {
+      "psi": 2.947297659737106,
+      "status": "warn",
+      "missing_rate_train": 0.0,
+      "missing_rate_infer": 0.0,
+      "expected": {
+        "bin_edges": [
+          -2.645671133300661,
+          -1.2784583802294918,
+          -0.8426474395999085,
+          -0.43061614285373545,
+          -0.20281596093773094,
+          0.002182157608132833,
+          0.2045345667062478,
+          0.48829882522907225,
+          0.8767583178945365,
+          1.2890298824204323,
+          2.6040693013993055
+        ],
+        "counts": [
+          20,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ]
+      },
+      "actual": {
+        "counts": [
+          1,
+          1,
+          3,
+          1,
+          0,
+          5,
+          4,
+          9,
+          10,
+          65
+        ]
+      }
+    },
+    "num__num2": {
+      "psi": 1.0251128945499672,
+      "status": "warn",
+      "missing_rate_train": 0.0,
+      "missing_rate_infer": 0.0,
+      "expected": {
+        "bin_edges": [
+          -2.7652078884951443,
+          -1.2941438917427552,
+          -0.7961983343601705,
+          -0.46460960586410494,
+          -0.22243582264216005,
+          -0.02781339992395663,
+          0.12943777471408818,
+          0.5268477077771112,
+          0.9034107794608724,
+          1.2761365679624146,
+          2.4651781290174384
+        ],
+        "counts": [
+          20,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          19,
+          20
+        ]
+      },
+      "actual": {
+        "counts": [
+          5,
+          2,
+          3,
+          7,
+          4,
+          3,
+          18,
+          15,
+          18,
+          55
+        ]
+      }
+    },
+    "cat__cat_a": {
+      "psi": 0.0,
+      "status": "ok",
+      "missing_rate_train": 0.0,
+      "missing_rate_infer": 0.0,
+      "expected": {
+        "bin_edges": [
+          0.0,
+          1.0
+        ],
+        "counts": [
+          192
+        ]
+      },
+      "actual": {
+        "counts": [
+          180
+        ]
+      }
+    },
+    "cat__cat_b": {
+      "psi": 0.0,
+      "status": "ok",
+      "missing_rate_train": 0.0,
+      "missing_rate_infer": 0.0,
+      "expected": {
+        "bin_edges": [
+          0.0,
+          1.0
+        ],
+        "counts": [
+          192
+        ]
+      },
+      "actual": {
+        "counts": [
+          180
+        ]
+      }
+    },
+    "cat__cat_c": {
+      "psi": 0.0,
+      "status": "ok",
+      "missing_rate_train": 0.0,
+      "missing_rate_infer": 0.0,
+      "expected": {
+        "bin_edges": [
+          0.0,
+          1.0
+        ],
+        "counts": [
+          192
+        ]
+      },
+      "actual": {
+        "counts": [
+          180
+        ]
+      }
+    }
+  },
+  "categorical": {},
+  "summary": {
+    "features_total": 5,
+    "psi_max": 2.947297659737106,
+    "psi_mean": 0.7944821108574146,
+    "warn_threshold": 0.1,
+    "fail_threshold": null,
+    "warn_count": 2,
+    "fail_count": 0,
+    "warned_features": [
+      "num__num1",
+      "num__num2"
+    ],
+    "failed_features": [],
+    "missing_features": []
+  }
+}

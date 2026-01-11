@@ -1,0 +1,21 @@
+# @package _global_
+task:
+  name: promote_model
+  stage: "06_promote_model"
+  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/06_promote_model"
+
+promotion:
+  source_leaderboard_dir: null
+  recommended_model_id: null
+  stage: production
+  set_champion: true
+  rollback: false
+  note: null
+
+promote:
+  source_leaderboard_dir: ${promotion.source_leaderboard_dir}
+  recommended_model_id: ${promotion.recommended_model_id}
+  stage: ${promotion.stage}
+  set_champion: ${promotion.set_champion}
+  rollback: ${promotion.rollback}
+  note: ${promotion.note}

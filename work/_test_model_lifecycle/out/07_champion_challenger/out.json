@@ -1,0 +1,13 @@
+{
+  "champion_challenger_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/out/07_champion_challenger/champion_challenger.csv",
+  "decision_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/out/07_champion_challenger/decision.json",
+  "summary_md": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/out/07_champion_challenger/summary.md",
+  "winner": "challenger",
+  "primary_metric": "accuracy",
+  "champion_score": 0.65,
+  "challenger_score": 0.8,
+  "directional_delta": 0.15000000000000002,
+  "champion_model_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/previous",
+  "challenger_model_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/challenger",
+  "eval_dataset_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/refs/previous"
+}

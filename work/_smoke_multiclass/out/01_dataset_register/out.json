@@ -1,0 +1,61 @@
+{
+  "raw_dataset_id": "local:fd657cf5cf8164344f64582d1125a09ee3b6194f01b29be7e5316db9e22eb783",
+  "raw_dataset_hash": "fd657cf5cf8164344f64582d1125a09ee3b6194f01b29be7e5316db9e22eb783",
+  "raw_schema": {
+    "rows": 240,
+    "columns": 7,
+    "fields": {
+      "num0": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num1": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num2": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num3": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num4": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "num5": {
+        "dtype": "float64",
+        "null_count": 0,
+        "null_rate": 0.0
+      },
+      "target": {
+        "dtype": "int64",
+        "null_count": 0,
+        "null_rate": 0.0
+      }
+    }
+  },
+  "data_quality_summary": {
+    "rows": 240,
+    "columns": 7,
+    "missing_columns": 0,
+    "missing_rate_max": null,
+    "duplicates_count": 0,
+    "high_cardinality_count": 0,
+    "id_like_count": 6,
+    "mixed_type_count": 0,
+    "name_suspect_count": 0,
+    "leak_suspect_count": 0,
+    "leak_suspects": [],
+    "leak_error": false,
+    "quality_status": "warn",
+    "quality_issue_count": 6
+  }
+}

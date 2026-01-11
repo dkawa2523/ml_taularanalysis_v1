@@ -1,0 +1,17 @@
+{
+  "primary_metric": "pr_auc",
+  "direction": "maximize",
+  "task_type": "classification",
+  "holdout": {
+    "accuracy": 0.9125,
+    "f1": 0.5333333333333333,
+    "log_loss": 0.1518494600993599,
+    "roc_auc": 0.9901315789473684,
+    "pr_auc": 0.8928571428571428,
+    "balanced_accuracy": 0.9539473684210527,
+    "fbeta": 0.7407407407407407,
+    "train_rows": 320,
+    "val_rows": 80
+  },
+  "n_classes": 2
+}

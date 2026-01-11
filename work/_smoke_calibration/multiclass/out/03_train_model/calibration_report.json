@@ -1,0 +1,38 @@
+{
+  "n_samples": 44,
+  "n_bins": 10,
+  "mode": "multiclass_top1",
+  "ece": 0.13561230501720367,
+  "curve": [
+    {
+      "bin": 5,
+      "count": 5,
+      "mean_confidence": 0.5565668203745041,
+      "mean_accuracy": 0.4
+    },
+    {
+      "bin": 6,
+      "count": 5,
+      "mean_confidence": 0.6442623637420712,
+      "mean_accuracy": 0.8
+    },
+    {
+      "bin": 7,
+      "count": 8,
+      "mean_confidence": 0.7562628018459394,
+      "mean_accuracy": 1.0
+    },
+    {
+      "bin": 8,
+      "count": 9,
+      "mean_confidence": 0.8626247066904171,
+      "mean_accuracy": 1.0
+    },
+    {
+      "bin": 9,
+      "count": 17,
+      "mean_confidence": 0.9282856522014078,
+      "mean_accuracy": 1.0
+    }
+  ]
+}

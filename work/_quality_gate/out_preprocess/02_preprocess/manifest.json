@@ -1,0 +1,33 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-01T18:55:56Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "categorical_encoding": {
+      "encoding": "onehot",
+      "auto_onehot_max_categories": 50,
+      "hashing": {
+        "n_features": 128
+      },
+      "target_mean_oof": {
+        "folds": 5,
+        "smoothing": 10.0
+      }
+    },
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_quality_gate/tmp/quality_warn.csv"
+  },
+  "outputs": {
+    "processed_dataset_id": "local:6eab2b363e40bc3e121efc49015b93f7b1128b33a7e6e5388da4fde3658ba70a",
+    "split_hash": "c5364cbed923d2ea24964a51e864e71cd247c2f8f63da2862bd718f83fd6f6bd",
+    "recipe_hash": "65d41e52bc7dba816c51094b2350cdc0b94784687a993f5c968d9288636e68e8"
+  },
+  "hashes": {
+    "config_hash": "50c886216f31a5ef9ee681c67cefd8a3af133caf82ccd8d9b6472b9117d715ae",
+    "split_hash": "c5364cbed923d2ea24964a51e864e71cd247c2f8f63da2862bd718f83fd6f6bd",
+    "recipe_hash": "65d41e52bc7dba816c51094b2350cdc0b94784687a993f5c968d9288636e68e8"
+  }
+}

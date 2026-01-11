@@ -1,0 +1,8 @@
+{
+  "rollback_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/out/07_rollback_model/rollback.json",
+  "rollback_status": "succeeded",
+  "stage": "production",
+  "before_model_id": "model_current",
+  "after_model_id": "model_previous",
+  "model_registry_state_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_model_lifecycle/out/model_registry_state.json"
+}

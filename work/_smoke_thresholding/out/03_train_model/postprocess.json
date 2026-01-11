@@ -1,0 +1,6 @@
+{
+  "threshold": 0.25,
+  "metric": "f1",
+  "score": 0.9454545454545454,
+  "direction": "maximize"
+}

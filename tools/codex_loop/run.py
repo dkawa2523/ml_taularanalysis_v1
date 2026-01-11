@@ -565,6 +565,13 @@ def main(argv: Optional[List[str]] = None) -> int:
         help="Fail if git working tree is dirty (optional safety rail)",
     )
     parser.add_argument("--force-lock", action="store_true", help="Ignore lock file and proceed")
+    parser.add_argument(
+        "--no-preverify-failed",
+        dest="preverify_failed",
+        action="store_false",
+        help="Disable pre-verify for failed tasks (default: enabled).",
+    )
+    parser.set_defaults(preverify_failed=True)
     args = parser.parse_args(argv)
 
     repo = Path(args.repo).resolve()
@@ -624,6 +631,7 @@ def main(argv: Optional[List[str]] = None) -> int:
                 print("[codex_loop] No runnable tasks. All done?")
                 return 0
 
+            prev_status = task_status(state, task.id)
             print(f"[codex_loop] Running: {task.id} {task.title}")
 
             # Mark in_progress
@@ -634,6 +642,29 @@ def main(argv: Optional[List[str]] = None) -> int:
             ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             run_dir = repo / "work" / "runs" / f"{ts}_{task.id}"
             run_dir.mkdir(parents=True, exist_ok=True)
+
+            # Pre-verify for reruns: if a task previously failed but is already satisfied, skip Codex.
+            if getattr(args, "preverify_failed", True) and prev_status == "failed" and task.verify:
+                pv_ok, pv_log = run_verify(repo, task.verify, run_dir)
+                # keep preverify logs separate from post-codex verify logs
+                ok_path = run_dir / "verify_ok.txt"
+                fail_path = run_dir / "verify_failed.txt"
+                if pv_ok and ok_path.exists():
+                    ok_path.rename(run_dir / "preverify_ok.txt")
+                if (not pv_ok) and fail_path.exists():
+                    fail_path.rename(run_dir / "preverify_failed.txt")
+                if pv_ok:
+                    state["tasks"][task.id]["status"] = "done"
+                    state["tasks"][task.id]["last_run"] = str(run_dir)
+                    state["tasks"][task.id]["finished_at"] = datetime.now().isoformat(timespec="seconds")
+                    save_state(repo, state)
+                    lf = repo / "work/last_failure.md"
+                    if lf.exists():
+                        lf.unlink()
+                    print(f"[codex_loop] PREVERIFY OK: {task.id} already satisfied; skipping codex.")
+                    if args.once or args.task_id:
+                        return 0
+                    continue
 
             # Snapshots
             before_must = snapshot_hashes(repo, task.must_change_globs)
@@ -689,13 +720,13 @@ def main(argv: Optional[List[str]] = None) -> int:
                 changed = changed_keys(before_must, after_must)
                 (run_dir / "must_change_after.json").write_text(json.dumps(after_must, ensure_ascii=False, indent=2), encoding="utf-8")
                 (run_dir / "must_change_changed.txt").write_text("\n".join(changed) + "\n", encoding="utf-8")
-                if not changed:
-                    msg = f"must_change_globs に該当するファイルが変更されていません: {task.must_change_globs}"
-                    (repo / "work" / "last_failure.md").write_text(
-                        f"# Last failure\n\nTask: {task.id} {task.title}\nAttempt: {attempt}\n\n{msg}\n",
-                        encoding="utf-8",
+                if task.must_change_globs and not changed:
+                    msg = (
+                        f"must_change_globs に該当するファイルが変更されていません: {task.must_change_globs} "
+                        f"(task may already be satisfied; continuing to verify)"
                     )
-                    continue
+                    (run_dir / "must_change_warning.txt").write_text(msg + "\n", encoding="utf-8")
+                    print(f"[codex_loop] WARN: {msg}")
 
                 # verify
                 v_ok, v_log = run_verify(repo, task.verify, run_dir)
@@ -727,6 +758,17 @@ def main(argv: Optional[List[str]] = None) -> int:
             state["tasks"][task.id]["finished_at"] = datetime.now().isoformat(timespec="seconds")
             save_state(repo, state)
             print(f"[codex_loop] FAILED: {task.id} {task.title} (see {run_dir})", file=sys.stderr)
+            # Show quick failure hint (tail of last_failure.md) to reduce back-and-forth.
+            lf = repo / "work" / "last_failure.md"
+            if lf.exists():
+                try:
+                    txt = lf.read_text(encoding="utf-8")
+                    tail = txt.splitlines()[-60:]
+                    print("[codex_loop] ---- work/last_failure.md (tail) ----", file=sys.stderr)
+                    print("\n".join(tail), file=sys.stderr)
+                    print("[codex_loop] --------------------------------------", file=sys.stderr)
+                except Exception:
+                    pass
             return 1
 
     finally:

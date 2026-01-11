@@ -1,0 +1,39 @@
+{
+  "rows": 240,
+  "columns": 6,
+  "fields": {
+    "num0": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num1": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num2": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num3": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num4": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num5": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    }
+  },
+  "target_column": "target",
+  "id_columns": [],
+  "drop_columns": []
+}

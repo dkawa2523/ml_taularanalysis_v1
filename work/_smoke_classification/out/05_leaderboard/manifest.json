@@ -1,0 +1,32 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-01T19:41:11Z",
+  "inputs": {
+    "train_task_refs": [
+      "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model"
+    ],
+    "require_comparable": true,
+    "top_k": 10,
+    "primary_metric": "accuracy",
+    "direction": "maximize",
+    "seed": 42,
+    "task_type": "classification",
+    "processed_dataset_id": "local:c85ab7f964e06c43fa5db1e6d9fc50f2facb82320be7b232790713c03ccfdee3",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  },
+  "outputs": {
+    "leaderboard_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": null,
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model/model_bundle.joblib",
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "358bd8e58a6899235aa63a660f0dd1fabe1a5b63986fada02604fb5eecac11a5",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

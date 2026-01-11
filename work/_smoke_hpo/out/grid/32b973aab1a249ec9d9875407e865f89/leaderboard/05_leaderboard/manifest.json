@@ -1,0 +1,34 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-01T04:23:36Z",
+  "inputs": {
+    "train_task_refs": [
+      "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/32b973aab1a249ec9d9875407e865f89/train__stdscaler_ohe__ridge__alpha_0_1/03_train_model",
+      "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/32b973aab1a249ec9d9875407e865f89/train__stdscaler_ohe__ridge__alpha_1/03_train_model",
+      "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/32b973aab1a249ec9d9875407e865f89/train__stdscaler_ohe__ridge__alpha_10/03_train_model"
+    ],
+    "require_comparable": true,
+    "top_k": 10,
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "seed": 42,
+    "task_type": "regression",
+    "processed_dataset_id": "local:1e22078d9567b798c54c08b843083cc210d25b990cb0671e821edca6bc24da19",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  },
+  "outputs": {
+    "leaderboard_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/32b973aab1a249ec9d9875407e865f89/leaderboard/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": null,
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/32b973aab1a249ec9d9875407e865f89/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib",
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "a2ddb007b55e5aad0ee16363a7faf5cc3a1945621694c6d2328f7d2c0a2512bc",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "recommended_train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/1be24b58e9e344349fd47c271b6be88d/train__stdscaler_ohe__ridge/03_train_model",
+  "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/1be24b58e9e344349fd47c271b6be88d/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+  "recommended_best_score": 0.01008751014762982,
+  "recommended_primary_metric": "rmse"
+}

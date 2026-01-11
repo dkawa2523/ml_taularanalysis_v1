@@ -1,0 +1,7 @@
+{
+  "calibration": {
+    "enabled": true,
+    "method": "sigmoid",
+    "mode": "prefit"
+  }
+}

@@ -1,0 +1,109 @@
+run:
+  usecase_id: TabularAnalysis
+  output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_thresholding/out
+  schema_version: v1
+  grid_run_id: null
+  clearml:
+    enabled: false
+    execution: local
+    project_root: MFG
+    queue_name: null
+    clone_from_task_id: null
+    extra_tags: []
+data:
+  dataset_path: null
+  raw_dataset_id: null
+  processed_dataset_id: local:196c80d5a57a487f7755c6d1a18067fcb96fdb30a0ee10efe2fa528f4733c8da
+  target_column: target
+  id_columns: []
+  drop_columns: []
+  quality:
+    enabled: true
+    fail_on_duplicates: false
+    fail_on_leak: true
+    max_rows_scan: 50000
+  split:
+    strategy: random
+    test_size: 0.2
+    seed: 42
+    group_column: null
+    time_column: null
+eval:
+  task_type: classification
+  primary_metric: f1
+  direction: maximize
+  cv_folds: 5
+  seed: 42
+  thresholding:
+    enabled: true
+    metric: f1
+    grid:
+    - 0.05
+    - 0.1
+    - 0.15
+    - 0.2
+    - 0.25
+    - 0.3
+    - 0.35
+    - 0.4
+    - 0.45
+    - 0.5
+    - 0.55
+    - 0.6
+    - 0.65
+    - 0.7
+    - 0.75
+    - 0.8
+    - 0.85
+    - 0.9
+    - 0.95
+  calibration:
+    enabled: false
+    method: sigmoid
+viz:
+  enabled: true
+  max_features: 20
+  max_points: 1000
+  confusion_normalize: true
+  roc_curve: true
+  heavy:
+    enabled: false
+group:
+  preprocess:
+    preprocess_variant:
+      name: stdscaler_ohe
+      numeric_scaler: standard
+      categorical_encoder: onehot
+      handle_unknown: ignore
+  model:
+    model_variant:
+      name: logistic_regression
+      framework: sklearn
+      class_path: sklearn.linear_model.LogisticRegression
+      params:
+        max_iter: 1000
+        random_state: ${eval.seed}
+  split:
+    split_variant:
+      name: random
+      strategy: random
+  infer_mode:
+    infer_mode:
+      name: single
+      input_format: json
+task:
+  name: train_model
+  stage: 03_train_model
+  project_name: ${run.clearml.project_root}/${run.usecase_id}/03_train_model
+train:
+  model: ${model_variant.name}
+  params: {}
+  inputs:
+    preprocess_run_dir: null
+model_variant:
+  name: logistic_regression
+  framework: sklearn
+  class_path: sklearn.linear_model.LogisticRegression
+  params:
+    max_iter: 1000
+    random_state: ${eval.seed}

@@ -1,0 +1,30 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "train_model",
+  "created_at": "2026-01-01T11:31:05Z",
+  "inputs": {
+    "processed_dataset_id": "local:9a7e2ed7a7caf251c216596d7874cd600568a0bf36c7204192eb5958152b585c",
+    "split_hash": "6b3a975664d4a62da0dacd4506222aa1d186c76a8c409449707655e0e28cb2e6",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0",
+    "model_variant": "logistic_regression",
+    "primary_metric": "pr_auc",
+    "direction": "maximize",
+    "cv_folds": 0,
+    "seed": 42,
+    "task_type": "classification"
+  },
+  "outputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_imbalance/out/03_train_model/model_bundle.joblib",
+    "best_score": 0.8928571428571428,
+    "primary_metric": "pr_auc",
+    "task_type": "classification",
+    "n_classes": 2
+  },
+  "hashes": {
+    "config_hash": "a6f3c137e803c29ac953a06503afb040ab18069c78f44a6b8565016b385302f1",
+    "split_hash": "6b3a975664d4a62da0dacd4506222aa1d186c76a8c409449707655e0e28cb2e6",
+    "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-01-01T00:00:00Z",
+  "usecases": {
+    "RetrainLocal": {
+      "stages": {
+        "production": {
+          "current": {
+            "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/03_train_model/model_bundle.joblib",
+            "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_test_retrain/out/03_train_model",
+            "processed_dataset_id": "local:a5527dfd7b0ac70425e63e2e105b913099f7817e63efbf9290a3a6f1d1b79f7c",
+            "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f"
+          }
+        }
+      }
+    }
+  }
+}

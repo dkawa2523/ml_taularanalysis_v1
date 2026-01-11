@@ -1,0 +1,25 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "infer",
+  "created_at": "2026-01-01T12:37:31Z",
+  "inputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_calibration/binary/out/03_train_model/model_bundle.joblib",
+    "train_task_id": null,
+    "mode": "single",
+    "input_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_calibration/binary/tmp/toy_binary_infer.csv",
+    "processed_dataset_id": "local:e5ac4b2531bb4a0ded43c63c0750c179e95d9eebd2d8592d6fbbc88b72107be3",
+    "split_hash": "86b3c8eee5f2589ba15bf079bc985b83b0f48ac0203d185ec36f93060d710670",
+    "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2"
+  },
+  "outputs": {
+    "predictions_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_calibration/binary/out/04_infer/prediction.json",
+    "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_calibration/binary/out/04_infer/input_preview.json"
+  },
+  "hashes": {
+    "config_hash": "c1e3f6f3ab80423f6d42c5d4b7e2d039920a236dcef6d2ada9237102a3a40867",
+    "split_hash": "86b3c8eee5f2589ba15bf079bc985b83b0f48ac0203d185ec36f93060d710670",
+    "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2"
+  }
+}

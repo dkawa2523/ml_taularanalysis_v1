@@ -1,0 +1,33 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-01T19:41:16Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "categorical_encoding": {
+      "encoding": "hashing",
+      "auto_onehot_max_categories": 50,
+      "hashing": {
+        "n_features": 64
+      },
+      "target_mean_oof": {
+        "folds": 5,
+        "smoothing": 10.0
+      }
+    },
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_high_card_cat/tmp/high_card.csv"
+  },
+  "outputs": {
+    "processed_dataset_id": "local:7be70ac50c843ea428125710d40d4e80af77f1a5b19ba5b80a1f517384e6892f",
+    "split_hash": "5a8bb626ab0aab6316437b61862696a7dab067cf8b73ef2220f971ded39537e4",
+    "recipe_hash": "6dd86da9bf36aa7485f096f54fc9e00f68c82db8a8e53cc40d9431fac3783705"
+  },
+  "hashes": {
+    "config_hash": "07828377e198865308f1c9f1a7e27e42ae635276e68079867ac2758b3cb4821d",
+    "split_hash": "5a8bb626ab0aab6316437b61862696a7dab067cf8b73ef2220f971ded39537e4",
+    "recipe_hash": "6dd86da9bf36aa7485f096f54fc9e00f68c82db8a8e53cc40d9431fac3783705"
+  }
+}

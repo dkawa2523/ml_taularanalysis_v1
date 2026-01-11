@@ -1,0 +1,57 @@
+{
+  "tasks": [
+    {
+      "id": "T051",
+      "title": "試験段階: ClearML命名/タグ/Propertiesのポリシーをyamlで切替可能にする",
+      "deps": ["T050"],
+      "task_file": "work/tasks/T051_TEST_PHASE_CLEARML_POLICY.md",
+      "must_change_globs": ["conf/**", "src/**", "docs/**"],
+      "verify": [
+        "python -m compileall -q src",
+        "python -m tabular_analysis.ops.print_clearml_identity --help"
+      ]
+    },
+    {
+      "id": "T052",
+      "title": "試験段階: ClearML運用検討をIssue(md)として残す枠組みを追加",
+      "deps": ["T051"],
+      "task_file": "work/tasks/T052_CLEARML_ISSUES_AND_DECISIONS.md",
+      "must_change_globs": ["docs/**"],
+      "verify": [
+        "python -m compileall -q src",
+        "python -c \"import pathlib; assert (pathlib.Path('docs/issues')/ 'README.md').exists()\""
+      ]
+    },
+    {
+      "id": "T053",
+      "title": "試験段階: ローカルClearML用リハーサル手順とスクリプトを整備",
+      "deps": ["T052"],
+      "task_file": "work/tasks/T053_REHEARSAL_LOCAL_CLEARML.md",
+      "must_change_globs": ["tools/**", "docs/**"],
+      "verify": [
+        "python -m compileall -q src",
+        "python tools/rehearsal/run_rehearsal.py --help"
+      ]
+    },
+    {
+      "id": "T054",
+      "title": "試験段階: Template Task(将来)の作成・チェック手順をdocsに明文化",
+      "deps": ["T053"],
+      "task_file": "work/tasks/T054_TEMPLATE_TASK_CHECKLIST.md",
+      "must_change_globs": ["docs/**"],
+      "verify": [
+        "python -c \"import pathlib; assert (pathlib.Path('docs')/ '41_TEMPLATES_AND_ISSUE_FORMAT.md').exists()\""
+      ]
+    },
+    {
+      "id": "T055",
+      "title": "試験段階: 社内ClearMLへ移行するための差分チェックと微調整手順を整備",
+      "deps": ["T054"],
+      "task_file": "work/tasks/T055_REHEARSAL_INTERNAL_CLEARML.md",
+      "must_change_globs": ["docs/**", "tools/**", "conf/**"],
+      "verify": [
+        "python tools/rehearsal/plan_migration.py --help"
+      ]
+    }
+  ]
+}

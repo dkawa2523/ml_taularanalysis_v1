@@ -1,0 +1,10 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_drift/out_train/03_train_model/model_bundle.joblib",
+  "train_task_id": null,
+  "best_score": 0.009310328917039961,
+  "primary_metric": "rmse",
+  "processed_dataset_id": "local:eac696b3d8f20fe0a2b884f999f0ffeb577b1060945aac4e7de80c4c9f2aff44",
+  "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+  "recipe_hash": "bd4e78f2d424bb6803eeb7d66efc35c5f0743e9a2849fb18750887cba3f868c0",
+  "task_type": "regression"
+}

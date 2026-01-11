@@ -1,0 +1,22 @@
+{
+  "predictions_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/04_infer/predictions.csv",
+  "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/04_infer/input_preview.csv",
+  "mode": "batch",
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/03_train_model/model_bundle.joblib",
+  "train_task_id": null,
+  "schema_validation": {
+    "mode": "warn",
+    "ok": true,
+    "warnings_count": 0,
+    "errors_count": 0
+  },
+  "chunked": {
+    "chunk_size": 50000,
+    "rows": 240,
+    "chunks": 1,
+    "errors_count": 0,
+    "output_format": "csv",
+    "write_mode": "overwrite",
+    "max_rows": null
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "rows": 180,
+  "columns": 4,
+  "fields": {
+    "num1": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "num2": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "cat": {
+      "dtype": "object",
+      "null_count": 0,
+      "null_rate": 0.0
+    },
+    "target": {
+      "dtype": "float64",
+      "null_count": 0,
+      "null_rate": 0.0
+    }
+  }
+}

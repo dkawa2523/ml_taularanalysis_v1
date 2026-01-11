@@ -1,0 +1,18 @@
+{
+  "primary_metric": "rmse",
+  "direction": "minimize",
+  "task_type": "regression",
+  "holdout": {
+    "rmse": 0.08915055308377491,
+    "mae": 0.07405572769186816,
+    "r2": 0.9765938482086817,
+    "train_rows": 160,
+    "val_rows": 40
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

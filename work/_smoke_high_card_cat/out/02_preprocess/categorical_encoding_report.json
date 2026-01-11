@@ -1,0 +1,11 @@
+{
+  "encoding": "hashing",
+  "columns": {
+    "cat_high": {
+      "encoding": "hashing",
+      "unique": 480,
+      "encoded_dim": 64
+    }
+  },
+  "total_encoded_dim": 64
+}

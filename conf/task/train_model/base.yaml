@@ -2,7 +2,7 @@
 task:
   name: train_model
   stage: "03_train_model"
-  project_name: "${run.clearml.project_root}/${run.usecase_id}/03_train_model"
+  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/03_train_model"
 
 train:
   # モデルバリアント（conf/group/model/*.yaml で定義）

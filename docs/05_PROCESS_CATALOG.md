@@ -39,7 +39,7 @@
 - `train.inputs.preprocess_run_dir`（preprocess の出力ディレクトリ）
 - `data.processed_dataset_id`（preprocess out.json の整合チェック用。ClearML では Dataset ID）
 - `model_variant`
-- `eval.primary_metric`/`eval.direction`/`eval.cv_folds`/`eval.seed`
+- `eval.primary_metric`/`eval.direction`/`eval.cv_folds`/`eval.seed`/`eval.task_type`
 
 **出力（out.json）**
 - `processed_dataset_id`
@@ -49,6 +49,12 @@
 - `model_id`（ClearML Model ID など。local では path）
 - `best_score`
 - `primary_metric`
+- `task_type`
+- `n_classes`（classification のみ）
+
+**失敗時（例: TabPFN の重み未取得）**
+- `out.json` / `manifest.json` は出力し、`status: "failed"` と `error`（type/message）を追加する
+- `model_id` / `best_score` などは null になる（leaderboard 側で除外される）
 
 **追加 Artifacts**
 - `metrics.json`, `model_bundle/*`

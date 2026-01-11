@@ -1,0 +1,30 @@
+{
+  "schema_version": "v1",
+  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "platform_version": "0.1.0",
+  "process": "promote_model",
+  "created_at": "2026-01-01T13:27:33Z",
+  "inputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/train1/03_train_model/model_bundle.joblib",
+    "stage": "production",
+    "source": "leaderboard_dir:/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/lb1/05_leaderboard",
+    "train_task_id": null,
+    "train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/train1/03_train_model",
+    "primary_metric": "rmse",
+    "set_champion": true,
+    "rollback": false,
+    "champion_registry_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/registry/champions.json"
+  },
+  "outputs": {
+    "promotion_json": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_champion_registry/out/promo1/06_promote_model/promotion.json",
+    "registry_model_id": null,
+    "registry_status": null,
+    "promotion_status": "succeeded",
+    "champion_registry_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/registry/champions.json"
+  },
+  "hashes": {
+    "config_hash": "36c7a026b9f78fb63d20a36b95d60c0b9ee8dcaa8b73579df392d9dee4f6a428",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

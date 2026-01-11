@@ -1,0 +1,11 @@
+{
+  "encoding": "onehot",
+  "columns": {
+    "cat": {
+      "encoding": "onehot",
+      "unique": 3,
+      "encoded_dim": 3
+    }
+  },
+  "total_encoded_dim": 3
+}
