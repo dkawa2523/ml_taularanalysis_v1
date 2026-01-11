@@ -29,6 +29,7 @@
 - `docs/55_CLEARML_UI_CHECKLIST.md`
 - `docs/68_CLEARML_AGENT_TROUBLESHOOTING.md`
 - `docs/69_CLEARML_TROUBLESHOOTING.md`
+- `docs/70_CHATGPT_HANDOFF.md`
 
 ## Integration / Tracking
 - `docs/06_ARTIFACTS_AND_VERSIONING.md`
