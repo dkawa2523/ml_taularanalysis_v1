@@ -33,6 +33,11 @@ clearml:
   code_repository: "auto"
   code_branch: "auto"
 
+  # ClearML Task Script の version_num ポリシー
+  # branch_head: commit pin せず branch を追従
+  # pin_commit: git rev-parse HEAD を pin する
+  code_version_mode: "branch_head"
+
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
 

@@ -184,21 +184,31 @@ def log_debug_table(task: Any, title: str, series: str, df: Any, step: int = 0) 
     if dataframe is None:
         return log_debug_text(task, title, series, str(df), step=step)
     try:
-        reporter(title=str(title), series=str(series), iteration=int(step), dataframe=dataframe)
+        reporter(title=str(title), series=str(series), iteration=int(step), table_plot=dataframe)
         return True
     except Exception:
+        pass
+    try:
+        reporter(str(title), str(series), int(step), dataframe)
+        return True
+    except Exception:
+        pass
+    try:
+        records = dataframe.to_dict(orient="records")
+    except Exception:
+        records = None
+    if records is not None:
         try:
-            records = dataframe.to_dict(orient="records")
+            reporter(title=str(title), series=str(series), iteration=int(step), data=records)
+            return True
         except Exception:
-            records = None
-        if records is not None:
-            try:
-                reporter(title=str(title), series=str(series), iteration=int(step), data=records)
-                return True
-            except Exception:
-                pass
-        try:
-            csv_text = dataframe.to_csv(index=False)
-        except Exception:
-            csv_text = str(dataframe)
+            pass
+    try:
+        csv_text = dataframe.to_csv(index=False)
+    except Exception:
+        csv_text = str(dataframe)
+    try:
+        reporter(title=str(title), series=str(series), iteration=int(step), csv=csv_text)
+        return True
+    except Exception:
         return log_debug_text(task, title, series, csv_text, step=step)

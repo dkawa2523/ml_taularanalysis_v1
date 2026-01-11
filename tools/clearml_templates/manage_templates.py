@@ -67,6 +67,18 @@ def _load_run_defaults(repo_root: Path) -> PlanContext:
     )
 
 
+def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
+    if override:
+        return str(override)
+    run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
+    if not run_cfg_path.exists():
+        return "branch_head"
+    cfg = OmegaConf.load(run_cfg_path)
+    clearml_cfg = getattr(cfg, "clearml", None)
+    value = getattr(clearml_cfg, "code_version_mode", None)
+    return str(value) if value else "branch_head"
+
+
 class _SafeFormatDict(dict):
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
@@ -281,12 +293,26 @@ def _apply_templates(
     lock_path: Path,
     repo: str | None,
     branch: str | None,
+    version_mode: str | None,
 ) -> None:
     lock = _load_lock(lock_path)
     lock_templates = lock.get("templates", {})
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     for spec in templates:
+        module, script, entry_args = _parse_entrypoint(spec.entrypoint)
+        entry_point = f"-m {module}" if module else script
+        spec_cfg = {"run": {"clearml": {"code_version_mode": version_mode}}}
+        script_spec = platform_adapter.resolve_clearml_script_spec(
+            spec_cfg,
+            entry_point_override=entry_point,
+            repo_override=repo,
+            branch_override=branch,
+            version_mode_override=version_mode,
+            task_name_override=spec.name,
+            canonicalize_pipeline=False,
+        )
+
         existing = lock_templates.get(spec.name) if isinstance(lock_templates, dict) else None
         existing_id = None
         if isinstance(existing, dict):
@@ -294,12 +320,21 @@ def _apply_templates(
         if existing_id:
             try:
                 platform_adapter.clearml_task_exists(str(existing_id))
-                print(f"Reuse template {spec.name}: {existing_id}")
+                if platform_adapter.ensure_clearml_task_script(
+                    str(existing_id),
+                    repo=script_spec.repository,
+                    branch=script_spec.branch,
+                    entry_point=script_spec.entry_point,
+                    working_dir=script_spec.working_dir,
+                    version_num=script_spec.version_num,
+                ):
+                    print(f"Update template {spec.name}: script")
+                else:
+                    print(f"Reuse template {spec.name}: {existing_id}")
                 continue
             except Exception:
                 print(f"Existing task id not found, recreating: {spec.name}")
 
-        module, script, entry_args = _parse_entrypoint(spec.entrypoint)
         overrides = _normalized_args([*entry_args, *spec.default_overrides])
         task_id = platform_adapter.create_clearml_task(
             project_name=spec.project_name,
@@ -307,10 +342,18 @@ def _apply_templates(
             module=module,
             script=script,
             args=overrides,
-            repo=repo,
-            branch=branch,
+            repo=script_spec.repository,
+            branch=script_spec.branch,
             tags=spec.tags,
             properties=spec.properties_minimal,
+        )
+        platform_adapter.ensure_clearml_task_script(
+            task_id,
+            repo=script_spec.repository,
+            branch=script_spec.branch,
+            entry_point=script_spec.entry_point,
+            working_dir=script_spec.working_dir,
+            version_num=script_spec.version_num,
         )
         lock_templates[spec.name] = {
             "task_id": task_id,
@@ -368,6 +411,7 @@ def main() -> int:
     parser.add_argument("--schema-version", default=None)
     parser.add_argument("--repo", default=None)
     parser.add_argument("--branch", default=None)
+    parser.add_argument("--code-version-mode", default=None)
 
     args = parser.parse_args()
 
@@ -394,12 +438,15 @@ def main() -> int:
         return 0
 
     repo_url = args.repo or _detect_repo_url(repo_root)
+    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
+    print(f"code_version_mode: {version_mode}")
     if args.apply:
         _apply_templates(
             templates,
             lock_path=Path(args.lock),
             repo=repo_url,
             branch=args.branch,
+            version_mode=version_mode,
         )
         return 0
 

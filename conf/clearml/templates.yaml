@@ -52,6 +52,7 @@ templates:
       - "run.clearml.execution=logging"
     requirements:
       - "-r requirements/base.txt"
+      - "-r requirements/models.txt"
       - "-e ."
     tags:
       - "template:true"
@@ -73,6 +74,7 @@ templates:
       - "run.clearml.execution=logging"
     requirements:
       - "-r requirements/base.txt"
+      - "-r requirements/models.txt"
       - "-e ."
     tags:
       - "template:true"

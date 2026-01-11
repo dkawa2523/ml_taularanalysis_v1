@@ -21,6 +21,8 @@ from collections.abc import Iterable as IterableABC
 from datetime import datetime, timezone
 import json
 from dataclasses import dataclass
+import os
+import sys
 from pathlib import Path
 import re
 import subprocess
@@ -38,6 +40,16 @@ class TaskContext:
     project_name: str
     task_name: str
     output_dir: Path
+
+
+@dataclass(frozen=True)
+class ClearMLScriptSpec:
+    repository: str | None
+    branch: str | None
+    entry_point: str | None
+    working_dir: str | None
+    version_policy: str
+    version_num: str | None
 
 
 class PlatformAdapterError(RuntimeError):
@@ -220,6 +232,35 @@ def _normalize_code_ref(value: Any) -> str | None:
     return text or None
 
 
+def normalize_clearml_repository(value: Any) -> str | None:
+    text = _normalize_code_ref(value)
+    if not text:
+        return None
+    return _normalize_git_remote_url(text).rstrip("/")
+
+
+def normalize_clearml_branch(value: Any) -> str | None:
+    return _normalize_code_ref(value)
+
+
+def normalize_clearml_entry_point(value: Any) -> str | None:
+    text = _normalize_code_ref(value)
+    if not text:
+        return None
+    parts = text.split()
+    if parts and parts[0] in {"python", "python3"}:
+        parts = parts[1:]
+    normalized = " ".join(parts).strip()
+    if not normalized:
+        return None
+    command, _ = _split_entry_point_command(normalized)
+    return command or None
+
+
+def normalize_clearml_version_num(value: Any) -> str | None:
+    return _normalize_code_ref(value)
+
+
 def hydra_list(values: list[str]) -> str:
     return "[" + ",".join(values) + "]"
 
@@ -322,49 +363,38 @@ def _canonicalize_pipeline_entrypoint(
     cfg: Any,
     entry_point: str | None,
     fallback: str | None,
+    task_name_override: str | None = None,
+    canonicalize_pipeline: bool = True,
 ) -> str | None:
-    task_name = _normalize_code_ref(_cfg_value(cfg, "task.name"))
+    if not canonicalize_pipeline:
+        return entry_point
+    task_name = _normalize_code_ref(task_name_override) or _normalize_code_ref(
+        _cfg_value(cfg, "task.name")
+    )
     if task_name != "pipeline":
         return entry_point
-    preprocess_variants = _coerce_hydra_list_value(
-        _cfg_value(cfg, "pipeline.grid.preprocess_variants")
-    )
-    model_variants = _coerce_hydra_list_value(
-        _cfg_value(cfg, "pipeline.grid.model_variants")
-    )
-    if not preprocess_variants and not model_variants:
-        return entry_point
-    base = entry_point or fallback or "tools/clearml_entrypoint.py"
-    updated = base
-    if preprocess_variants:
-        updated = _replace_or_append_override(
-            updated,
-            "pipeline.grid.preprocess_variants",
-            hydra_list(preprocess_variants),
-        )
-    if model_variants:
-        updated = _replace_or_append_override(
-            updated,
-            "pipeline.grid.model_variants",
-            hydra_list(model_variants),
-        )
-    return updated
+    return entry_point or fallback or "tools/clearml_entrypoint.py"
 
 
 def _resolve_clearml_entrypoint(
     cfg: Any,
     current_entry_point: Any,
     entry_point_override: str | None,
+    task_name_override: str | None = None,
+    canonicalize_pipeline: bool = True,
 ) -> str | None:
     current_text = _normalize_code_ref(current_entry_point)
     base = current_text
     if entry_point_override is not None:
         override_text = str(entry_point_override).strip()
-        if current_text:
-            base = _swap_entry_point_command(current_text, override_text)
-        else:
-            base = override_text
-    return _canonicalize_pipeline_entrypoint(cfg, base, entry_point_override or current_text)
+        base = override_text or current_text
+    return _canonicalize_pipeline_entrypoint(
+        cfg,
+        base,
+        entry_point_override or current_text,
+        task_name_override=task_name_override,
+        canonicalize_pipeline=canonicalize_pipeline,
+    )
 
 
 def resolve_clearml_code_reference(cfg: Any) -> tuple[str | None, str | None]:
@@ -388,6 +418,125 @@ def _resolve_clearml_entrypoint_override(cfg: Any) -> str | None:
     return None
 
 
+def _resolve_clearml_code_version_mode(cfg: Any, *, override: str | None = None) -> str:
+    text = _normalize_code_ref(override) or _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_version_mode"))
+    if not text:
+        return "branch_head"
+    lowered = text.lower()
+    if lowered in {"branch_head", "branch", "head"}:
+        return "branch_head"
+    if lowered in {"pin_commit", "commit", "pinned"}:
+        return "pin_commit"
+    return "branch_head"
+
+
+def _resolve_clearml_version_num(
+    cfg: Any,
+    *,
+    version_mode_override: str | None = None,
+) -> tuple[str, str | None]:
+    mode = _resolve_clearml_code_version_mode(cfg, override=version_mode_override)
+    if mode == "pin_commit":
+        repo_root = _resolve_repo_root()
+        commit = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
+        if not commit:
+            raise PlatformAdapterError("Failed to resolve git commit for pin_commit.")
+        return mode, commit
+    return mode, ""
+
+
+def resolve_clearml_script_spec(
+    cfg: Any,
+    *,
+    current_entry_point: Any | None = None,
+    repo_override: str | None = None,
+    branch_override: str | None = None,
+    entry_point_override: str | None = None,
+    working_dir_override: str | None = None,
+    version_mode_override: str | None = None,
+    task_name_override: str | None = None,
+    canonicalize_pipeline: bool = True,
+) -> ClearMLScriptSpec:
+    repo_value, branch_value = resolve_clearml_code_reference(cfg)
+    if repo_override is not None:
+        repo_value = repo_override
+    if branch_override is not None:
+        branch_value = branch_override
+    entry_override = (
+        entry_point_override
+        if entry_point_override is not None
+        else _resolve_clearml_entrypoint_override(cfg)
+    )
+    entry_point = _resolve_clearml_entrypoint(
+        cfg,
+        current_entry_point,
+        entry_override,
+        task_name_override=task_name_override,
+        canonicalize_pipeline=canonicalize_pipeline,
+    )
+    working_dir = _normalize_code_ref(working_dir_override) or _normalize_code_ref(
+        _cfg_value(cfg, "run.clearml.working_dir")
+    )
+    version_policy, version_num = _resolve_clearml_version_num(
+        cfg, version_mode_override=version_mode_override
+    )
+    return ClearMLScriptSpec(
+        repository=repo_value,
+        branch=branch_value,
+        entry_point=entry_point,
+        working_dir=working_dir,
+        version_policy=version_policy,
+        version_num=version_num,
+    )
+
+
+def _commit_matches(expected: str | None, actual: str | None) -> bool:
+    if not expected:
+        return not actual
+    if not actual:
+        return False
+    expected_norm = expected.lower()
+    actual_norm = actual.lower()
+    if expected_norm == actual_norm:
+        return True
+    if expected_norm.startswith(actual_norm) or actual_norm.startswith(expected_norm):
+        return min(len(expected_norm), len(actual_norm)) >= 7
+    return False
+
+
+def clearml_script_mismatches(spec: ClearMLScriptSpec, script: Mapping[str, Any]) -> list[str]:
+    errors: list[str] = []
+    expected_repo = normalize_clearml_repository(spec.repository)
+    if expected_repo:
+        actual_repo = normalize_clearml_repository(script.get("repository"))
+        if actual_repo != expected_repo:
+            errors.append(f"repository mismatch: {actual_repo or 'none'}")
+    expected_branch = normalize_clearml_branch(spec.branch)
+    if expected_branch:
+        actual_branch = normalize_clearml_branch(script.get("branch"))
+        if actual_branch != expected_branch:
+            errors.append(f"branch mismatch: {actual_branch or 'none'}")
+    expected_entry = normalize_clearml_entry_point(spec.entry_point)
+    if expected_entry:
+        actual_entry = normalize_clearml_entry_point(script.get("entry_point"))
+        if actual_entry != expected_entry:
+            errors.append(f"entry_point mismatch: {actual_entry or 'none'}")
+    expected_working = _normalize_code_ref(spec.working_dir)
+    if expected_working:
+        actual_working = _normalize_code_ref(script.get("working_dir"))
+        if actual_working != expected_working:
+            errors.append(f"working_dir mismatch: {actual_working or 'none'}")
+    actual_version = normalize_clearml_version_num(script.get("version_num"))
+    if spec.version_policy == "branch_head":
+        if actual_version:
+            errors.append(f"version_num mismatch: {actual_version}")
+    elif spec.version_policy == "pin_commit":
+        expected_version = normalize_clearml_version_num(spec.version_num)
+        if not _commit_matches(expected_version, actual_version):
+            errors.append(f"version_num mismatch: {actual_version or 'none'}")
+    return errors
+
+
 def _resolve_clearml_task(target: Any) -> Any:
     for name in ("task", "_task", "pipeline_task"):
         if hasattr(target, name):
@@ -397,51 +546,155 @@ def _resolve_clearml_task(target: Any) -> Any:
     return target
 
 
+def _set_clearml_task_script(task: Any, payload: Mapping[str, Any]) -> None:
+    setter = getattr(task, "set_script", None)
+    if not callable(setter):
+        raise PlatformAdapterError("ClearML Task.set_script is not available.")
+    try:
+        setter(**payload)
+        return
+    except TypeError:
+        pass
+    if "version_num" in payload:
+        commit_payload = dict(payload)
+        commit_payload["commit"] = commit_payload.pop("version_num")
+        try:
+            setter(**commit_payload)
+            return
+        except TypeError:
+            pass
+    try:
+        setter(script=dict(payload))
+        return
+    except TypeError:
+        if "version_num" not in payload:
+            raise
+        trimmed = dict(payload)
+        trimmed.pop("version_num", None)
+        setter(**trimmed)
+
+
 def _apply_clearml_task_script_override(target: Any, cfg: Any) -> bool:
-    repo_value, branch_value = resolve_clearml_code_reference(cfg)
-    entry_point_override = _resolve_clearml_entrypoint_override(cfg)
     task = _resolve_clearml_task(target)
     current = _task_script(task)
     current_repo = current.get("repository")
     current_branch = current.get("branch")
     current_entry_point = current.get("entry_point")
-    desired_entry_point = _resolve_clearml_entrypoint(cfg, current_entry_point, entry_point_override)
-    if (
-        repo_value is None
-        and branch_value is None
-        and entry_point_override is None
-        and desired_entry_point is None
-    ):
-        return False
+    current_version = current.get("version_num")
+    spec = resolve_clearml_script_spec(cfg, current_entry_point=current_entry_point)
     changed = False
-    if repo_value is not None and str(current_repo or "") != str(repo_value):
+    if spec.repository is not None and str(current_repo or "") != str(spec.repository):
         changed = True
-    if branch_value is not None and str(current_branch or "") != str(branch_value):
+    if spec.branch is not None and str(current_branch or "") != str(spec.branch):
         changed = True
-    if desired_entry_point is not None and str(current_entry_point or "") != str(desired_entry_point):
+    if spec.entry_point is not None and str(current_entry_point or "") != str(spec.entry_point):
         changed = True
+    if spec.version_num is not None:
+        current_text = "" if current_version is None else str(current_version)
+        if current_version is None or current_text != str(spec.version_num):
+            changed = True
     if not changed:
         return False
     setter = getattr(task, "set_script", None)
     if not callable(setter):
         raise PlatformAdapterError("ClearML Task.set_script is not available.")
     payload: dict[str, Any] = {}
-    repo_to_set = repo_value if repo_value is not None else current_repo
-    branch_to_set = branch_value if branch_value is not None else current_branch
+    repo_to_set = spec.repository if spec.repository is not None else current_repo
+    branch_to_set = spec.branch if spec.branch is not None else current_branch
     if repo_to_set is not None:
         payload["repository"] = str(repo_to_set)
     if branch_to_set is not None:
         payload["branch"] = str(branch_to_set)
-    entry_point = desired_entry_point if desired_entry_point is not None else current_entry_point
+    entry_point = spec.entry_point if spec.entry_point is not None else current_entry_point
     if entry_point is not None:
         payload["entry_point"] = str(entry_point)
-    working_dir = current.get("working_dir")
+    working_dir = spec.working_dir if spec.working_dir is not None else current.get("working_dir")
     if working_dir is not None:
         payload["working_dir"] = working_dir
+    if spec.version_num is not None:
+        payload["version_num"] = spec.version_num
     if not payload:
         return False
-    setter(**payload)
+    _set_clearml_task_script(task, payload)
     return True
+
+
+def _apply_clearml_task_args(task: Any, args: Mapping[str, Any]) -> bool:
+    if not args:
+        return False
+    params = _task_parameters(task)
+    existing_args: dict[str, str] = {}
+    for key, value in params.items():
+        if isinstance(key, str) and key.startswith("Args/"):
+            existing_args[key[5:]] = "" if value is None else str(value)
+    updates: dict[str, str] = {}
+    for key, value in args.items():
+        expected = "" if value is None else str(value)
+        if existing_args.get(str(key)) != expected:
+            updates[str(key)] = expected
+    if not updates:
+        return False
+    updated_params = dict(params)
+    for key, value in updates.items():
+        updated_params[f"Args/{key}"] = value
+    setter = getattr(task, "set_parameters", None)
+    if callable(setter):
+        setter(updated_params)
+        return True
+    setter = getattr(task, "set_parameters_as_dict", None)
+    if callable(setter):
+        merged = {**existing_args, **updates}
+        setter({"Args": merged})
+        return True
+    raise PlatformAdapterError("ClearML Task.set_parameters is not available.")
+
+
+def _apply_clearml_pipeline_args(target: Any, cfg: Any) -> bool:
+    task = _resolve_clearml_task(target)
+    preprocess_variants = _coerce_hydra_list_value(
+        _cfg_value(cfg, "pipeline.grid.preprocess_variants")
+    )
+    model_variants = _coerce_hydra_list_value(
+        _cfg_value(cfg, "pipeline.grid.model_variants")
+    )
+    if not preprocess_variants and not model_variants:
+        return False
+    args: dict[str, Any] = {}
+    if preprocess_variants:
+        args["pipeline.grid.preprocess_variants"] = hydra_list(preprocess_variants)
+    if model_variants:
+        args["pipeline.grid.model_variants"] = hydra_list(model_variants)
+    return _apply_clearml_task_args(task, args)
+
+
+def _apply_clearml_task_requirements(task: Any, requirements: Iterable[str]) -> bool:
+    normalized = _normalize_requirement_lines(requirements)
+    if not normalized:
+        return False
+    setter = getattr(task, "set_packages", None)
+    if not callable(setter):
+        raise PlatformAdapterError("ClearML Task.set_packages is not available.")
+    try:
+        setter(normalized)
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to set task requirements via ClearML: {exc}") from exc
+    return True
+
+
+def _resolve_clearml_pipeline_requirements(cfg: Any) -> list[str]:
+    repo_root = _resolve_repo_root()
+    spec_path = repo_root / "conf" / "clearml" / "templates.yaml"
+    try:
+        from tabular_analysis.clearml import template_manager  # type: ignore
+
+        ctx = template_manager.load_default_context(repo_root)
+        specs = template_manager.load_template_specs(spec_path, ctx)
+        for spec in specs:
+            if spec.name == "pipeline":
+                return list(spec.requirements or [])
+    except Exception:
+        pass
+    return ["-r requirements/base.txt"]
 
 
 def _resolve_version_props(cfg: Any, *, clearml_enabled: bool) -> dict[str, str]:
@@ -542,7 +795,45 @@ def _load_clearml_module(clearml_enabled: bool):
                 "Install/update ml_platform."
             ) from exc
         return None
+    _patch_platform_clearml(platform_clearml)
     return platform_clearml
+
+
+def _normalize_clearml_user_properties(properties: Mapping[str, Any]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for key, value in properties.items():
+        if isinstance(value, Mapping) and "value" in value:
+            value = value.get("value")
+        normalized[str(key)] = "" if value is None else str(value)
+    return normalized
+
+
+def _patch_platform_clearml(platform_clearml: Any) -> None:
+    if platform_clearml is None:
+        return
+    if getattr(platform_clearml, "_ta_user_properties_patch", False):
+        return
+
+    def _safe_set_user_properties(task: Any, properties: Mapping[str, Any] | None) -> None:
+        if not properties:
+            return
+        setter = getattr(task, "set_user_properties", None)
+        if not callable(setter):
+            return
+        normalized = _normalize_clearml_user_properties(dict(properties))
+        try:
+            setter(**normalized)
+            return
+        except TypeError:
+            pass
+        try:
+            setter(*normalized.items())
+            return
+        except TypeError:
+            setter(normalized)
+
+    platform_clearml.set_user_properties = _safe_set_user_properties
+    platform_clearml._ta_user_properties_patch = True
 
 
 def _load_clearml_dataset(clearml_enabled: bool):
@@ -1203,6 +1494,63 @@ def create_clearml_task(
     return str(task_id)
 
 
+def list_clearml_tasks_by_tags(
+    tags: Iterable[str],
+    *,
+    project_name: str | None = None,
+    task_name: str | None = None,
+    allow_archived: bool = True,
+    order_by: Iterable[str] | None = None,
+) -> list[Any]:
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml is required for ClearML task queries.") from exc
+    tag_list = _dedupe_tags(tags)
+    if not tag_list:
+        raise PlatformAdapterError("tags are required to query ClearML tasks.")
+    task_filter = {"order_by": list(order_by) if order_by else ["-last_update"]}
+    try:
+        tasks = ClearMLTask.get_tasks(
+            project_name=project_name,
+            task_name=task_name,
+            tags=tag_list,
+            allow_archived=allow_archived,
+            task_filter=task_filter,
+        )
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to query ClearML tasks by tags: {exc}") from exc
+    return list(tasks or [])
+
+
+def clearml_task_id(task: Any) -> str | None:
+    task_id = getattr(task, "id", None) or getattr(task, "task_id", None)
+    return str(task_id) if task_id else None
+
+
+def clearml_task_tags(task: Any) -> list[str]:
+    return _dedupe_tags(_task_tags(task))
+
+
+def clearml_task_script(task: Any) -> dict[str, Any]:
+    return _task_script(task)
+
+
+def clearml_task_status_from_obj(task: Any) -> str | None:
+    status = getattr(task, "status", None)
+    if status:
+        return str(status)
+    getter = getattr(task, "get_status", None)
+    if callable(getter):
+        try:
+            status = getter()
+        except Exception:
+            status = None
+        if status:
+            return str(status)
+    return None
+
+
 def find_clearml_task_id_by_tags(
     tags: Iterable[str],
     *,
@@ -1264,24 +1612,29 @@ def _task_tags(task: Any) -> list[str]:
 
 
 def _task_script(task: Any) -> dict[str, Any]:
+    script: dict[str, Any] = {}
     getter = getattr(task, "get_script", None)
     if callable(getter):
         try:
-            script = getter()
+            script_value = getter()
         except Exception:
-            script = None
-        if isinstance(script, Mapping):
-            return dict(script)
+            script_value = None
+        if isinstance(script_value, Mapping):
+            script.update(dict(script_value))
     data = getattr(task, "data", None)
     script_obj = getattr(data, "script", None) if data is not None else None
     if script_obj is not None:
-        return {
+        fallback = {
             "repository": getattr(script_obj, "repository", None),
             "branch": getattr(script_obj, "branch", None),
             "entry_point": getattr(script_obj, "entry_point", None),
             "working_dir": getattr(script_obj, "working_dir", None),
+            "version_num": getattr(script_obj, "version_num", None),
         }
-    return {}
+        for key, value in fallback.items():
+            if key not in script or script[key] is None:
+                script[key] = value
+    return script
 
 
 def _task_parameters(task: Any) -> dict[str, Any]:
@@ -1343,6 +1696,7 @@ def get_clearml_task_script(task_id: str) -> dict[str, Any]:
         "branch": script.get("branch"),
         "entry_point": script.get("entry_point"),
         "working_dir": script.get("working_dir"),
+        "version_num": script.get("version_num"),
     }
 
 
@@ -1432,6 +1786,11 @@ def enqueue_clearml_task(task_id: str, queue_name: str, *, force: bool = False) 
         raise PlatformAdapterError("clearml is required to enqueue ClearML tasks.") from exc
     try:
         ClearMLTask.enqueue(task=str(task_id), queue_name=str(queue_name), force=bool(force))
+    except TypeError:
+        try:
+            ClearMLTask.enqueue(task_id=str(task_id), queue_name=str(queue_name), force=bool(force))
+        except TypeError:
+            ClearMLTask.enqueue(str(task_id), queue_name=str(queue_name))
     except Exception as exc:
         raise PlatformAdapterError(f"Failed to enqueue ClearML task: {exc}") from exc
 
@@ -1466,6 +1825,35 @@ def ensure_clearml_task_tags(task_id: str, tags: Iterable[str]) -> bool:
         raise PlatformAdapterError("ClearML Task.add_tags is not available.")
     adder(missing)
     return True
+
+
+def update_clearml_task_tags(
+    task_id: str,
+    *,
+    add: Iterable[str] | None = None,
+    remove: Iterable[str] | None = None,
+) -> bool:
+    add_list = _dedupe_tags(add or [])
+    remove_set = set(_dedupe_tags(remove or []))
+    if not add_list and not remove_set:
+        return False
+    task = _get_clearml_task(task_id)
+    existing = _task_tags(task)
+    updated = [tag for tag in existing if tag not in remove_set]
+    updated = _dedupe_tags([*updated, *add_list])
+    if updated == existing:
+        return False
+    setter = getattr(task, "set_tags", None)
+    if callable(setter):
+        setter(updated)
+        return True
+    if remove_set:
+        raise PlatformAdapterError("ClearML Task.set_tags is not available for tag removal.")
+    adder = getattr(task, "add_tags", None)
+    if callable(adder):
+        adder([tag for tag in add_list if tag not in existing])
+        return True
+    raise PlatformAdapterError("ClearML Task tag update is not available.")
 
 
 def ensure_clearml_task_requirements(task_id: str, requirements: Iterable[str]) -> bool:
@@ -1544,6 +1932,14 @@ def ensure_clearml_task_args(task_id: str, args: Iterable[str]) -> bool:
     raise PlatformAdapterError("ClearML Task.set_parameters is not available.")
 
 
+def apply_clearml_task_overrides(target: Any, overrides: Iterable[str]) -> bool:
+    desired = _parse_task_args(overrides)
+    if not desired:
+        return False
+    task = _resolve_clearml_task(target)
+    return _apply_clearml_task_args(task, desired)
+
+
 def ensure_clearml_task_script(
     task_id: str,
     *,
@@ -1551,8 +1947,15 @@ def ensure_clearml_task_script(
     branch: str | None,
     entry_point: str | None,
     working_dir: str | None,
+    version_num: str | None = None,
 ) -> bool:
-    if repo is None and branch is None and entry_point is None and working_dir is None:
+    if (
+        repo is None
+        and branch is None
+        and entry_point is None
+        and working_dir is None
+        and version_num is None
+    ):
         return False
     task = _get_clearml_task(task_id)
     current = _task_script(task)
@@ -1565,17 +1968,19 @@ def ensure_clearml_task_script(
         changed = True
     if working_dir is not None and str(current.get("working_dir") or "") != str(working_dir):
         changed = True
+    if version_num is not None and str(current.get("version_num") or "") != str(version_num):
+        changed = True
     if not changed:
         return False
-    setter = getattr(task, "set_script", None)
-    if not callable(setter):
-        raise PlatformAdapterError("ClearML Task.set_script is not available.")
-    setter(
-        repository=repo,
-        branch=branch,
-        working_dir=working_dir,
-        entry_point=entry_point,
-    )
+    payload: dict[str, Any] = {
+        "repository": repo,
+        "branch": branch,
+        "working_dir": working_dir,
+        "entry_point": entry_point,
+    }
+    if version_num is not None:
+        payload["version_num"] = version_num
+    _set_clearml_task_script(task, payload)
     return True
 
 
@@ -1793,14 +2198,24 @@ def create_pipeline_controller(
         default_queue=default_queue,
     )
     _apply_clearml_task_script_override(controller, cfg)
+    _apply_clearml_pipeline_args(controller, cfg)
+    _apply_clearml_task_requirements(
+        _resolve_clearml_task(controller),
+        _resolve_clearml_pipeline_requirements(cfg),
+    )
     return controller
 
 
 def pipeline_require_clearml_agent(queue_name: str | None = None) -> None:
+    if os.getenv("CLEARML_TASK_ID") or os.getenv("TRAINS_TASK_ID"):
+        return
     pipeline_utils = _load_clearml_pipeline_utils(clearml_enabled=True)
     if pipeline_utils is None:
         raise PlatformAdapterError("pipeline_utils is not available.")
-    pipeline_utils.require_clearml_agent(queue_name)
+    try:
+        pipeline_utils.require_clearml_agent(queue_name)
+    except RuntimeError as exc:
+        print(f"[warn] {exc}", file=sys.stderr)
 
 
 def pipeline_step_task_id_ref(step_name: str) -> str:

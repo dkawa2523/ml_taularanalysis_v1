@@ -99,6 +99,7 @@ python -m tabular_analysis.cli task=pipeline
 
 ## ドキュメント
 
+- `docs/INDEX.md`：ドキュメント全体の入口
 - `docs/00_SCOPE.md`：スコープ
 - `docs/03_CLEARML_UI_CONTRACT.md`：ClearML UI 契約（Project/Tags/Properties/Artifacts/Plots）
 - `docs/05_PROCESS_CATALOG.md`：各タスクの I/O 契約

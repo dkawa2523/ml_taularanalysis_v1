@@ -91,7 +91,8 @@ def load_default_context(repo_root: Path) -> TemplateContext:
     cfg = OmegaConf.load(run_cfg_path)
     clearml_cfg = getattr(cfg, "clearml", None)
     project_root = getattr(clearml_cfg, "project_root", None) or "MFG"
-    usecase_id = getattr(cfg, "usecase_id", None) or "TabularAnalysis"
+    template_usecase_id = getattr(clearml_cfg, "template_usecase_id", None)
+    usecase_id = template_usecase_id or getattr(cfg, "usecase_id", None) or "TabularAnalysis"
     schema_version = getattr(cfg, "schema_version", None) or "v1"
     return TemplateContext(
         project_root=str(project_root),

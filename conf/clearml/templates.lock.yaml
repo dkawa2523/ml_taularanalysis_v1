@@ -1,0 +1,44 @@
+version: 1
+templates:
+  dataset_register:
+    task_id: a678f653323a45c2aef19ed8be9e5274
+    project_name: MFG/TabularAnalysis/01_dataset_register
+    task_name: dataset_register
+    entrypoint: python tools/clearml_entrypoint.py task=dataset_register
+    updated_at: '2026-01-10T17:33:38Z'
+  preprocess:
+    task_id: 5719b4342d7c4fa28c5b438255664643
+    project_name: MFG/TabularAnalysis/02_preprocess
+    task_name: preprocess
+    entrypoint: python tools/clearml_entrypoint.py task=preprocess
+    updated_at: '2026-01-10T17:33:38Z'
+  train_model:
+    task_id: 21dad267eb104ab88ccea28f5fb12d5c
+    project_name: MFG/TabularAnalysis/03_train_model
+    task_name: train_model
+    entrypoint: python tools/clearml_entrypoint.py task=train_model
+    updated_at: '2026-01-10T17:33:38Z'
+  infer:
+    task_id: 4c0dde4e50c642c0ac8c4d1cbb562973
+    project_name: MFG/TabularAnalysis/04_infer
+    task_name: infer
+    entrypoint: python tools/clearml_entrypoint.py task=infer
+    updated_at: '2026-01-10T17:33:38Z'
+  leaderboard:
+    task_id: 3174a7f112cf4974b15240e5940a476c
+    project_name: MFG/TabularAnalysis/05_leaderboard
+    task_name: leaderboard
+    entrypoint: python tools/clearml_entrypoint.py task=leaderboard
+    updated_at: '2026-01-10T17:33:38Z'
+  pipeline:
+    task_id: d271fd9c77d040bb93608c1da7f29445
+    project_name: MFG/TabularAnalysis/99_pipeline
+    task_name: pipeline
+    entrypoint: python tools/clearml_entrypoint.py task=pipeline
+    updated_at: '2026-01-10T17:33:38Z'
+  promote_model:
+    task_id: 57096ab21efe437ca276431c0496a6d8
+    project_name: MFG/TabularAnalysis/06_promote_model
+    task_name: promote_model
+    entrypoint: python tools/clearml_entrypoint.py task=promote_model
+    updated_at: '2026-01-10T17:33:38Z'

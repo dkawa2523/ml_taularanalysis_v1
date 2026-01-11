@@ -20,6 +20,7 @@ import uuid
 from ..clearml.templates import resolve_template_task_id
 from ..clearml.ui_logger import log_scalar
 from ..platform_adapter import (
+    apply_clearml_task_overrides,
     clearml_task_type_controller,
     create_pipeline_controller,
     hash_config,
@@ -521,6 +522,36 @@ def _overrides_to_params(overrides: Mapping[str, Any]) -> dict[str, Any]:
             continue
         params[key] = formatted
     return params
+
+
+def _normalize_override_key(text: str) -> str:
+    key = str(text).strip().split("=", 1)[0].strip()
+    return key.lstrip("+~")
+
+
+def _ensure_override(overrides: list[str], key: str, value: Any) -> None:
+    if value is None:
+        return
+    normalized = {_normalize_override_key(item) for item in overrides}
+    if key in normalized:
+        return
+    formatted = _format_value(value)
+    if formatted is None:
+        return
+    overrides.append(f"{key}={formatted}")
+
+
+def _hydra_task_overrides() -> list[str]:
+    try:
+        from hydra.core.hydra_config import HydraConfig  # type: ignore
+
+        hydra_cfg = HydraConfig.get()
+        overrides = getattr(getattr(hydra_cfg, "overrides", None), "task", None)
+        if overrides:
+            return [str(item) for item in overrides if item]
+    except Exception:
+        return []
+    return []
 
 
 def _merge_overrides(*items: Mapping[str, Any]) -> dict[str, Any]:
@@ -1338,6 +1369,60 @@ def _run_clearml_pipeline(
 
         pipeline_name = _normalize_str(_cfg_value(cfg, "run.clearml.task_name")) or "pipeline"
         controller = create_pipeline_controller(cfg, name=pipeline_name, default_queue=pipeline_queue)
+        controller_overrides = _hydra_task_overrides()
+        if controller_overrides:
+            _ensure_override(controller_overrides, "task", "pipeline")
+            _ensure_override(controller_overrides, "run.grid_run_id", grid_run_id)
+            _ensure_override(controller_overrides, "run.output_dir", _cfg_value(cfg, "run.output_dir"))
+            _ensure_override(controller_overrides, "run.clearml.enabled", True)
+            _ensure_override(
+                controller_overrides,
+                "run.clearml.execution",
+                controller_execution or _cfg_value(cfg, "run.clearml.execution"),
+            )
+            _ensure_override(
+                controller_overrides,
+                "pipeline.run_dataset_register",
+                plan.get("run_dataset_register"),
+            )
+            _ensure_override(controller_overrides, "pipeline.run_preprocess", plan.get("run_preprocess"))
+            _ensure_override(controller_overrides, "pipeline.run_train", plan.get("run_train"))
+            _ensure_override(controller_overrides, "pipeline.run_leaderboard", plan.get("run_leaderboard"))
+            _ensure_override(controller_overrides, "pipeline.run_infer", plan.get("run_infer"))
+            _ensure_override(
+                controller_overrides,
+                "pipeline.grid.preprocess_variants",
+                plan.get("preprocess_variants"),
+            )
+            _ensure_override(
+                controller_overrides,
+                "pipeline.grid.model_variants",
+                plan.get("model_variants"),
+            )
+            _ensure_override(controller_overrides, "data.dataset_path", _cfg_value(cfg, "data.dataset_path"))
+            _ensure_override(controller_overrides, "data.target_column", _cfg_value(cfg, "data.target_column"))
+            _ensure_override(controller_overrides, "data.raw_dataset_id", _cfg_value(cfg, "data.raw_dataset_id"))
+            _ensure_override(controller_overrides, "run.usecase_id", _cfg_value(cfg, "run.usecase_id"))
+        else:
+            controller_overrides_map = _merge_overrides(
+                _collect_run_overrides(cfg, grid_run_id, child_execution=None),
+                _collect_data_overrides(cfg),
+                _collect_eval_overrides(cfg),
+                {
+                    "task": "pipeline",
+                    "run.output_dir": _cfg_value(cfg, "run.output_dir"),
+                    "pipeline.run_dataset_register": plan.get("run_dataset_register"),
+                    "pipeline.run_preprocess": plan.get("run_preprocess"),
+                    "pipeline.run_train": plan.get("run_train"),
+                    "pipeline.run_leaderboard": plan.get("run_leaderboard"),
+                    "pipeline.run_infer": plan.get("run_infer"),
+                    "pipeline.grid.preprocess_variants": plan.get("preprocess_variants"),
+                    "pipeline.grid.model_variants": plan.get("model_variants"),
+                },
+            )
+            controller_overrides = _overrides_to_args(controller_overrides_map)
+        if controller_overrides:
+            apply_clearml_task_overrides(controller, controller_overrides)
         pipeline_require_clearml_agent(queue_name)
 
         template_task_ids: dict[str, str] = {}

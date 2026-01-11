@@ -5,10 +5,15 @@ from __future__ import annotations
 import argparse
 import os
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Any, Iterable, Optional
 
 from ..clearml import template_manager
 from ..platform_adapter import (
+    clearml_script_mismatches,
+    clearml_task_id,
+    clearml_task_script,
+    clearml_task_status_from_obj,
+    clearml_task_tags,
     create_clearml_task,
     detect_git_branch,
     detect_git_repository_url,
@@ -17,11 +22,17 @@ from ..platform_adapter import (
     ensure_clearml_task_requirements,
     ensure_clearml_task_script,
     ensure_clearml_task_tags,
-    find_clearml_task_id_by_tags,
     get_clearml_task_args,
     get_clearml_task_script,
-    get_clearml_task_tags,
+    list_clearml_tasks_by_tags,
+    resolve_clearml_script_spec,
+    update_clearml_task_tags,
 )
+
+try:
+    from omegaconf import OmegaConf  # type: ignore
+except Exception:  # pragma: no cover - optional in some environments
+    OmegaConf = None
 
 
 def _resolve_repo_root() -> Path:
@@ -52,24 +63,6 @@ def _clearml_config_present(repo_root: Path) -> bool:
     return False
 
 
-def _normalize_text(value: Optional[str]) -> str:
-    if value is None:
-        return ""
-    return str(value).strip()
-
-
-def _normalize_entry_point(value: Optional[str]) -> str:
-    if value is None:
-        return ""
-    text = str(value).strip()
-    if not text:
-        return ""
-    parts = text.split()
-    if parts and parts[0] in {"python", "python3"}:
-        parts = parts[1:]
-    return " ".join(parts)
-
-
 def _args_to_map(args: Iterable[str]) -> dict[str, str]:
     parsed: dict[str, str] = {}
     for item in args:
@@ -83,13 +76,74 @@ def _args_to_map(args: Iterable[str]) -> dict[str, str]:
     return parsed
 
 
-def _find_template_task_id(target: template_manager.TemplateTarget) -> str | None:
+def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
+    if override:
+        return str(override)
+    if OmegaConf is None:
+        return "branch_head"
+    run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
+    if not run_cfg_path.exists():
+        return "branch_head"
+    try:
+        cfg = OmegaConf.load(run_cfg_path)
+    except Exception:
+        return "branch_head"
+    clearml_cfg = getattr(cfg, "clearml", None)
+    value = getattr(clearml_cfg, "code_version_mode", None)
+    return str(value) if value else "branch_head"
+
+
+def _build_script_cfg(version_mode: str | None) -> dict[str, Any]:
+    cfg: dict[str, Any] = {"run": {"clearml": {}}}
+    if version_mode:
+        cfg["run"]["clearml"]["code_version_mode"] = version_mode
+    return cfg
+
+
+def _resolve_target_script_spec(
+    *,
+    target: template_manager.TemplateTarget,
+    repo: str | None,
+    branch: str | None,
+    version_mode: str | None,
+) -> Any:
+    cfg = _build_script_cfg(version_mode)
+    return resolve_clearml_script_spec(
+        cfg,
+        entry_point_override=target.entry_point,
+        repo_override=repo,
+        branch_override=branch,
+        version_mode_override=version_mode,
+        task_name_override=target.name,
+        canonicalize_pipeline=False,
+    )
+
+
+def _collect_candidate_tasks(target: template_manager.TemplateTarget) -> list[Any]:
     candidates = template_manager.build_tag_candidates(target.tags, target.name)
+    tasks: list[Any] = []
+    seen: set[str] = set()
     for tags in candidates:
-        task_id = find_clearml_task_id_by_tags(tags, project_name=target.project_name)
-        if task_id:
-            return task_id
-    return None
+        for task in list_clearml_tasks_by_tags(tags, project_name=target.project_name):
+            task_id = clearml_task_id(task)
+            if task_id and task_id in seen:
+                continue
+            if task_id:
+                seen.add(task_id)
+            tasks.append(task)
+    return tasks
+
+
+def _deprecate_template_task(task_id: str, *, reason: str) -> None:
+    try:
+        update_clearml_task_tags(
+            task_id,
+            add=["template:deprecated"],
+            remove=["template:true"],
+        )
+        print(f"[deprecated] {task_id}: {reason}")
+    except Exception as exc:
+        print(f"[warn] failed to deprecate {task_id}: {exc}")
 
 
 def _print_plan(
@@ -118,53 +172,95 @@ def _apply_templates(
     *,
     repo: str | None,
     branch: str | None,
+    version_mode: str | None,
 ) -> None:
     for target in targets:
-        task_id = _find_template_task_id(target)
-        if not task_id:
+        spec = _resolve_target_script_spec(
+            target=target,
+            repo=repo,
+            branch=branch,
+            version_mode=version_mode,
+        )
+        candidate_tasks = _collect_candidate_tasks(target)
+        selected_task_id: str | None = None
+        for task in candidate_tasks:
+            task_id = clearml_task_id(task)
+            if not task_id:
+                continue
+            tags = clearml_task_tags(task)
+            if "template:deprecated" in tags:
+                continue
+            script = clearml_task_script(task)
+            missing_tags = [tag for tag in target.tags if tag not in tags]
+            tag_mismatches = []
+            if missing_tags:
+                tag_mismatches.append(f"missing tags: {', '.join(missing_tags)}")
+            script_mismatches = clearml_script_mismatches(spec, script)
+            mismatches = [*tag_mismatches, *script_mismatches]
+            if mismatches:
+                status = (clearml_task_status_from_obj(task) or "").lower()
+                if status == "failed":
+                    _deprecate_template_task(task_id, reason=", ".join(mismatches))
+                    continue
+                if script_mismatches:
+                    try:
+                        ensure_clearml_task_script(
+                            task_id,
+                            repo=spec.repository,
+                            branch=spec.branch,
+                            entry_point=spec.entry_point,
+                            working_dir=spec.working_dir,
+                            version_num=spec.version_num,
+                        )
+                    except Exception as exc:
+                        _deprecate_template_task(task_id, reason=f"script update failed: {exc}")
+                        continue
+                    script = get_clearml_task_script(task_id)
+                    script_mismatches = clearml_script_mismatches(spec, script)
+                    mismatches = [*tag_mismatches, *script_mismatches]
+                if mismatches:
+                    _deprecate_template_task(task_id, reason=", ".join(mismatches))
+                    continue
+            if selected_task_id is None:
+                selected_task_id = task_id
+                changes: list[str] = []
+                if ensure_clearml_task_tags(task_id, target.tags):
+                    changes.append("tags")
+                if ensure_clearml_task_requirements(task_id, target.requirements):
+                    changes.append("requirements")
+                if ensure_clearml_task_properties(task_id, target.properties):
+                    changes.append("properties")
+                if ensure_clearml_task_args(task_id, target.args):
+                    changes.append("args")
+                if changes:
+                    print(f"[update] {target.name}: {', '.join(changes)}")
+                else:
+                    print(f"[skip] {target.name}: no changes")
+            else:
+                print(f"[info] {target.name}: additional template found {task_id}")
+
+        if selected_task_id is None:
             task_id = create_clearml_task(
                 project_name=target.project_name,
                 task_name=target.task_name,
                 module=target.module,
                 script=target.script,
                 args=target.args,
-                repo=repo,
-                branch=branch,
+                repo=spec.repository,
+                branch=spec.branch,
                 tags=target.tags,
                 properties=target.properties,
                 requirements=target.requirements,
             )
             ensure_clearml_task_script(
                 task_id,
-                repo=repo,
-                branch=branch,
-                entry_point=target.entry_point,
-                working_dir=None,
+                repo=spec.repository,
+                branch=spec.branch,
+                entry_point=spec.entry_point,
+                working_dir=spec.working_dir,
+                version_num=spec.version_num,
             )
             print(f"[create] {target.name}: {task_id}")
-            continue
-
-        changes: list[str] = []
-        if ensure_clearml_task_script(
-            task_id,
-            repo=repo,
-            branch=branch,
-            entry_point=target.entry_point,
-            working_dir=None,
-        ):
-            changes.append("script")
-        if ensure_clearml_task_tags(task_id, target.tags):
-            changes.append("tags")
-        if ensure_clearml_task_requirements(task_id, target.requirements):
-            changes.append("requirements")
-        if ensure_clearml_task_properties(task_id, target.properties):
-            changes.append("properties")
-        if ensure_clearml_task_args(task_id, target.args):
-            changes.append("args")
-        if changes:
-            print(f"[update] {target.name}: {', '.join(changes)}")
-        else:
-            print(f"[skip] {target.name}: no changes")
 
 
 def _validate_templates(
@@ -172,45 +268,56 @@ def _validate_templates(
     *,
     repo: str | None,
     branch: str | None,
+    version_mode: str | None,
 ) -> bool:
     ok = True
+    repo_root = _resolve_repo_root()
     for target in targets:
-        task_id = _find_template_task_id(target)
-        if not task_id:
+        spec = _resolve_target_script_spec(
+            target=target,
+            repo=repo,
+            branch=branch,
+            version_mode=version_mode,
+        )
+        candidate_tasks = _collect_candidate_tasks(target)
+        if not candidate_tasks:
             print(f"[missing] {target.name}: template task not found")
             ok = False
             continue
-        errors: list[str] = []
-        tags = get_clearml_task_tags(task_id)
-        missing_tags = [tag for tag in target.tags if tag not in tags]
-        if missing_tags:
-            errors.append(f"missing tags: {', '.join(missing_tags)}")
+        found_valid = False
+        had_invalid = False
+        for task in candidate_tasks:
+            task_id = clearml_task_id(task)
+            if not task_id:
+                continue
+            tags = clearml_task_tags(task)
+            if "template:deprecated" in tags:
+                continue
+            errors: list[str] = []
+            missing_tags = [tag for tag in target.tags if tag not in tags]
+            if missing_tags:
+                errors.append(f"missing tags: {', '.join(missing_tags)}")
 
-        script = get_clearml_task_script(task_id)
-        entry_point = _normalize_entry_point(script.get("entry_point"))
-        expected_entry = _normalize_entry_point(target.entry_point)
-        if expected_entry and entry_point != expected_entry:
-            errors.append(f"entry_point mismatch: {entry_point or 'none'}")
-        if repo:
-            repo_value = _normalize_text(script.get("repository"))
-            if repo_value != _normalize_text(repo):
-                errors.append(f"repository mismatch: {repo_value or 'none'}")
-        if branch:
-            branch_value = _normalize_text(script.get("branch"))
-            if branch_value != _normalize_text(branch):
-                errors.append(f"branch mismatch: {branch_value or 'none'}")
+            script = clearml_task_script(task)
+            errors.extend(clearml_script_mismatches(spec, script))
 
-        expected_args = _args_to_map(target.args)
-        actual_args = get_clearml_task_args(task_id)
-        for key, value in expected_args.items():
-            if str(actual_args.get(key, "")) != value:
-                errors.append(f"arg mismatch: {key}={value}")
+            expected_args = _args_to_map(target.args)
+            actual_args = get_clearml_task_args(task_id)
+            for key, value in expected_args.items():
+                if str(actual_args.get(key, "")) != value:
+                    errors.append(f"arg mismatch: {key}={value}")
 
-        if errors:
-            ok = False
-            print(f"[invalid] {target.name}: {', '.join(errors)}")
-        else:
+            if errors:
+                had_invalid = True
+                ok = False
+                print(f"[invalid] {target.name}: {task_id} ({', '.join(errors)})")
+                continue
             print(f"[ok] {target.name}: {task_id}")
+            found_valid = True
+            break
+        if not found_valid and not had_invalid:
+            print(f"[missing] {target.name}: no matching template found")
+            ok = False
     return ok
 
 
@@ -228,6 +335,11 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--schema-version", default=None, help="Override schema_version placeholder.")
     parser.add_argument("--repo", default=None, help="Override ClearML repository URL.")
     parser.add_argument("--branch", default=None, help="Override ClearML repository branch.")
+    parser.add_argument(
+        "--code-version-mode",
+        default=None,
+        help="Override run.clearml.code_version_mode (branch_head|pin_commit).",
+    )
 
     args = parser.parse_args(argv)
 
@@ -256,15 +368,17 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     repo = args.repo or detect_git_repository_url(repo_root)
     branch = args.branch or detect_git_branch(repo_root)
+    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
     if not repo:
         print("Warning: repository not detected; pass --repo for agent clone.")
+    print(f"code_version_mode: {version_mode}")
 
     if args.apply:
-        _apply_templates(targets, repo=repo, branch=branch)
+        _apply_templates(targets, repo=repo, branch=branch, version_mode=version_mode)
         return 0
 
     if args.validate:
-        ok = _validate_templates(targets, repo=repo, branch=branch)
+        ok = _validate_templates(targets, repo=repo, branch=branch, version_mode=version_mode)
         return 0 if ok else 1
 
     return 0
