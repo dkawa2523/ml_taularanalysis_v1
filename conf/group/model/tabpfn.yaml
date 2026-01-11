@@ -6,4 +6,4 @@ model_variant:
     regression: tabular_analysis.registry.tabpfn.TabPFNRegressor
     classification: tabular_analysis.registry.tabpfn.TabPFNClassifier
   params:
-    auto_download: false
+    auto_download: true
