@@ -1,0 +1,32 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-07T06:37:40Z",
+  "inputs": {
+    "train_task_refs": [
+      "d902074c67e7473bbb0b31cf94eb9c75"
+    ],
+    "require_comparable": true,
+    "top_k": 10,
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "seed": 42,
+    "task_type": "regression",
+    "processed_dataset_id": "9d5ba8d651eb47f786676aba8e9a1b04",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  },
+  "outputs": {
+    "leaderboard_csv": "outputs/cli_logging_test_20260107_153725/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": "d902074c67e7473bbb0b31cf94eb9c75",
+    "recommended_model_id": "outputs/cli_logging_test_20260107_153725/03_train_model/model_bundle.joblib",
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "b86f7430b0e6274435c2e0c65d8f1cbf239921d6793c43755d7ed0bbba9b98a1",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

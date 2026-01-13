@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "code_version": "fbd83c1273b523225fee663e9e6ed869c4b3e33b",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-07T02:36:47Z",
+  "inputs": {
+    "run_dataset_register": true,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": false
+  },
+  "outputs": {
+    "grid_run_id": "6b8b0c6b3d2049889a52096f8942e272",
+    "pipeline_run_path": "outputs/20260107_113621/99_pipeline/pipeline_run.json"
+  },
+  "hashes": {
+    "config_hash": "9614a6140fde300b3f837595b2315ff7b2691920e95bfe9ff5125906c1e24b49",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

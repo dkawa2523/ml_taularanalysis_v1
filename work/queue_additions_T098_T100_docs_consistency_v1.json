@@ -1,0 +1,34 @@
+{
+  "append_tasks": [
+    {
+      "id": "T098",
+      "title": "docs: check_docs 全体の整合性監査（T097/アンサンブル/パイプラインUI）と矛盾修正",
+      "md": "work/tasks/T098_docs_consistency_reconcile.md",
+      "must_change_globs": [
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T099",
+      "title": "docs: 55_CLEARML_UI_CHECKLIST を T097仕様に合わせて実行確認しやすく刷新（pipeline構成チェック含む）",
+      "md": "work/tasks/T099_update_clearml_ui_checklist.md",
+      "must_change_globs": [
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T100",
+      "title": "tools+docs: rehearsal後にClearML UI構造を自動検証する Python runner 追加（jq不要）",
+      "md": "work/tasks/T100_add_python_runner_docs_ui_audit.md",
+      "must_change_globs": [
+        "tools/**",
+        "docs/**"
+      ]
+    }
+  ],
+  "notes": [
+    "このファイル自体は codex_loop から直接読み込まれません。work/queue.json に append_tasks を追記してください。",
+    "既存の T097 までが完了している前提で、T098 から順に実行する想定です。",
+    "must_change_globs は codex_loop の安全弁です。実装方針により変更対象が変わる場合は調整してください。"
+  ]
+}

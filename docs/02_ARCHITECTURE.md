@@ -3,28 +3,24 @@
 ## 原則
 - 各プロセスは **独立タスク**として実行可能
 - 追跡性は **manifest/out.json/properties** によって担保
-- 親子タスクは作らない（UI の迷い・再実行のしにくさを回避）
+- 親子タスクは比較目的で作らない（PipelineController の親子関係はオーケストレーション用途に限定）
 
 ## タスクの依存関係（概略）
 
 ```mermaid
 flowchart LR
-  A[dataset_register] --> B[preprocess]
+  A[dataset_register] -->|raw_dataset_id| P[pipeline]
+  P --> B[preprocess]
   B --> C1[train_model ...]
   B --> C2[train_model ...]
-  C1 --> D[leaderboard]
-  C2 --> D
-  D --> E[infer]
-
-  P[pipeline] --> A
-  P --> B
-  P --> C1
-  P --> C2
-  P --> D
-  P --> E
+  C1 --> E[train_ensemble ...]
+  C2 --> E
+  E --> D[leaderboard]
+  D --> F[infer]
 ```
 
-- `pipeline` は「接着剤」。重い処理を持たず、IDの受け渡しと実行制御を行う。
+- `pipeline` は「接着剤」。重い処理を持たず、`raw_dataset_id` を受けて実行制御を行う。
+- dataset_register は別タスクで実行し、pipeline からは呼ばない（リハーサル runner は順に実行する）。
 - `leaderboard` は比較と推奨の唯一の場所。
 
 ## Metadata Linking（追跡性）

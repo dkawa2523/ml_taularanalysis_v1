@@ -1,0 +1,15 @@
+ClearML Task: created new task id=f80d273a721f43f29ae86472c61c3b80
+ClearML results page: http://localhost:8080/projects/2533d080428a42cfb7fc8696f3ae0bc3/experiments/f80d273a721f43f29ae86472c61c3b80/output/log
+ClearML pipeline page: http://localhost:8080/pipelines/2533d080428a42cfb7fc8696f3ae0bc3/experiments/f80d273a721f43f29ae86472c61c3b80
+Launching the next 1 steps
+Launching step [dataset_register]
+Launching step: dataset_register
+Parameters:
+{'Args/run.grid_run_id': 'c3f49bf56e5b4204b6b7f960f77d6b84', 'Args/run.usecase_id': 'test_toy_cls_20260111_114444', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': 'outputs/clearml_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114444/grid/c3f49bf56e5b4204b6b7f960f77d6b84/dataset_register'}
+Configurations:
+{}
+Overrides:
+{}
+ClearML Monitor: GPU monitoring failed getting GPU reading, switching off GPU monitoring
+Launching the next 0 steps
+Setting pipeline controller Task as failed (due to failed steps) !

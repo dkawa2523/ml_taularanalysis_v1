@@ -1,0 +1,44 @@
+{
+  "recommended": {
+    "model_id": null,
+    "train_task_ref": null,
+    "train_task_id": null,
+    "best_score": null,
+    "primary_metric": "rmse",
+    "primary_metric_ci": null,
+    "composite_score": null,
+    "metrics": {},
+    "task_type": "regression"
+  },
+  "scoring": {
+    "metrics": [
+      "r2",
+      "rmse",
+      "mae",
+      "mse"
+    ],
+    "weights": {
+      "r2": 1.0,
+      "rmse": -1.0,
+      "mae": -0.5,
+      "mse": -0.2
+    },
+    "normalization": "minmax",
+    "ranking_score_key": "composite_score",
+    "ranking_direction": "maximize"
+  },
+  "comparability": {
+    "require_comparable": true,
+    "processed_dataset_id": null,
+    "split_hash": null,
+    "recipe_hash": null,
+    "primary_metric": "rmse",
+    "direction": null,
+    "task_type": "regression",
+    "seed": 42
+  },
+  "leaderboard_csv": "outputs/20260107_211908/05_leaderboard/leaderboard.csv",
+  "top_models": [],
+  "excluded_count": 0,
+  "warning_count": 0
+}

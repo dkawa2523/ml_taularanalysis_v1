@@ -6,20 +6,20 @@
 ## 重要：固定する範囲と固定しない範囲
 
 - 上位階層（組織やドメイン）は利用者が決める
-- それ以下は `TabularAnalysis/<usecase_id>/...` の形に寄せる（候補は複数）
+- それ以下は `<solution_root>/<usecase_id>/...` の形に寄せる（候補は複数）
 
 ---
 
-## 案A：工程をプロジェクトで分ける（現行ベース）
+## 案A：process group をプロジェクトで分ける（config-driven）
 
 ```
-<ROOT>/TabularAnalysis/<usecase_id>/01_dataset_register
-<ROOT>/TabularAnalysis/<usecase_id>/02_preprocess
-<ROOT>/TabularAnalysis/<usecase_id>/03_train_model
-<ROOT>/TabularAnalysis/<usecase_id>/05_leaderboard
-<ROOT>/TabularAnalysis/<usecase_id>/04_infer
-<ROOT>/TabularAnalysis/<usecase_id>/98_ops
-<ROOT>/TabularAnalysis/<usecase_id>/99_pipeline
+<ROOT>/<solution_root>/<usecase_id>/01_Datasets
+<ROOT>/<solution_root>/<usecase_id>/02_Preprocess
+<ROOT>/<solution_root>/<usecase_id>/03_TrainModels
+<ROOT>/<solution_root>/<usecase_id>/06_Leaderboards
+<ROOT>/<solution_root>/<usecase_id>/05_Infer
+<ROOT>/<solution_root>/<usecase_id>/00_Pipelines
+<ROOT>/<solution_root>/<usecase_id>/Misc
 ```
 
 メリット：
@@ -34,7 +34,7 @@
 ## 案B：工程をタグで分け、プロジェクトは用途だけ
 
 ```
-<ROOT>/TabularAnalysis/<usecase_id>
+<ROOT>/<solution_root>/<usecase_id>
 ```
 
 メリット：
@@ -48,8 +48,8 @@
 ## 案C：用途＋目的（train/ops）だけに絞る
 
 ```
-<ROOT>/TabularAnalysis/<usecase_id>/train
-<ROOT>/TabularAnalysis/<usecase_id>/ops
+<ROOT>/<solution_root>/<usecase_id>/train
+<ROOT>/<solution_root>/<usecase_id>/ops
 ```
 
 メリット：

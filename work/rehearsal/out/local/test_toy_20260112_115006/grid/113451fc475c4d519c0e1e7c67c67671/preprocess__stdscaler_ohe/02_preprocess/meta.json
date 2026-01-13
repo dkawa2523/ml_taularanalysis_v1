@@ -1,0 +1,18 @@
+{
+  "processed_dataset_hash": "17ffec56dcf6c9291a80a2ea4716e01ef4f0cd45976727b8eba6b0f4206c8123",
+  "raw_dataset_hash": "bcbef2dd65ddeef15c7461588644b7574a85f265ef0d5a8f07940b116941ee87",
+  "raw_dataset_id": "local:bcbef2dd65ddeef15c7461588644b7574a85f265ef0d5a8f07940b116941ee87",
+  "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+  "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+  "schema_hash": "9fddf6a68c1ffbaa06ee142c718c1827a879824fe3eada3c0cb63029cf18f56c",
+  "bundle_hash": "f545f96169f461c2d5ee7a984eeba5636cd6c73a4e01d2ba8de1592e733bab2b",
+  "preprocess_variant": "stdscaler_ohe",
+  "task_type": "regression",
+  "target_column": "target",
+  "n_rows": 200,
+  "n_features": 5,
+  "store_features": true,
+  "created_at": "2026-01-12T11:50:09Z",
+  "schema_version": "v1",
+  "usecase_id": "test_toy_20260112_115006"
+}

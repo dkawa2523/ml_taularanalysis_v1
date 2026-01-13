@@ -1,0 +1,29 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+  "train_task_id": "3504b2ae118f4d9d9f69c287c757f0e2",
+  "best_score": 0.3133085191754989,
+  "primary_metric": "rmse",
+  "processed_dataset_id": "900d42a190e74275b9fbad1fe46004a0",
+  "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+  "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+  "task_type": "regression",
+  "preds_valid_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/train__stdscaler_ohe__ridge/03_train_model/artifacts/preds_valid.parquet",
+  "preds_schema": {
+    "task_type": "regression",
+    "columns": [
+      "y_true",
+      "y_pred"
+    ]
+  },
+  "imbalance": {
+    "enabled": false,
+    "strategy": "class_weight",
+    "applied": false
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

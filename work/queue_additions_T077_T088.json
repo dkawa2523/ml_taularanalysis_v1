@@ -1,0 +1,145 @@
+{
+  "tasks": [
+    {
+      "id": "T077",
+      "title": "ClearML Agent/Pipeline の commit pin(version_num) を根治（branch pin 既定）",
+      "md": "work/tasks/T077_clearml_code_ref_policy.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T078",
+      "title": "pipeline driver 分離: Local逐次 / Agentテンプレclone を統一",
+      "md": "work/tasks/T078_pipeline_driver_local_vs_agent.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T079",
+      "title": "テンプレTaskを template_set で運用安定化（増殖抑止・置換・obsolete化）",
+      "md": "work/tasks/T079_template_set_management.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T080",
+      "title": "ClearML Project 階層を自動階層化（configで容易に変更可能）",
+      "md": "work/tasks/T080_clearml_project_layout.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T081",
+      "title": "ClearML Hyperparameters をカテゴリ分割（inputs/dataset/preprocess/model/eval/pipeline/clearml）",
+      "md": "work/tasks/T081_clearml_hyperparameters_sections.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**"
+      ]
+    },
+    {
+      "id": "T082",
+      "title": "ClearML Scalars/Plots/Artifacts を整理し、yamlでON/OFF可能にする",
+      "md": "work/tasks/T082_clearml_reporting_scalars_plots.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T083",
+      "title": "アンサンブル: mean_topk を train_ensemble として追加し leaderboard で比較可能に",
+      "md": "work/tasks/T083_ensemble_mean_topk.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T084",
+      "title": "アンサンブル: weighted を追加（依存増やさず）",
+      "md": "work/tasks/T084_ensemble_weighted.md",
+      "priority": "P2",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T085",
+      "title": "アンサンブル: stacking を追加（cv_score を優先しリーク抑制）",
+      "md": "work/tasks/T085_ensemble_stacking.md",
+      "priority": "P2",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T086",
+      "title": "leaderboard を拡張: 単体 + アンサンブルを同列比較・推薦",
+      "md": "work/tasks/T086_leaderboard_include_ensembles.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T087",
+      "title": "リハーサル用 Python runner 追加（jq不要・Local/Agent再検証を1コマンド化）",
+      "md": "work/tasks/T087_python_rehearsal_runner.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "tools/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T088",
+      "title": "docs 整備（実行モード/テンプレ/命名則/アンサンブル/リハーサル）",
+      "md": "work/tasks/T088_docs_update.md",
+      "priority": "P2",
+      "status": "todo",
+      "must_change_globs": [
+        "docs/**"
+      ]
+    }
+  ]
+}

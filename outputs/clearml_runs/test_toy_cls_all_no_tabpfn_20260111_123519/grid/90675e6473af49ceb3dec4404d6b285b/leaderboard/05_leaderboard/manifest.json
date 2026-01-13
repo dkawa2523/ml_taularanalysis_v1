@@ -1,0 +1,62 @@
+{
+  "schema_version": "v1",
+  "code_version": "3381002c1c6d7108f7d0a640779ec8213610d916",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-11T03:51:23Z",
+  "inputs": {
+    "train_task_refs": [
+      "80779c9030394e97833644b2c32e74ae",
+      "45d5db04cb8541759e0cdc40b25b3468",
+      "18df80a2fa924e22a6c0f4dc24086536",
+      "947188cd11754578a5bcfaa134dca9dd",
+      "ecbdf97c1d044cada28614b6bbcad01d",
+      "88bd1ec94870492eb2a91912996ca59f",
+      "7c0d053e0a1844818bc2ffd9fdbdbefe",
+      "eaa8e37ff51544d5992f20aa01eb6277",
+      "f1cf9069f6084e5087dd43845515e12e",
+      "78f8406754214ecd99038a78a56c7eb2",
+      "8fd14440da224a3fb5a592e0612c6959",
+      "e9a431f423f94e9290dd8d76a9a79d9c",
+      "456813bea678440094a20b0aed271949"
+    ],
+    "require_comparable": true,
+    "top_k": 10,
+    "scoring": {
+      "metrics": [
+        "r2",
+        "rmse",
+        "mae",
+        "mse"
+      ],
+      "weights": {
+        "r2": 1.0,
+        "rmse": -1.0,
+        "mae": -0.5,
+        "mse": -0.2
+      },
+      "normalization": "minmax",
+      "ranking_score_key": "best_score",
+      "ranking_direction": "minimize"
+    },
+    "primary_metric": "accuracy",
+    "direction": "minimize",
+    "seed": 42,
+    "task_type": "classification",
+    "processed_dataset_id": "00546bfb148a4b44bfd7cd2ce45a3e38",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  },
+  "outputs": {
+    "leaderboard_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/leaderboard/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": "80779c9030394e97833644b2c32e74ae",
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__catboost/03_train_model/model_bundle.joblib",
+    "recommended_composite_score": null,
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "2bda9073129c06fa50006d9270f6b21d0f06a39efd124ae990b8a0cef13a0b81",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

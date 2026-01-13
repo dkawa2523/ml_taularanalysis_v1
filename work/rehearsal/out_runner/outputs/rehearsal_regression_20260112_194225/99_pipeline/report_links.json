@@ -1,0 +1,35 @@
+{
+  "grid_run_id": "b47dfc8c0f4c44358d79d00780c5d241",
+  "pipeline": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/99_pipeline",
+    "task_id": "b576a5975ffc41f2a74aab1da49c0aa8",
+    "clearml_url": "http://localhost:8080/projects/8fbf7ddc0f72422f962c326803595e3a/experiments/b576a5975ffc41f2a74aab1da49c0aa8/output/log"
+  },
+  "dataset_register": null,
+  "preprocess": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe"
+    }
+  ],
+  "train": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/train__stdscaler_ohe__ridge/03_train_model",
+      "task_id": "3504b2ae118f4d9d9f69c287c757f0e2",
+      "clearml_url": "http://localhost:8080/projects/d35c1fa5c4694ae684718e27d9607a58/experiments/3504b2ae118f4d9d9f69c287c757f0e2/output/log",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge"
+    },
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/train__stdscaler_ohe__elasticnet/03_train_model",
+      "task_id": "5723b87642784d19808076709462f867",
+      "clearml_url": "http://localhost:8080/projects/d35c1fa5c4694ae684718e27d9607a58/experiments/5723b87642784d19808076709462f867/output/log",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "elasticnet"
+    }
+  ],
+  "leaderboard": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194225/grid/b47dfc8c0f4c44358d79d00780c5d241/leaderboard/05_leaderboard"
+  },
+  "infer": null
+}

@@ -6,7 +6,7 @@ so another agent can quickly understand intent, edits, and current status.
 ## Scope and Goals
 - Stabilize ClearML template resolution and remote execution.
 - Ensure all remote tasks point to the solution repo and use the unified entry point.
-- Make version pinning optional (default: branch head).
+- Make version pinning optional (default: branch mode).
 - Add diagnostics and operator-friendly guidance.
 
 ## Branch and Commits
@@ -86,19 +86,23 @@ python -m tabular_analysis.ops.manage_clearml_templates --validate --branch upda
 python -m tabular_analysis.ops.clearml_diagnose --queue default
 
 # Regression full-model pipeline (controller)
+python -m tabular_analysis.cli task=dataset_register \
+  run.clearml.enabled=true run.clearml.execution=logging \
+  run.usecase_id=test_toy_reg_all_<timestamp> \
+  data.dataset_path=/tmp/ta_rehearsal_data/toy_reg.csv \
+  data.target_column=target
+
 python -m tabular_analysis.cli task=pipeline \
   run.clearml.enabled=true \
   run.clearml.execution=pipeline_controller \
   run.clearml.queue_name=default \
   run.usecase_id=test_toy_reg_all_<timestamp> \
-  data.dataset_path=/tmp/ta_rehearsal_data/toy_reg.csv \
-  data.target_column=target \
-  pipeline.run_dataset_register=true \
+  data.raw_dataset_id=<RAW_DATASET_ID> \
   +pipeline.model_set=regression_all
 ```
 
 ## Next Checks for a New Agent
 - Confirm the regression pipeline controller task finishes and child tasks are created under
-  `MFG/TabularAnalysis/<usecase_id>/<stage>` projects.
+  `MFG/<solution_root>/<usecase_id>/<process_group>` projects.
 - If any task fails, inspect `clearml` console output for dependency or diff-apply errors.
 - If TabPFN is required, confirm HF token is available in the agent environment.

@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "degraded": true,
+  "policy": {
+    "fail_policy": {
+      "allow_skipped": true,
+      "allowed_failures": 0,
+      "fail_fast": false,
+      "min_successful_train_tasks": 1
+    },
+    "result": {
+      "successful_train_tasks": 0,
+      "failed_train_tasks": 1,
+      "skipped_train_tasks": 0,
+      "effective_failures": 1,
+      "meets_min_successful_train_tasks": false,
+      "within_allowed_failures": false
+    }
+  },
+  "context": {
+    "usecase_id": "test_toy_20260112_122914",
+    "project_root": "MFG",
+    "code_identity": {
+      "repository": "https://github.com/dkawa2523/ml_taularanalysis_v1",
+      "branch": "update6-clearml",
+      "commit": "50fd396e885908e85eb8469691bbe83c25c9110a"
+    },
+    "grid_run_id": "105504592d714abf801e4c4784817ed6",
+    "pipeline_task": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/99_pipeline",
+      "task_id": "967d058ec8c04010ab320be7d5ba1e10",
+      "clearml_url": "http://localhost:8080/projects/43e79ab31ed4427ba965017059082dcf/experiments/967d058ec8c04010ab320be7d5ba1e10/output/log"
+    }
+  },
+  "execution": {
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "limit_exceeded": false
+  },
+  "plan_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/99_pipeline",
+    "artifact": "plan.json"
+  },
+  "preprocess_variants": [
+    {
+      "preprocess_variant": "stdscaler_ohe",
+      "status": "failed",
+      "processed_dataset_id": null,
+      "split_hash": null,
+      "recipe_hash": null,
+      "task_id": null,
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess",
+      "reason": null,
+      "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=preprocess run.grid_run_id=105504592d714abf801e4c4784817ed6 run.usecase_id=test_toy_20260112_122914 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=967d058ec8c04010ab320be7d5ba1e10 data.raw_dataset_id=0faa456a53f541ad93a73895e5fdd202 data.target_column=target data.split.strategy=random data.split.test_size=0.2 data.split.seed=42 group/preprocess=stdscaler_ohe run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe run.clearml.project_name=MFG/TabularAnalysis/test_toy_20260112_122914/02_Preprocess\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1085, in _ensure_clearml_parent\n    setter(str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/clearml/backend_interface/task/task.py\", line 1996, in set_parent\n    assert parent != self.id\nAssertionError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1210, in init_task_context\n    _ensure_clearml_parent(task, _normalize_str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1087, in _ensure_clearml_parent\n    raise PlatformAdapterError(f\"Failed to set ClearML parent task: {exc}\") from exc\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to set ClearML parent task: \n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/preprocess.py\", line 365, in run\n    ctx = init_task_context(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1218, in init_task_context\n    raise PlatformAdapterError(f\"Failed to init ClearML task via ml-platform: {e}\") from e\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to init ClearML task via ml-platform: Failed to set ClearML parent task: \n"
+    }
+  ],
+  "train_tasks": [
+    {
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "status": "failed",
+      "train_task_id": null,
+      "task_id": null,
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge/03_train_model",
+      "model_id": null,
+      "primary_metric": null,
+      "best_score": null,
+      "metrics_ref": null,
+      "reason": null,
+      "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=train_model run.grid_run_id=105504592d714abf801e4c4784817ed6 run.usecase_id=test_toy_20260112_122914 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=967d058ec8c04010ab320be7d5ba1e10 data.raw_dataset_id=0faa456a53f541ad93a73895e5fdd202 data.target_column=target data.split.strategy=random data.split.test_size=0.2 data.split.seed=42 eval.primary_metric=rmse eval.direction=auto eval.cv_folds=5 eval.seed=42 eval.task_type=regression eval.classification.mode=auto eval.classification.top_k=1 eval.metrics.classification_multiclass=['accuracy','f1_macro','logloss'] eval.calibration.enabled=false eval.uncertainty.enabled=false eval.ci.enabled=false group/model=ridge train.inputs.preprocess_run_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge run.clearml.project_layout.group_map.train_model=03_TrainModels/stdscaler_ohe run.clearml.extra_tags=['grid_cell:stdscaler_ohe__ridge'] run.clearml.project_name=MFG/TabularAnalysis/test_toy_20260112_122914/03_TrainModels/stdscaler_ohe\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1085, in _ensure_clearml_parent\n    setter(str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/clearml/backend_interface/task/task.py\", line 1996, in set_parent\n    assert parent != self.id\nAssertionError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1210, in init_task_context\n    _ensure_clearml_parent(task, _normalize_str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1087, in _ensure_clearml_parent\n    raise PlatformAdapterError(f\"Failed to set ClearML parent task: {exc}\") from exc\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to set ClearML parent task: \n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/train_model.py\", line 1639, in run\n    ctx = init_task_context(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1218, in init_task_context\n    raise PlatformAdapterError(f\"Failed to init ClearML task via ml-platform: {e}\") from e\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to init ClearML task via ml-platform: Failed to set ClearML parent task: \n",
+      "hpo_run_id": null,
+      "hpo_params": null
+    }
+  ],
+  "ensemble_tasks": [],
+  "leaderboard": {
+    "status": "skipped",
+    "task_id": null,
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard/05_leaderboard",
+    "leaderboard_ref": null,
+    "recommendation_ref": null,
+    "recommended_model_id": null,
+    "recommended_primary_metric": null,
+    "recommended_best_score": null,
+    "reason": "no_successful_train",
+    "error": null
+  },
+  "infer": null,
+  "recommendation": {
+    "best_model_id": null,
+    "train_task_ref": null,
+    "primary_metric": null,
+    "best_score": null,
+    "reason": null
+  },
+  "links": {
+    "grid_run_id": "105504592d714abf801e4c4784817ed6",
+    "pipeline": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/99_pipeline",
+      "task_id": "967d058ec8c04010ab320be7d5ba1e10",
+      "clearml_url": "http://localhost:8080/projects/43e79ab31ed4427ba965017059082dcf/experiments/967d058ec8c04010ab320be7d5ba1e10/output/log"
+    },
+    "dataset_register": null,
+    "preprocess": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe"
+      }
+    ],
+    "train": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge/03_train_model",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge"
+      }
+    ],
+    "leaderboard": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard/05_leaderboard"
+    },
+    "infer": null
+  }
+}

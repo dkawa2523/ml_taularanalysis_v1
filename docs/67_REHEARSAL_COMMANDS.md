@@ -1,10 +1,33 @@
 # 試験（ローカル→社内）リハーサルコマンド v2
 
-## 0) 前提
-- `run.clearml.enabled=true` の場合は ClearML 設定済みであること
-- pipeline はデフォルトで `pipeline.run_dataset_register=false`（`data.raw_dataset_id` が必須）
+## 0) Python runner（推奨・自動検証つき）
+```bash
+python tools/rehearsal/run_pipeline_v2.py --execution local \
+  --task-type regression --preprocess stdscaler_ohe --models ridge,elasticnet
 
-## 1) dataset_register（raw_dataset_id を取得）
+python tools/rehearsal/run_pipeline_v2.py --execution logging \
+  --task-type regression --preprocess stdscaler_ohe --models ridge,elasticnet \
+  --project-root LOCAL
+
+python tools/rehearsal/run_pipeline_v2.py --execution agent --queue-name default \
+  --task-type regression --preprocess stdscaler_ohe --models ridge,elasticnet \
+  --project-root LOCAL
+```
+- dataset_register + pipeline を 1コマンドで実行し、ClearML の基本検証まで行う
+- 最後に `usecase_id` / `pipeline_task_id` / `dataset_id` / 検索タグを表示する
+
+## 0.5) ClearML UI 構造の自動検証（T100）
+```bash
+python tools/tests/rehearsal_verify_clearml_ui.py --usecase-id <USECASE_ID>
+```
+- pipeline / preprocess / train / ensemble / leaderboard の存在と構造を自動チェック
+- version_num pin と HyperParameters セクション分割も警告として表示
+
+## 1) 前提
+- `run.clearml.enabled=true` の場合は ClearML 設定済みであること
+- pipeline は `data.raw_dataset_id` 必須で dataset_register は含まない
+
+## 2) dataset_register（raw_dataset_id を取得）
 ### ClearML logging
 ```bash
 python -m tabular_analysis.cli task=dataset_register \
@@ -21,7 +44,7 @@ python -m tabular_analysis.cli task=dataset_register \
 ```
 - 出力: `raw_dataset_id=local:<hash>`（以降の pipeline で `data.dataset_path` と併用）
 
-## 2) pipeline（dataset_register 後に実行）
+## 3) pipeline（dataset_register 後に実行）
 ### ClearML logging（ローカル実行 + 記録）
 ```bash
 python -m tabular_analysis.cli task=pipeline \
@@ -42,6 +65,7 @@ python -m tabular_analysis.cli task=pipeline \
 ```
 ※ grid override を入れる場合は Hydra list 形式（スペース/クォートなし）で指定する。\
 例: `pipeline.grid.model_variants=[ridge,lasso] pipeline.grid.preprocess_variants=[stdscaler_ohe]`
+※ pipeline_controller は template clone 前提。commit pin を避けるため `run.clearml.code_ref.mode=branch` を推奨（`docs/69_CLEARML_TROUBLESHOOTING.md`）。
 
 ### ローカル（ClearML 無効）
 ```bash
@@ -51,7 +75,7 @@ python -m tabular_analysis.cli task=pipeline \
   pipeline.preprocess_variant=stdscaler_ohe pipeline.model_set=regression_all
 ```
 
-## 3) ローカル一括（agent 不要、ClearML task を分割生成）
+## 4) ローカル一括（agent 不要、ClearML task を分割生成）
 ```bash
 python -m tabular_analysis.ops.local_orchestrator train_regression \
   --dataset-path /tmp/ta_rehearsal_data/toy_reg.csv --target-column target \
@@ -63,7 +87,7 @@ python -m tabular_analysis.ops.local_orchestrator train_regression \
   --preprocess stdscaler_ohe --model-set regression_all --clearml --project-root LOCAL
 ```
 
-## 4) infer single/batch/optimize
+## 5) infer single/batch/optimize
 ```bash
 python -m tabular_analysis.cli task=infer infer.mode=single \
   infer.model_id=<MODEL_ID> infer.input_path=/tmp/infer.csv

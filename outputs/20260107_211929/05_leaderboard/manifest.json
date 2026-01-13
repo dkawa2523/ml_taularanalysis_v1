@@ -1,0 +1,48 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "leaderboard",
+  "created_at": "2026-01-07T12:19:29Z",
+  "inputs": {
+    "train_task_refs": [],
+    "require_comparable": true,
+    "top_k": 10,
+    "scoring": {
+      "metrics": [
+        "r2",
+        "rmse",
+        "mae",
+        "mse"
+      ],
+      "weights": {
+        "r2": 1.0,
+        "rmse": -1.0,
+        "mae": -0.5,
+        "mse": -0.2
+      },
+      "normalization": "minmax",
+      "ranking_score_key": "composite_score",
+      "ranking_direction": "maximize"
+    },
+    "primary_metric": "rmse",
+    "direction": null,
+    "seed": 42,
+    "task_type": "regression",
+    "processed_dataset_id": null,
+    "split_hash": null,
+    "recipe_hash": null
+  },
+  "outputs": {
+    "leaderboard_csv": "outputs/20260107_211929/05_leaderboard/leaderboard.csv",
+    "recommended_train_task_id": null,
+    "recommended_model_id": null,
+    "recommended_composite_score": null,
+    "excluded_count": 0
+  },
+  "hashes": {
+    "config_hash": "002f02a3837ca46c835953cbb9e0333dccc9dec96f51c6b4dc3bb061c7682820",
+    "split_hash": "unknown",
+    "recipe_hash": "unknown"
+  }
+}

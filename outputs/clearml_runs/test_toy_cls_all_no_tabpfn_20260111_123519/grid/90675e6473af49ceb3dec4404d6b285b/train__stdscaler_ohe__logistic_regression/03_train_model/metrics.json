@@ -1,0 +1,33 @@
+{
+  "primary_metric": "accuracy",
+  "direction": "max",
+  "task_type": "classification",
+  "holdout": {
+    "accuracy": 0.925,
+    "f1": 0.9230769230769231,
+    "log_loss": 0.2931564366631714,
+    "roc_auc": 0.9523809523809523,
+    "train_rows": 160,
+    "val_rows": 40
+  },
+  "n_classes": 2,
+  "cv": {
+    "folds": 5,
+    "seed": 42,
+    "scores": [
+      0.84375,
+      0.8125,
+      0.75,
+      0.71875,
+      0.75
+    ],
+    "mean": 0.775,
+    "std": 0.04592793267718459
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "leaderboard_csv": "outputs/cli_logging_test_20260107_153725/05_leaderboard/leaderboard.csv",
+  "recommended_train_task_id": "d902074c67e7473bbb0b31cf94eb9c75",
+  "recommended_train_task_ref": "d902074c67e7473bbb0b31cf94eb9c75",
+  "recommended_model_id": "outputs/cli_logging_test_20260107_153725/03_train_model/model_bundle.joblib",
+  "recommended_best_score": 0.27386127875258304,
+  "recommended_primary_metric": "rmse",
+  "excluded_count": 0
+}

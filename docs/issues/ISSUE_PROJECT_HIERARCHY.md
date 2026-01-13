@@ -23,6 +23,11 @@ ClearMLのproject階層は、UIの一覧性と検索性に直結する。
 - 特定の階層に固定しない
 - 試験では案ごとの見え方を記録する
 
+## Update（T080）
+
+- config駆動で `<project_root>/<solution_root>/<usecase_id>/<process_group>` に整理（default）
+- 設定: `conf/clearml/project_layout.yaml`（group_map/misc_group で変更可能）
+
 ## 恒久対応案（候補）
 - 案A: `<project_root>/<usecase_id>/<process>`
 - 案B: `<project_root>/<usecase_id>/<run_group>/<process>`

@@ -1,0 +1,10 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260113_000124/grid/e033083f16734ffab04439a6393f5809/ensemble__stdscaler_ohe/04_train_ensemble/model_bundle.joblib",
+  "train_task_id": "baf41cd090bf412590ecd1d33ffadbf7",
+  "best_score": 0.27386127875258304,
+  "primary_metric": "rmse",
+  "processed_dataset_id": "9d5ba8d651eb47f786676aba8e9a1b04",
+  "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+  "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779",
+  "task_type": "regression"
+}

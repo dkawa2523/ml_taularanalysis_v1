@@ -1,0 +1,45 @@
+{
+  "primary_metric": "f1",
+  "direction": "max",
+  "task_type": "classification",
+  "holdout": {
+    "accuracy": 0.925,
+    "f1": 0.9230769230769231,
+    "log_loss": 0.2794030605228812,
+    "roc_auc": 0.9523809523809523,
+    "train_rows": 160,
+    "val_rows": 40
+  },
+  "n_classes": 2,
+  "cv": {
+    "folds": 5,
+    "seed": 42,
+    "scores": [
+      0.8717948717948718,
+      0.8421052631578947,
+      0.8,
+      0.7692307692307693,
+      0.6923076923076923
+    ],
+    "mean": 0.7950877192982457,
+    "std": 0.062211064918386266
+  },
+  "thresholding": {
+    "enabled": true,
+    "metric": "f1",
+    "best_threshold": 0.4,
+    "best_score": 0.9230769230769231,
+    "direction": "maximize"
+  },
+  "calibration": {
+    "enabled": true,
+    "method": "sigmoid",
+    "mode": "prefit"
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

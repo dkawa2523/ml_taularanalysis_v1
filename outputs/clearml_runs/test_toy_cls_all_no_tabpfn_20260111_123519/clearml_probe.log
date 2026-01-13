@@ -1,0 +1,146 @@
+ClearML Task: created new task id=5c0c9b602b7a4b499a4538bf3e393023
+ClearML results page: http://localhost:8080/projects/ccd31880bae3499ba47537330e1f1f88/experiments/5c0c9b602b7a4b499a4538bf3e393023/output/log
+ClearML pipeline page: http://localhost:8080/pipelines/ccd31880bae3499ba47537330e1f1f88/experiments/5c0c9b602b7a4b499a4538bf3e393023
+Launching the next 1 steps
+Launching step [dataset_register]
+Launching step: dataset_register
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/dataset_register'}
+Configurations:
+{}
+Overrides:
+{}
+ClearML Monitor: GPU monitoring failed getting GPU reading, switching off GPU monitoring
+Launching the next 1 steps
+Launching step [preprocess__stdscaler_ohe]
+Launching step: preprocess__stdscaler_ohe
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/group/preprocess': 'stdscaler_ohe', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe'}
+Configurations:
+{}
+Overrides:
+{}
+Launching the next 13 steps
+Launching step [train__stdscaler_ohe__catboost]
+Launching step [train__stdscaler_ohe__extra_trees]
+Launching step [train__stdscaler_ohe__gaussian_process]
+Launching step [train__stdscaler_ohe__gradient_boosting]
+Launching step [train__stdscaler_ohe__knn]
+Launching step [train__stdscaler_ohe__lgbm]
+Launching step [train__stdscaler_ohe__logistic_regression]
+Launching step [train__stdscaler_ohe__mlp]
+Launching step [train__stdscaler_ohe__random_forest]
+Launching step [train__stdscaler_ohe__ridge]
+Launching step [train__stdscaler_ohe__svc]
+Launching step [train__stdscaler_ohe__svr]
+Launching step [train__stdscaler_ohe__xgboost]
+Launching step: train__stdscaler_ohe__catboost
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'catboost', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__catboost', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__catboost']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__extra_trees
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'extra_trees', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__extra_trees', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__extra_trees']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__gaussian_process
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'gaussian_process', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__gaussian_process', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__gaussian_process']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__gradient_boosting
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'gradient_boosting', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__gradient_boosting', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__gradient_boosting']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__knn
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'knn', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__knn', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__knn']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__lgbm
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'lgbm', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__lgbm', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__lgbm']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__logistic_regression
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'logistic_regression', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__logistic_regression', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__logistic_regression']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__mlp
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'mlp', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__mlp', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__mlp']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__random_forest
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'random_forest', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__random_forest', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__random_forest']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__ridge
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'ridge', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__ridge', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__ridge']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__svc
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'svc', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__svc', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__svc']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__svr
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'svr', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__svr', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__svr']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching step: train__stdscaler_ohe__xgboost
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/data.dataset_path': '/tmp/ta_rehearsal_data/toy_cls.csv', 'Args/data.target_column': 'target', 'Args/data.split.strategy': 'random', 'Args/data.split.test_size': '0.2', 'Args/data.split.seed': '42', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/group/model': 'xgboost', 'Args/train.inputs.preprocess_run_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/preprocess__stdscaler_ohe/02_preprocess', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__xgboost', 'Args/run.clearml.extra_tags': "['grid_cell:stdscaler_ohe__xgboost']"}
+Configurations:
+{}
+Overrides:
+{}
+ClearML Monitor: Could not detect iteration reporting, falling back to iterations as seconds-from-start
+ClearML Monitor: Reporting detected, reverting back to iteration based reporting
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 0 steps
+Launching the next 1 steps
+Launching step [leaderboard]
+Launching step: leaderboard
+Parameters:
+{'Args/run.grid_run_id': '90675e6473af49ceb3dec4404d6b285b', 'Args/run.usecase_id': 'test_toy_cls_all_no_tabpfn_20260111_123519', 'Args/run.schema_version': 'v1', 'Args/ops/usecase_id_policy': 'test_dataset_timestamp', 'Args/run.clearml.enabled': 'true', 'Args/run.clearml.execution': 'logging', 'Args/run.clearml.project_root': 'MFG', 'Args/run.clearml.queue_name': 'default', 'Args/ops/clearml_policy': 'test_minimal', 'Args/eval.primary_metric': 'accuracy', 'Args/eval.direction': 'max', 'Args/eval.cv_folds': '5', 'Args/eval.seed': '42', 'Args/eval.task_type': 'classification', 'Args/eval.classification.mode': 'auto', 'Args/eval.classification.top_k': '1', 'Args/eval.metrics.classification_multiclass': "['accuracy','f1_macro','logloss']", 'Args/eval.calibration.enabled': 'false', 'Args/eval.uncertainty.enabled': 'false', 'Args/eval.ci.enabled': 'false', 'Args/run.output_dir': '/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/leaderboard', 'Args/leaderboard.top_k': '10', 'Args/leaderboard.train_task_ids': "['${train__stdscaler_ohe__catboost.id}','${train__stdscaler_ohe__extra_trees.id}','${train__stdscaler_ohe__gaussian_process.id}','${train__stdscaler_ohe__gradient_boosting.id}','${train__stdscaler_ohe__knn.id}','${train__stdscaler_ohe__lgbm.id}','${train__stdscaler_ohe__logistic_regression.id}','${train__stdscaler_ohe__mlp.id}','${train__stdscaler_ohe__random_forest.id}','${train__stdscaler_ohe__ridge.id}','${train__stdscaler_ohe__svc.id}','${train__stdscaler_ohe__svr.id}','${train__stdscaler_ohe__xgboost.id}']"}
+Configurations:
+{}
+Overrides:
+{}
+Launching the next 0 steps

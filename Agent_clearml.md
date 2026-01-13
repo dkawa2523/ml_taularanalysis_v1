@@ -50,14 +50,16 @@ All items below are designed to prevent these regressions.
 
 ## Repository / Config Standards
 1) Code repository and branch
-   - `run.clearml.code_repository: auto` (uses repo origin URL)
-   - `run.clearml.code_branch: auto` (uses current branch)
+   - `run.clearml.code_ref.repository: auto` (uses repo origin URL)
+   - `run.clearml.code_ref.branch: auto` (uses current branch)
+   - Legacy: `run.clearml.code_repository` / `run.clearml.code_branch`
 2) Entry point (mandatory)
    - Remote tasks must use `tools/clearml_entrypoint.py`.
    - Do not use `-m tabular_analysis.cli` in ClearML task scripts.
 3) Version policy
-   - Default: `run.clearml.code_version_mode = branch_head`
-   - Production option: `pin_commit` (only if commit is reachable on remote).
+   - Default: `run.clearml.code_ref.mode = branch`
+   - Production option: `run.clearml.code_ref.mode = commit` (only if commit is reachable on remote).
+   - Legacy: `run.clearml.code_version_mode = branch_head` / `pin_commit`
 
 ## Template Tasks (Deterministic Resolution)
 1) Required tags
@@ -99,7 +101,7 @@ Use `python -m tabular_analysis.ops.clearml_diagnose` to:
    - Fix: refresh templates; remove old tasks from queue.
 2) `fatal: unable to read tree <commit>`
    - Cause: invalid `version_num`.
-   - Fix: set `code_version_mode=branch_head` or use a valid commit.
+   - Fix: set `run.clearml.code_ref.mode=branch` (legacy: `code_version_mode=branch_head`) or use a valid commit.
 3) `ConfigAttributeError: Key 'clearml_policy'`
    - Cause: override used `ops.clearml_policy` instead of `ops/clearml_policy`.
    - Fix: use config group syntax (`ops/clearml_policy=...`).

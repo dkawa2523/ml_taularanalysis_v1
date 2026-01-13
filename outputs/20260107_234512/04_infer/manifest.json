@@ -1,0 +1,23 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "infer",
+  "created_at": "2026-01-07T14:45:12Z",
+  "inputs": {
+    "model_id": null,
+    "train_task_id": null,
+    "mode": "optimize",
+    "input_path": null,
+    "dry_run": true
+  },
+  "outputs": {
+    "optimize_trials_path": "outputs/20260107_234512/04_infer/optimize_trials.csv",
+    "optimize_summary_path": "outputs/20260107_234512/04_infer/optimize_summary.json"
+  },
+  "hashes": {
+    "config_hash": "6ebfb1449e5b79cb860a933311ff2ede04e921e6cd4bc54cd401770c0c636f5f",
+    "split_hash": "dry_run",
+    "recipe_hash": "dry_run"
+  }
+}

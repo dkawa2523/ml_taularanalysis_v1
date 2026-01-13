@@ -13,6 +13,14 @@ queue/上限/重い機能の有効化を統一します。
 - `exec_policy.queues`：process/モデル種別ごとの queue
 - `exec_policy.selection`：重い機能のデフォルト OFF（calibration/uncertainty/ci）
 
+## 事故防止のレバー（一覧）
+| レバー | 設定キー | 効くタイミング | 確認ポイント |
+| --- | --- | --- | --- |
+| plan / dry-run | `pipeline.plan_only` / `pipeline.dry_run` | 実行前 | `plan.json` / `pipeline_run.json` |
+| exec_policy limits | `exec_policy.limits.*` | plan 作成時 | `planned_jobs` / `skipped_due_to_policy` |
+| pipeline safety limits | `pipeline.limits.*` | plan 作成後 | 上限超過で実行停止 |
+| parallelism | `pipeline.parallelism.*` | controller 実行時 | 同時実行数の制御 |
+
 ## pipeline の enforcing
 pipeline は組合せ生成時に `limits.max_jobs` を適用し、超過分は実行しません。
 `pipeline_run.json` には以下を明記します。
@@ -35,6 +43,36 @@ pipeline.plan_only=true
 - `pipeline.dry_run=true`
 
 plan モードでも `pipeline_run.json` を出力します（`executed_jobs=0`）。
+
+## Pipeline safety limits（事故防止）
+`pipeline.limits.*` は **plan 作成後の安全弁**です。上限を超える場合は実行を止めます
+（dry-run は表示のみ）。
+
+- `pipeline.limits.max_preprocess_variants`
+- `pipeline.limits.max_train_tasks`
+- `pipeline.limits.max_ensemble_tasks`
+
+いずれも 0 は無制限です。試験段階では **小さめ**を推奨します。
+
+推奨（試験段階の例）:
+```
+pipeline.limits.max_preprocess_variants=2
+pipeline.limits.max_train_tasks=10
+pipeline.limits.max_ensemble_tasks=2
+```
+
+limits 超過時の対処例:
+- `pipeline.groups.<group>.custom.include/exclude` の見直し
+- `pipeline.groups.<group>.mode=none` または `pipeline.run_*` を一時的に false
+- `pipeline.limits.max_*` を試験時のみ一時的に引き上げる
+
+## Pipeline parallelism
+`pipeline.parallelism.*` は PipelineController 実行時の並列数を制御します。
+
+- `pipeline.parallelism.max_concurrent_steps`（全ステップ上限）
+- `pipeline.parallelism.max_concurrent_train`（train 上限）
+
+0 は無制限です。local/logging の逐次実行には影響しません。
 
 ## 重い機能の selection
 `exec_policy.selection.<feature>=false` のとき pipeline は **強制的に OFF** にします。

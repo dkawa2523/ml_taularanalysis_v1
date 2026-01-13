@@ -1,0 +1,36 @@
+{
+  "grid_run_id": "d573405f6b7c452293722d2b80abc39e",
+  "pipeline": {
+    "run_dir": "outputs/clearml_runs/test_toy_cls_20260111_114659/99_pipeline",
+    "task_id": "339eb4fdf889414da259f828385364f7",
+    "clearml_url": "http://localhost:8080/projects/4e2f87cdfe2f445f807c620da64ed1a8/experiments/339eb4fdf889414da259f828385364f7/output/log"
+  },
+  "dataset_register": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/dataset_register/01_dataset_register",
+    "task_id": "2fe1d9c3db194fdb9f28fa90d4427687",
+    "clearml_url": "http://localhost:8080/projects/4e2f87cdfe2f445f807c620da64ed1a8/experiments/2fe1d9c3db194fdb9f28fa90d4427687/output/log"
+  },
+  "preprocess": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/preprocess__stdscaler_ohe/02_preprocess",
+      "task_id": "7b037e631f5a4b0dbe79d5ac070402f3",
+      "clearml_url": "http://localhost:8080/projects/4e2f87cdfe2f445f807c620da64ed1a8/experiments/7b037e631f5a4b0dbe79d5ac070402f3/output/log",
+      "preprocess_variant": "stdscaler_ohe"
+    }
+  ],
+  "train": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/train__stdscaler_ohe__ridge/03_train_model",
+      "task_id": "056cdb9891d34370be429fd5c345c660",
+      "clearml_url": "http://localhost:8080/projects/4e2f87cdfe2f445f807c620da64ed1a8/experiments/056cdb9891d34370be429fd5c345c660/output/log",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge"
+    }
+  ],
+  "leaderboard": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/leaderboard/05_leaderboard",
+    "task_id": "fd8eb90b7ae04400a5a2e24f24eaf82f",
+    "clearml_url": "http://localhost:8080/projects/4e2f87cdfe2f445f807c620da64ed1a8/experiments/fd8eb90b7ae04400a5a2e24f24eaf82f/output/log"
+  },
+  "infer": null
+}

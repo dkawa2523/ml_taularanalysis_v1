@@ -21,6 +21,7 @@
    - `store_features=true` の場合は X/y を parquet 等で保存し、Dataset に同梱して登録
    - false の場合は bundle+recipe+splits+schema+meta のみ登録（大規模データ対策）
    - out.json に `processed_dataset_id` と hash群を必ず書く
+   - dataset 名 / tags の schema_version は "v" の二重付与を避ける（例: `schema:v1`, `__v1`）
 3. `train_model` / `infer` を改修:
    - `data.processed_dataset_id` 指定時、Dataset.get_local_copy() で復元して学習/推論
    - train は `splits.json` を使って split を固定（再分割しない）

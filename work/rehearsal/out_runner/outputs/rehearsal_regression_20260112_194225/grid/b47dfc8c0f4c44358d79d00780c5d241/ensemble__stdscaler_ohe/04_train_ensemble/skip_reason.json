@@ -1,0 +1,34 @@
+{
+  "reason": "insufficient_candidates",
+  "detail": {
+    "available": 6,
+    "included": 0,
+    "required": 3,
+    "skipped_reasons": [
+      {
+        "reason": "status_incomplete",
+        "count": 26
+      },
+      {
+        "reason": "metric_missing",
+        "count": 23
+      },
+      {
+        "reason": "missing_preds_valid",
+        "count": 21
+      },
+      {
+        "reason": "missing_out_json",
+        "count": 16
+      },
+      {
+        "reason": "missing_model_bundle",
+        "count": 13
+      },
+      {
+        "reason": "preds_invalid",
+        "count": 6
+      }
+    ]
+  }
+}

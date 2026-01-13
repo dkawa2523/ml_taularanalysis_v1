@@ -1,0 +1,27 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-12T09:14:21Z",
+  "inputs": {
+    "run_dataset_register": false,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_ensemble": false,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": true
+  },
+  "outputs": {
+    "grid_run_id": "48a36a6d9eb84ea8adb4977e29870b31",
+    "pipeline_run_path": "outputs/t094_dryrun/99_pipeline/pipeline_run.json",
+    "plan_path": "outputs/t094_dryrun/99_pipeline/plan.json",
+    "run_summary_path": "outputs/t094_dryrun/99_pipeline/run_summary.json"
+  },
+  "hashes": {
+    "config_hash": "40505b455affc5e3bcb3994e36882a3397985327857abf89ecd438bafd3deb33",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

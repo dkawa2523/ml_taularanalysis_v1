@@ -1,0 +1,37 @@
+{
+  "status": "failure",
+  "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli 'task=pipeline' 'run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145355' 'run.usecase_id=rehearsal_regression_20260112_145355' 'data.raw_dataset_id=b68db6d2d1974ba28c0db5ba25691a96' 'pipeline.preprocess_variants=[\"stdscaler_ohe\"]' 'pipeline.model_variants=[\"ridge\"]' 'ensemble.enabled=true' 'ensemble.top_k=1' 'eval.task_type=regression' 'run.clearml.enabled=true' 'run.clearml.execution=logging' 'run.clearml.project_root=MFG'\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/hydra/_internal/config_loader_impl.py\", line 390, in _apply_overrides_to_config\n    OmegaConf.update(cfg, key, value, merge=True)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/omegaconf/omegaconf.py\", line 733, in update\n    node = root._get_child(last_key)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/omegaconf/basecontainer.py\", line 73, in _get_child\n    child = self._get_node(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/omegaconf/dictconfig.py\", line 475, in _get_node\n    self._validate_get(key)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/omegaconf/dictconfig.py\", line 164, in _validate_get\n    self._format_and_raise(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/omegaconf/base.py\", line 231, in _format_and_raise\n    format_and_raise(\n  File \"/Users/kawahito/Desktop/m...",
+  "timestamp_utc": "2026-01-12T14:53:55Z",
+  "usecase_id": "rehearsal_regression_20260112_145355",
+  "execution": "logging",
+  "task_type": "regression",
+  "models": "ridge",
+  "model_variants": [
+    "ridge"
+  ],
+  "preprocess_variants": [
+    "stdscaler_ohe"
+  ],
+  "repo_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis",
+  "out_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner",
+  "output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145355",
+  "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_145355/toy_regression.csv",
+  "raw_dataset_id": "b68db6d2d1974ba28c0db5ba25691a96",
+  "processed_dataset_id": null,
+  "pipeline_task_id": null,
+  "train_task_ids": [],
+  "preprocess_task_ids": [],
+  "leaderboard_task_id": null,
+  "clearml": {
+    "enabled": true,
+    "execution": "logging",
+    "queue_name": null,
+    "project_root": "MFG",
+    "warning": null
+  },
+  "clearml_tasks": null,
+  "verification": {
+    "status": "skipped",
+    "reason": "run_failed"
+  }
+}

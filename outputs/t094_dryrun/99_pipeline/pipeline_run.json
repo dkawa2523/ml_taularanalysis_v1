@@ -1,0 +1,263 @@
+{
+  "grid_run_id": "48a36a6d9eb84ea8adb4977e29870b31",
+  "plan_only": true,
+  "planned_jobs": 1,
+  "executed_jobs": 0,
+  "skipped_due_to_policy": 0,
+  "limit_exceeded": false,
+  "limit_violations": null,
+  "plan": {
+    "base_output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun",
+    "profile": "default",
+    "groups": {},
+    "run_dataset_register": false,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_ensemble": false,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "hpo_enabled": false,
+    "hpo_params_cfg": {
+      "ridge": {
+        "alpha": [
+          0.1,
+          1.0,
+          10.0
+        ]
+      }
+    },
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "pipeline_limits": {
+      "max_preprocess_variants": 3,
+      "max_train_tasks": 30,
+      "max_ensemble_tasks": 10
+    },
+    "parallelism": {
+      "max_concurrent_steps": 4,
+      "max_concurrent_train": 4
+    },
+    "max_jobs": 50,
+    "max_models": 10,
+    "max_hpo_trials": 0,
+    "plan_only": true,
+    "plan_info": {
+      "raw_jobs": 1,
+      "planned_jobs": 1,
+      "skipped_due_to_policy": 0
+    },
+    "train_jobs": [
+      {
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge",
+        "trial": {
+          "params": {},
+          "hpo_run_id": null,
+          "suffix": null
+        }
+      }
+    ],
+    "preprocess_targets": [
+      "stdscaler_ohe"
+    ],
+    "run_overrides": {
+      "run.grid_run_id": "48a36a6d9eb84ea8adb4977e29870b31",
+      "run.usecase_id": "test_dryrun_20260112_091421",
+      "run.schema_version": "v1",
+      "run.retrain_run_id": null,
+      "ops/usecase_id_policy": "test_dataset_timestamp",
+      "run.clearml.enabled": false,
+      "run.clearml.execution": "local",
+      "run.clearml.project_root": "MFG",
+      "run.clearml.queue_name": null,
+      "run.clearml.clone_from_task_id": null,
+      "ops/clearml_policy": "test_minimal"
+    },
+    "data_overrides": {
+      "data.dataset_path": "/tmp/dryrun.csv",
+      "data.raw_dataset_id": "local:dryrun",
+      "data.target_column": "target",
+      "data.split.strategy": "random",
+      "data.split.test_size": 0.2,
+      "data.split.seed": 42
+    },
+    "downstream_data_overrides": {
+      "data.dataset_path": "/tmp/dryrun.csv",
+      "data.raw_dataset_id": "local:dryrun",
+      "data.target_column": "target",
+      "data.split.strategy": "random",
+      "data.split.test_size": 0.2,
+      "data.split.seed": 42
+    },
+    "eval_overrides": {
+      "eval.primary_metric": "rmse",
+      "eval.direction": "auto",
+      "eval.cv_folds": 5,
+      "eval.seed": 42,
+      "eval.task_type": "regression",
+      "eval.classification.mode": "auto",
+      "eval.classification.top_k": 1,
+      "eval.metrics.classification_multiclass": [
+        "accuracy",
+        "f1_macro",
+        "logloss"
+      ],
+      "eval.calibration.enabled": false,
+      "eval.uncertainty.enabled": false,
+      "eval.ci.enabled": false
+    },
+    "base_extra_tags": [],
+    "queues": {
+      "default": null,
+      "pipeline": null,
+      "dataset_register": null,
+      "preprocess": null,
+      "train_model": null,
+      "train_ensemble": null,
+      "train_model_heavy": "gpu",
+      "leaderboard": null,
+      "infer": null,
+      "model_variants": {},
+      "heavy_model_variants": []
+    },
+    "steps": {
+      "preprocess": [
+        {
+          "step_name": "preprocess__stdscaler_ohe",
+          "task_name": "preprocess",
+          "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/preprocess__stdscaler_ohe",
+          "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/preprocess__stdscaler_ohe/02_preprocess",
+          "parents": [],
+          "queue": null,
+          "overrides": {
+            "group/preprocess": "stdscaler_ohe",
+            "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/preprocess__stdscaler_ohe"
+          },
+          "preprocess_variant": "stdscaler_ohe",
+          "project_name": "MFG/TabularAnalysis/test_dryrun_20260112_091421/02_Preprocess"
+        }
+      ],
+      "train": [
+        {
+          "step_name": "train__stdscaler_ohe__ridge",
+          "task_name": "train_model",
+          "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/train__stdscaler_ohe__ridge",
+          "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/train__stdscaler_ohe__ridge/03_train_model",
+          "parents": [
+            "preprocess__stdscaler_ohe"
+          ],
+          "queue": null,
+          "overrides": {
+            "group/model": "ridge",
+            "train.inputs.preprocess_run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/preprocess__stdscaler_ohe/02_preprocess",
+            "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/train__stdscaler_ohe__ridge",
+            "run.clearml.project_layout.group_map.train_model": "03_TrainModels/stdscaler_ohe",
+            "run.clearml.extra_tags": [
+              "grid_cell:stdscaler_ohe__ridge"
+            ]
+          },
+          "preprocess_variant": "stdscaler_ohe",
+          "model_variant": "ridge",
+          "hpo_run_id": null,
+          "hpo_params": null,
+          "inputs": {
+            "processed_dataset_id": {
+              "from_step": "preprocess__stdscaler_ohe",
+              "source": "preprocess"
+            }
+          },
+          "project_name": "MFG/TabularAnalysis/test_dryrun_20260112_091421/03_TrainModels/stdscaler_ohe"
+        }
+      ],
+      "ensemble": [],
+      "leaderboard": {
+        "step_name": "leaderboard",
+        "task_name": "leaderboard",
+        "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/leaderboard",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/leaderboard/05_leaderboard",
+        "parents": [
+          "train__stdscaler_ohe__ridge"
+        ],
+        "queue": null,
+        "overrides": {
+          "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/t094_dryrun/grid/48a36a6d9eb84ea8adb4977e29870b31/leaderboard",
+          "leaderboard.top_k": 10
+        },
+        "project_name": "MFG/TabularAnalysis/test_dryrun_20260112_091421/06_Leaderboards"
+      },
+      "infer": null
+    },
+    "task_counts": {
+      "preprocess": 1,
+      "train": 1,
+      "ensemble": 0,
+      "leaderboard": 1,
+      "infer": 0,
+      "total": 3
+    }
+  },
+  "dataset_register_ref": null,
+  "preprocess_ref": [],
+  "train_refs": [],
+  "ensemble_refs": [],
+  "leaderboard_ref": null,
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": false,
+      "params": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "pipeline_limits": {
+      "max_preprocess_variants": 3,
+      "max_train_tasks": 30,
+      "max_ensemble_tasks": 10
+    },
+    "parallelism": {
+      "max_concurrent_steps": 4,
+      "max_concurrent_train": 4
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    },
+    "fail_policy": {
+      "allow_skipped": true,
+      "allowed_failures": 0,
+      "fail_fast": false,
+      "min_successful_train_tasks": 1
+    }
+  }
+}

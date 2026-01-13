@@ -1,0 +1,11 @@
+{
+  "threshold": 0.4,
+  "metric": "f1",
+  "score": 0.9230769230769231,
+  "direction": "maximize",
+  "calibration": {
+    "enabled": true,
+    "method": "sigmoid",
+    "mode": "prefit"
+  }
+}

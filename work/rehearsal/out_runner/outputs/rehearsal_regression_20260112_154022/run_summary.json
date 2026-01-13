@@ -1,0 +1,97 @@
+{
+  "status": "success",
+  "error": null,
+  "timestamp_utc": "2026-01-12T15:40:22Z",
+  "usecase_id": "rehearsal_regression_20260112_154022",
+  "execution": "logging",
+  "task_type": "regression",
+  "models": "ridge",
+  "model_variants": [
+    "ridge"
+  ],
+  "preprocess_variants": [
+    "stdscaler_ohe"
+  ],
+  "repo_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis",
+  "out_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner",
+  "output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022",
+  "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_154022/toy_regression.csv",
+  "raw_dataset_id": "454fc2b58a5f4aa1a332997d6458770d",
+  "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+  "pipeline_task_id": "1e5f36183557435e9c86ec4237a78a0c",
+  "train_task_ids": [
+    "f07788060a95420c9dd7dd14e50ec756"
+  ],
+  "preprocess_task_ids": [],
+  "leaderboard_task_id": null,
+  "clearml": {
+    "enabled": true,
+    "execution": "logging",
+    "queue_name": null,
+    "project_root": "MFG",
+    "warning": null
+  },
+  "clearml_tasks": {
+    "pipeline": [
+      {
+        "task_id": "1e5f36183557435e9c86ec4237a78a0c",
+        "status": "completed",
+        "name": "pipeline"
+      }
+    ],
+    "leaderboard": [
+      {
+        "task_id": "4f71eb363f384396930e1d1f340413fe",
+        "status": "completed",
+        "name": "leaderboard"
+      }
+    ],
+    "train_ensemble": [
+      {
+        "task_id": "d419b4e65aad486db4b00a0a728bad84",
+        "status": "completed",
+        "name": "train_ensemble/mean_topk(k=3)"
+      }
+    ],
+    "train_model": [
+      {
+        "task_id": "f07788060a95420c9dd7dd14e50ec756",
+        "status": "completed",
+        "name": "train__ridge__pp=unknown__ds=454fc2b5~70d"
+      }
+    ],
+    "preprocess": [
+      {
+        "task_id": "6131cb082e6e411b98caf9bce2fd9f6d",
+        "status": "completed",
+        "name": "preprocess__pp=stdscaler_ohe"
+      },
+      {
+        "task_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+        "status": "completed",
+        "name": "processed__rehearsal_regression_20260112_154022__stdscaler_ohe__533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49__v1"
+      }
+    ],
+    "dataset_register": [
+      {
+        "task_id": "b1deadb89be84ebba22cf26513b92064",
+        "status": "completed",
+        "name": "dataset_register"
+      },
+      {
+        "task_id": "454fc2b58a5f4aa1a332997d6458770d",
+        "status": "completed",
+        "name": "rehearsal_regression_20260112_154022__raw__toy_regression"
+      }
+    ]
+  },
+  "verification": {
+    "status": "success",
+    "errors": [],
+    "warnings": [],
+    "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+    "project_prefix": "MFG/TabularAnalysis/rehearsal_regression_20260112_154022",
+    "pipeline_task_id": "1e5f36183557435e9c86ec4237a78a0c",
+    "clearml_checked": true
+  }
+}

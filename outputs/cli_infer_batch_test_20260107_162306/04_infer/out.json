@@ -1,0 +1,28 @@
+{
+  "predictions_path": "outputs/cli_infer_batch_test_20260107_162306/04_infer/predictions.csv",
+  "input_preview_path": "outputs/cli_infer_batch_test_20260107_162306/04_infer/input_preview.csv",
+  "mode": "batch",
+  "model_id": "/Users/kawahito/.clearml/cache/storage_manager/global/205aefdec57281d501cc2c5273c91fba.model_bundle.joblib",
+  "train_task_id": "9fc5ec21344a44ce89293cd3d9205938",
+  "calibration": {
+    "enabled": true,
+    "method": "sigmoid",
+    "mode": "prefit",
+    "calibrated_proba": true
+  },
+  "schema_validation": {
+    "mode": "warn",
+    "ok": true,
+    "warnings_count": 0,
+    "errors_count": 0
+  },
+  "chunked": {
+    "chunk_size": 2,
+    "rows": 5,
+    "chunks": 3,
+    "errors_count": 0,
+    "output_format": "csv",
+    "write_mode": "overwrite",
+    "max_rows": 5
+  }
+}

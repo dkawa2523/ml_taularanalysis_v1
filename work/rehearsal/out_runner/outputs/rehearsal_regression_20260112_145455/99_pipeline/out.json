@@ -1,0 +1,320 @@
+{
+  "pipeline_run": {
+    "grid_run_id": "6c9e294440f64a42bcc5a3f7d8e6e27f",
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "limit_exceeded": false,
+    "limit_violations": null,
+    "plan": {
+      "base_output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455",
+      "profile": "default",
+      "groups": {},
+      "run_dataset_register": false,
+      "run_preprocess": true,
+      "run_train": true,
+      "run_ensemble": true,
+      "run_leaderboard": true,
+      "run_infer": false,
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge"
+      ],
+      "hpo_enabled": false,
+      "hpo_params_cfg": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      },
+      "limits": {
+        "max_jobs": 50,
+        "max_models": 10,
+        "max_hpo_trials": 0
+      },
+      "pipeline_limits": {
+        "max_preprocess_variants": 3,
+        "max_train_tasks": 30,
+        "max_ensemble_tasks": 10
+      },
+      "parallelism": {
+        "max_concurrent_steps": 4,
+        "max_concurrent_train": 4
+      },
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0,
+      "plan_only": false,
+      "plan_info": {
+        "raw_jobs": 1,
+        "planned_jobs": 1,
+        "skipped_due_to_policy": 0
+      },
+      "train_jobs": [
+        {
+          "preprocess_variant": "stdscaler_ohe",
+          "model_variant": "ridge",
+          "trial": {
+            "params": {},
+            "hpo_run_id": null,
+            "suffix": null
+          }
+        }
+      ],
+      "preprocess_targets": [
+        "stdscaler_ohe"
+      ],
+      "run_overrides": {
+        "run.grid_run_id": "6c9e294440f64a42bcc5a3f7d8e6e27f",
+        "run.usecase_id": "rehearsal_regression_20260112_145455",
+        "run.schema_version": "v1",
+        "run.retrain_run_id": null,
+        "ops/usecase_id_policy": "test_dataset_timestamp",
+        "run.clearml.enabled": true,
+        "run.clearml.execution": "logging",
+        "run.clearml.project_root": "MFG",
+        "run.clearml.queue_name": null,
+        "run.clearml.clone_from_task_id": null,
+        "ops/clearml_policy": "test_minimal"
+      },
+      "data_overrides": {
+        "data.raw_dataset_id": "b1a09a98b9764fd8a2524432f46e3242",
+        "data.target_column": "target",
+        "data.split.strategy": "random",
+        "data.split.test_size": 0.2,
+        "data.split.seed": 42
+      },
+      "downstream_data_overrides": {
+        "data.raw_dataset_id": "b1a09a98b9764fd8a2524432f46e3242",
+        "data.target_column": "target",
+        "data.split.strategy": "random",
+        "data.split.test_size": 0.2,
+        "data.split.seed": 42
+      },
+      "eval_overrides": {
+        "eval.primary_metric": "rmse",
+        "eval.direction": "auto",
+        "eval.cv_folds": 5,
+        "eval.seed": 42,
+        "eval.task_type": "regression",
+        "eval.classification.mode": "auto",
+        "eval.classification.top_k": 1,
+        "eval.metrics.classification_multiclass": [
+          "accuracy",
+          "f1_macro",
+          "logloss"
+        ],
+        "eval.calibration.enabled": false,
+        "eval.uncertainty.enabled": false,
+        "eval.ci.enabled": false
+      },
+      "base_extra_tags": [],
+      "queues": {
+        "default": null,
+        "pipeline": null,
+        "dataset_register": null,
+        "preprocess": null,
+        "train_model": null,
+        "train_ensemble": null,
+        "train_model_heavy": "gpu",
+        "leaderboard": null,
+        "infer": null,
+        "model_variants": {},
+        "heavy_model_variants": []
+      },
+      "steps": {
+        "preprocess": [
+          {
+            "step_name": "preprocess__stdscaler_ohe",
+            "task_name": "preprocess",
+            "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/preprocess__stdscaler_ohe",
+            "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/preprocess__stdscaler_ohe/02_preprocess",
+            "parents": [],
+            "queue": null,
+            "overrides": {
+              "group/preprocess": "stdscaler_ohe",
+              "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/preprocess__stdscaler_ohe",
+              "run.clearml.project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/02_Preprocess"
+            },
+            "preprocess_variant": "stdscaler_ohe",
+            "project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/02_Preprocess"
+          }
+        ],
+        "train": [
+          {
+            "step_name": "train__stdscaler_ohe__ridge",
+            "task_name": "train_model",
+            "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/train__stdscaler_ohe__ridge",
+            "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/train__stdscaler_ohe__ridge/03_train_model",
+            "parents": [
+              "preprocess__stdscaler_ohe"
+            ],
+            "queue": null,
+            "overrides": {
+              "group/model": "ridge",
+              "train.inputs.preprocess_run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/preprocess__stdscaler_ohe/02_preprocess",
+              "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/train__stdscaler_ohe__ridge",
+              "run.clearml.project_layout.group_map.train_model": "03_TrainModels/stdscaler_ohe",
+              "run.clearml.extra_tags": [
+                "grid_cell:stdscaler_ohe__ridge"
+              ],
+              "run.clearml.project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/03_TrainModels/stdscaler_ohe"
+            },
+            "preprocess_variant": "stdscaler_ohe",
+            "model_variant": "ridge",
+            "hpo_run_id": null,
+            "hpo_params": null,
+            "inputs": {
+              "processed_dataset_id": {
+                "from_step": "preprocess__stdscaler_ohe",
+                "source": "preprocess"
+              }
+            },
+            "project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/03_TrainModels/stdscaler_ohe"
+          }
+        ],
+        "ensemble": [
+          {
+            "step_name": "ensemble__stdscaler_ohe",
+            "task_name": "train_ensemble",
+            "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/ensemble__stdscaler_ohe",
+            "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/ensemble__stdscaler_ohe/04_train_ensemble",
+            "parents": [
+              "train__stdscaler_ohe__ridge"
+            ],
+            "queue": null,
+            "overrides": {
+              "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/ensemble__stdscaler_ohe",
+              "preprocess.variant": "stdscaler_ohe",
+              "run.clearml.project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/04_Ensembles"
+            },
+            "preprocess_variant": "stdscaler_ohe",
+            "project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/04_Ensembles"
+          }
+        ],
+        "leaderboard": {
+          "step_name": "leaderboard",
+          "task_name": "leaderboard",
+          "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/leaderboard",
+          "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/leaderboard/05_leaderboard",
+          "parents": [
+            "train__stdscaler_ohe__ridge",
+            "ensemble__stdscaler_ohe"
+          ],
+          "queue": null,
+          "overrides": {
+            "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/leaderboard",
+            "leaderboard.top_k": 10,
+            "run.clearml.project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/06_Leaderboards"
+          },
+          "project_name": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455/06_Leaderboards"
+        },
+        "infer": null
+      },
+      "task_counts": {
+        "preprocess": 1,
+        "train": 1,
+        "ensemble": 1,
+        "leaderboard": 1,
+        "infer": 0,
+        "total": 4
+      }
+    },
+    "dataset_register_ref": null,
+    "preprocess_ref": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe",
+        "processed_dataset_id": "ff1c00398cbe4ea09a3ce5eb3a49559a",
+        "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+        "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+        "status": "success"
+      }
+    ],
+    "train_refs": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/train__stdscaler_ohe__ridge/03_train_model",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge",
+        "train_task_id": "a07566067dca4c0198e02d9c66527879",
+        "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+        "best_score": 0.3133085191754989,
+        "primary_metric": "rmse",
+        "status": "success"
+      }
+    ],
+    "ensemble_refs": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/ensemble__stdscaler_ohe/04_train_ensemble",
+        "preprocess_variant": "stdscaler_ohe",
+        "train_task_id": "a07566067dca4c0198e02d9c66527879",
+        "primary_metric": "rmse",
+        "model_variant": "ensemble_mean_topk",
+        "status": "failed",
+        "reason": "insufficient_candidates",
+        "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=train_ensemble run.grid_run_id=6c9e294440f64a42bcc5a3f7d8e6e27f run.usecase_id=rehearsal_regression_20260112_145455 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=a07566067dca4c0198e02d9c66527879 eval.primary_metric=rmse eval.direction=auto eval.cv_folds=5 eval.seed=42 eval.task_type=regression eval.classification.mode=auto eval.classification.top_k=1 eval.metrics.classification_multiclass=['accuracy','f1_macro','logloss'] eval.calibration.enabled=false eval.uncertainty.enabled=false eval.ci.enabled=false run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/ensemble__stdscaler_ohe preprocess.variant=stdscaler_ohe run.clearml.project_name=MFG/TabularAnalysis/rehearsal_regression_20260112_145455/04_Ensembles data.processed_dataset_id=ff1c00398cbe4ea09a3ce5eb3a49559a\n\nInsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 2459, in write_manifest\n    return platform_write_manifest(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-platform/src/ml_platform/artifacts/manifest.py\", line 52, in write_manifest\n    _validate_manifest(payload)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-platform/src/ml_platform/artifacts/manifest.py\", line 92, in _validate_manifest\n    raise ValueError(f\"manifest missing hash keys: {', '.join(sorted(missing_hashes))}\")\nValueError: manifest missing hash keys: recipe_hash, split_hash\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/train_ensemble.py\", line 1571, in run\n    _record_skip(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/train_ensemble.py\", line 1289, in _record_skip\n    write_manifest(ctx, manifest)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 2466, in write_manifest\n    raise PlatformAdapterError(f\"Failed to write manifest via ml_platform: {exc}\") from exc\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to write manifest via ml_platform: manifest missing hash keys: recipe_hash, split_hash\nInsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings\n"
+      }
+    ],
+    "leaderboard_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/leaderboard/05_leaderboard",
+      "status": "failed",
+      "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=leaderboard run.grid_run_id=6c9e294440f64a42bcc5a3f7d8e6e27f run.usecase_id=rehearsal_regression_20260112_145455 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=a07566067dca4c0198e02d9c66527879 eval.primary_metric=rmse eval.direction=auto eval.cv_folds=5 eval.seed=42 eval.task_type=regression eval.classification.mode=auto eval.classification.top_k=1 eval.metrics.classification_multiclass=['accuracy','f1_macro','logloss'] eval.calibration.enabled=false eval.uncertainty.enabled=false eval.ci.enabled=false run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455/grid/6c9e294440f64a42bcc5a3f7d8e6e27f/leaderboard leaderboard.top_k=10 run.clearml.project_name=MFG/TabularAnalysis/rehearsal_regression_20260112_145455/06_Leaderboards leaderboard.train_task_ids=['a07566067dca4c0198e02d9c66527879']\n\nInsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/leaderboard.py\", line 897, in run\n    raise ValueError(\"No comparable train runs found for leaderboard.\")\nValueError: No comparable train runs found for leaderboard.\nInsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings\n"
+    },
+    "infer_ref": null,
+    "grid": {
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge"
+      ],
+      "max_jobs": 50,
+      "max_hpo_trials": 0,
+      "hpo": {
+        "enabled": false,
+        "params": {
+          "ridge": {
+            "alpha": [
+              0.1,
+              1.0,
+              10.0
+            ]
+          }
+        }
+      }
+    },
+    "policy": {
+      "limits": {
+        "max_jobs": 50,
+        "max_models": 10,
+        "max_hpo_trials": 0
+      },
+      "pipeline_limits": {
+        "max_preprocess_variants": 3,
+        "max_train_tasks": 30,
+        "max_ensemble_tasks": 10
+      },
+      "parallelism": {
+        "max_concurrent_steps": 4,
+        "max_concurrent_train": 4
+      },
+      "selection": {
+        "calibration": false,
+        "uncertainty": false,
+        "ci": false
+      },
+      "fail_policy": {
+        "allow_skipped": true,
+        "allowed_failures": 0,
+        "fail_fast": false,
+        "min_successful_train_tasks": 1
+      }
+    }
+  }
+}

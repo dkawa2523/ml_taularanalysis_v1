@@ -20,7 +20,8 @@ PY
 ```
 
 If repository/branch is wrong, update the task script or re-run the pipeline with
-`run.clearml.code_repository` / `run.clearml.code_branch` set correctly.
+`run.clearml.code_ref.repository` / `run.clearml.code_ref.branch` set correctly
+(legacy: `run.clearml.code_repository` / `run.clearml.code_branch`).
 
 ## 2) Queue/Agent checks
 - pipeline task `run.clearml.queue_name` matches the queue the agent listens on

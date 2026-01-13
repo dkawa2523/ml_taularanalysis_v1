@@ -1,0 +1,72 @@
+{
+  "rows_total": 1,
+  "rows_scanned": 1,
+  "columns": 3,
+  "columns_scanned": 3,
+  "scan_sampled": false,
+  "target_column": "target",
+  "task_type": "classification",
+  "id_columns": [],
+  "dtype_counts": {
+    "float64": 2,
+    "object": 1
+  },
+  "missing_total": 0,
+  "missing_rate_total": 0.0,
+  "missing_columns": 0,
+  "missing_top": [],
+  "duplicates_count": 0,
+  "duplicates_rate": 0.0,
+  "constant_columns": [
+    "num1",
+    "num2",
+    "cat1"
+  ],
+  "mixed_type_columns": [],
+  "mixed_type_details": [],
+  "high_cardinality_columns": [],
+  "high_cardinality_details": [],
+  "high_cardinality_threshold": 0.8,
+  "id_like_columns": [],
+  "name_suspects": [],
+  "quality_thresholds": {
+    "high_cardinality_ratio_warn": 0.8,
+    "high_cardinality_min_unique": 20,
+    "id_like_ratio_warn": 0.98,
+    "id_like_min_unique": 20,
+    "leak_near_match_warn": 0.98,
+    "leak_correlation_warn": 0.98,
+    "leak_mapping_accuracy_warn": 0.98,
+    "mixed_type_columns_warn": 1,
+    "mixed_type_columns_fail": 5
+  },
+  "leak_suspects": [],
+  "leak_summary": {
+    "available": false,
+    "exact_match": [],
+    "near_match": [],
+    "correlation_top": [],
+    "mapping_suspects": [],
+    "thresholds": {
+      "near_match": 0.98,
+      "correlation": 0.98,
+      "mapping_accuracy": 0.98
+    }
+  },
+  "quality_issues": [
+    {
+      "type": "constant_columns",
+      "severity": "warn",
+      "count": 3,
+      "detail": {
+        "columns": [
+          "num1",
+          "num2",
+          "cat1"
+        ]
+      }
+    }
+  ],
+  "quality_status": "warn",
+  "quality_issue_count": 3
+}

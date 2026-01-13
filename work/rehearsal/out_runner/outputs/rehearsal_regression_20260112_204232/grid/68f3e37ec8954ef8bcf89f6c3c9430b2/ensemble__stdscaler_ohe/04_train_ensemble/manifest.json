@@ -1,0 +1,26 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "train_ensemble",
+  "created_at": "2026-01-12T20:42:58Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "method": "mean_topk",
+    "top_k": 1,
+    "selection_metric": "rmse",
+    "primary_metric": "rmse",
+    "direction": "minimize"
+  },
+  "outputs": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_204232/grid/68f3e37ec8954ef8bcf89f6c3c9430b2/ensemble__stdscaler_ohe/04_train_ensemble/model_bundle.joblib",
+    "best_score": 0.27386127875258304,
+    "primary_metric": "rmse",
+    "task_type": "regression"
+  },
+  "hashes": {
+    "config_hash": "77ad832c07bbab68b5acebd025f3509a798564391adc7fff6398de91d495a75c",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

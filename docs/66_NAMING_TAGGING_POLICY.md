@@ -9,6 +9,14 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 - task 名は **process 名のまま**（`dataset_register`, `preprocess`, `train_model`, `leaderboard`, `infer`, `pipeline`, `champion_challenger`, `promote_model`, `retrain`, `rollback_model`）
 - `run.clearml.task_name` が指定されていればそちらを優先
 
+### preprocess の自動命名
+`src/tabular_analysis/clearml/naming.py` により、`preprocess` は以下の命名に上書きされる:
+- `preprocess__pp={preprocess_variant}`
+
+解決ルール:
+- `preprocess_variant`: `preprocess_variant.name` → `preprocess.variant` の順で解決
+- sanitize: `[A-Za-z0-9_-]` 以外を `-` に置換し、連続 `-` を圧縮
+
 ### train_model の自動命名
 `src/tabular_analysis/clearml/naming.py` により、`train_model` は以下の命名に上書きされる:
 - `train__{model_abbr}__pp={preprocess_variant}__ds={raw_id_short}`
@@ -39,6 +47,7 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 
 ### 実装が追加するタグ
 - train_model: `model:<abbr>`, `preprocess:<variant>`, `dataset:<raw_dataset_id>`（shorten せず全文を sanitize）
+- preprocess: `preprocess:<variant>`
 - pipeline grid: `grid_cell:<preprocess>__<model>`
 - HPO trial: `hpo:<hpo_run_id>`
 - promote_model: `stage:<stage>`, `champion:current`（設定時）, `rollback:true`（rollback時）

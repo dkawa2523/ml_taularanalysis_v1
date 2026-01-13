@@ -50,4 +50,5 @@ python tools/tests/smoke_plots.py
 ```
 
 ## Result
-- RESULT: TODO (nonce: <fill>)
+- RESULT: preprocess に Debug Samples（raw_sample / processed_sample）を追加し、UIで入力/出力の例を確認可能にした。
+- RESULT: train_ensemble に optional scalar `ensemble/best_score` を追加し、UIで指標が追えるようにした。

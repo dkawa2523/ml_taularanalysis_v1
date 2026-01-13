@@ -132,9 +132,10 @@ GBDT や TabPFN は base 依存には入れず、**extras** で有効化しま�
   - `auto_download=true` の場合はライブラリの推奨手順で取得し、失敗時は out/manifest に記録される
 
 > 運用上の重要ポリシー:
-> - optional ライブラリが無い環境で 해당モデルを選んだ場合は **落ち方を明確に**する  
->   例: 「catboost が無いので `pip install -e ".[models]"` を実行してください」
-> - 依存不足は `MissingOptionalDependencyError` で通知し、インストール手順を含める
+> - optional ライブラリが無い環境で 해당モデルを選んだ場合は **SKIP として明示**する  
+>   例: `status=skipped` / `reason=missing_dependency` を記録し、導入手順を表示
+> - 依存不足は `MissingOptionalDependencyError` を捕捉して SKIP 記録する（単体実行でも pipeline でも同じ）
+> - pipeline v2 では missing deps は plan から除外される（`groups.train.skipped_missing_dependencies`）
 > - “黙って他モデルに切り替える” は禁止（追跡性・再現性が壊れる）
 
 ---

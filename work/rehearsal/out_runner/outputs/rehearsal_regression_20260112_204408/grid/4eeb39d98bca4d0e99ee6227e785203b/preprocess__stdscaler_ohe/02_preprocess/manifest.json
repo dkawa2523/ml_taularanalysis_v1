@@ -1,0 +1,40 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "preprocess",
+  "created_at": "2026-01-12T20:44:17Z",
+  "inputs": {
+    "raw_dataset_id": "877e84a2980b4c538031c5976d1389ae",
+    "upstream_task_ids": [],
+    "preprocess_variant": "stdscaler_ohe",
+    "target_column": "target",
+    "categorical_encoding": {
+      "encoding": "onehot",
+      "auto_onehot_max_categories": 50,
+      "hashing": {
+        "n_features": 128
+      },
+      "target_mean_oof": {
+        "folds": 5,
+        "smoothing": 10.0
+      }
+    },
+    "store_features": true
+  },
+  "outputs": {
+    "processed_dataset_id": "52a878767f3b4177a293c7c52d7b8805",
+    "processed_dataset_version": "1.0.0",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "schema_hash": "db994b06eb32179556256bbc096fa58870f8a98fce7f14b17bf1290f06d05088",
+    "n_rows": 240,
+    "n_features": 5
+  },
+  "hashes": {
+    "config_hash": "47c4ef035977671a21f27fb4b8866e0568d730bf4af43930f958a3c0877f9f0e",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "schema_hash": "db994b06eb32179556256bbc096fa58870f8a98fce7f14b17bf1290f06d05088"
+  }
+}

@@ -34,8 +34,8 @@ python -m tabular_analysis.ops.clearml_diagnose --queue default
 
 ### 2) commit pin の罠
 template task に `version_num` が pin されると、存在しない commit で checkout が失敗する。
-- 試験段階は `run.clearml.code_version_mode=branch_head` 推奨
-- 本番で pin する場合は `pin_commit` に切り替える
+- 試験段階は `run.clearml.code_ref.mode=branch` 推奨（legacy: `run.clearml.code_version_mode=branch_head`）
+- 本番で pin する場合は `run.clearml.code_ref.mode=commit` に切り替える（legacy: `pin_commit`）
 
 ### 3) entry_point の統一
 remote 実行タスクは `tools/clearml_entrypoint.py` を使う。

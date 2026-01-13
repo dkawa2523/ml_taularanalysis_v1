@@ -1,0 +1,92 @@
+{
+  "append_tasks": [
+    {
+      "id": "T089",
+      "title": "Pipeline v2: 設定スキーマ導入（profile+groups+policy）",
+      "md": "work/tasks/T089_pipeline_v2_config_schema.md",
+      "must_change_globs": [
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T090",
+      "title": "Variant/Step Registry 導入（default_enabled/requires/applicability）",
+      "md": "work/tasks/T090_registry_variants_default_policy.md",
+      "must_change_globs": [
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T091",
+      "title": "Pipeline v2 builder: groups 解釈 + preprocess×model plan 展開",
+      "md": "work/tasks/T091_pipeline_v2_builder_groups_plan.md",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T092",
+      "title": "SKIP 正規化: optional deps / inapplicable / 候補不足",
+      "md": "work/tasks/T092_skip_semantics_optional_deps.md",
+      "must_change_globs": [
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T093",
+      "title": "partial failure: fail_policy 固定 + run_summary.json 生成",
+      "md": "work/tasks/T093_pipeline_fail_policy_run_summary.md",
+      "must_change_globs": [
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T094",
+      "title": "事故防止: limits/parallelism/dry-run 実装",
+      "md": "work/tasks/T094_pipeline_limits_parallelism_dryrun.md",
+      "must_change_globs": [
+        "src/**",
+        "conf/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T095",
+      "title": "Local/Agent 見え方一致: plan+driver 分離、テンプレclone必須",
+      "md": "work/tasks/T095_local_agent_driver_consistency.md",
+      "must_change_globs": [
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T096",
+      "title": "Python rehearsal runner + 自動検証（jq不要）",
+      "md": "work/tasks/T096_python_rehearsal_runner_autotest.md",
+      "must_change_globs": [
+        "tools/**",
+        "docs/**",
+        "src/**"
+      ]
+    },
+    {
+      "id": "T097",
+      "title": "docs: 運用ルール・拡張ガイド整備（レビューしやすく）",
+      "md": "work/tasks/T097_docs_ops_rules_and_extension_guide.md",
+      "must_change_globs": [
+        "docs/**"
+      ]
+    }
+  ],
+  "notes": [
+    "このファイル自体は codex_loop から直接読み込まれません。work/queue.json に append_tasks を追記してください。",
+    "既存の T088 までが完了している前提で、T089 から順に実行する想定です。",
+    "must_change_globs は codex_loop の安全弁です。実装方針により変更対象が変わる場合は調整してください。"
+  ]
+}

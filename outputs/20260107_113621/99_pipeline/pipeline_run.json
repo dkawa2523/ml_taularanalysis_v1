@@ -1,0 +1,67 @@
+{
+  "grid_run_id": "6b8b0c6b3d2049889a52096f8942e272",
+  "plan_only": false,
+  "planned_jobs": 2,
+  "executed_jobs": 2,
+  "skipped_due_to_policy": 0,
+  "dataset_register_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_113621/grid/6b8b0c6b3d2049889a52096f8942e272/dataset_register/01_dataset_register"
+  },
+  "preprocess_ref": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_113621/grid/6b8b0c6b3d2049889a52096f8942e272/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe"
+    }
+  ],
+  "train_refs": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_113621/grid/6b8b0c6b3d2049889a52096f8942e272/train__stdscaler_ohe__logistic_regression/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "logistic_regression"
+    },
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_113621/grid/6b8b0c6b3d2049889a52096f8942e272/train__stdscaler_ohe__random_forest/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "random_forest"
+    }
+  ],
+  "leaderboard_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_113621/grid/6b8b0c6b3d2049889a52096f8942e272/leaderboard/05_leaderboard"
+  },
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "logistic_regression",
+      "random_forest"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": false,
+      "params": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    }
+  }
+}

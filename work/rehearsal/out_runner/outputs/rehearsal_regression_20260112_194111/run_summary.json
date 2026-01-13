@@ -1,0 +1,38 @@
+{
+  "status": "failure",
+  "error": "Command failed (exit=1)\n$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli 'task=dataset_register' 'run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194111' 'run.usecase_id=rehearsal_regression_20260112_194111' 'data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_194111/toy_regression.csv' 'data.target_column=target' 'eval.task_type=regression' 'run.clearml.enabled=true' 'run.clearml.execution=logging'\n\n/Library/Frameworks/Python.framework/Versions/3.10/bin/python3: Error while finding module specification for 'tabular_analysis.cli' (ModuleNotFoundError: No module named 'tabular_analysis')",
+  "timestamp_utc": "2026-01-12T19:41:11Z",
+  "usecase_id": "rehearsal_regression_20260112_194111",
+  "execution": "logging",
+  "task_type": "regression",
+  "models": null,
+  "model_variants": [
+    "ridge",
+    "elasticnet"
+  ],
+  "preprocess_variants": [
+    "stdscaler_ohe"
+  ],
+  "repo_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis",
+  "out_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner",
+  "output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_194111",
+  "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_194111/toy_regression.csv",
+  "raw_dataset_id": null,
+  "processed_dataset_id": null,
+  "pipeline_task_id": null,
+  "train_task_ids": [],
+  "preprocess_task_ids": [],
+  "leaderboard_task_id": null,
+  "clearml": {
+    "enabled": true,
+    "execution": "logging",
+    "queue_name": null,
+    "project_root": null,
+    "warning": null
+  },
+  "clearml_tasks": null,
+  "verification": {
+    "status": "skipped",
+    "reason": "run_failed"
+  }
+}

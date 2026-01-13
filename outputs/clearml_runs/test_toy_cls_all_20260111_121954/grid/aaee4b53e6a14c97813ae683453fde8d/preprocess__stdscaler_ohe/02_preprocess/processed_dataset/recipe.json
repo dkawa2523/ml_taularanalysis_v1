@@ -1,0 +1,40 @@
+{
+  "variant": {
+    "name": "stdscaler_ohe",
+    "numeric_scaler": "standard",
+    "categorical_encoder": "onehot",
+    "handle_unknown": "ignore"
+  },
+  "impute": {
+    "numeric": "mean",
+    "categorical": "most_frequent"
+  },
+  "categorical_encoding": {
+    "encoding": "onehot",
+    "auto_onehot_max_categories": 50,
+    "hashing": {
+      "n_features": 128
+    },
+    "target_mean_oof": {
+      "folds": 5,
+      "smoothing": 10.0
+    }
+  },
+  "columns": {
+    "feature_columns": [
+      "num1",
+      "num2",
+      "cat1"
+    ],
+    "numeric_features": [
+      "num1",
+      "num2"
+    ],
+    "categorical_features": [
+      "cat1"
+    ],
+    "target_column": "target",
+    "id_columns": [],
+    "drop_columns": []
+  }
+}

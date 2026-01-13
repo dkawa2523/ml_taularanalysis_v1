@@ -6,8 +6,14 @@
 - Artifact は「再現・追跡用のファイル（json/csv/bundle）」中心にする。
 
 ## 設計（冗長化を防ぐ）
-- ClearML UI 出力は `tabular_analysis/clearml/ui_logger.py` に集約し、各 process が個別に logger API を乱用しない。
+- ClearML UI 出力は `tabular_analysis/clearml/reporting.py` を経由し、`ui_logger.py` に集約する。
 - **png を生成して artifact に置くだけ**は NG。UI に載せたい図は `report_plotly` / `report_image` で Plots に表示する。
+
+## Config toggles（yaml）
+- `run.clearml.reporting.enable_scalars`（default: true）
+- `run.clearml.reporting.enable_plots`（default: true）
+- `run.clearml.reporting.enable_tables`（default: true）
+- `enable_tables=false` でテーブル/Debug Samples を抑制できる
 
 ## 1. Scalars（必須）
 Train task:

@@ -1,0 +1,67 @@
+{
+  "pipeline_run": {
+    "grid_run_id": "d573405f6b7c452293722d2b80abc39e",
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "dataset_register_ref": {
+      "task_id": "2fe1d9c3db194fdb9f28fa90d4427687",
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/dataset_register/01_dataset_register"
+    },
+    "preprocess_ref": [
+      {
+        "task_id": "7b037e631f5a4b0dbe79d5ac070402f3",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe"
+      }
+    ],
+    "train_refs": [
+      {
+        "task_id": "056cdb9891d34370be429fd5c345c660",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/train__stdscaler_ohe__ridge/03_train_model",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge"
+      }
+    ],
+    "leaderboard_ref": {
+      "task_id": "fd8eb90b7ae04400a5a2e24f24eaf82f",
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114659/grid/d573405f6b7c452293722d2b80abc39e/leaderboard/05_leaderboard"
+    },
+    "infer_ref": null,
+    "grid": {
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge"
+      ],
+      "max_jobs": 50,
+      "max_hpo_trials": 0,
+      "hpo": {
+        "enabled": false,
+        "params": {
+          "ridge": {
+            "alpha": [
+              0.1,
+              1.0,
+              10.0
+            ]
+          }
+        }
+      }
+    },
+    "policy": {
+      "limits": {
+        "max_jobs": 50,
+        "max_models": 10,
+        "max_hpo_trials": 0
+      },
+      "selection": {
+        "calibration": false,
+        "uncertainty": false,
+        "ci": false
+      }
+    }
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "recommended_train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/local/test_toy_20260112_115006/grid/113451fc475c4d519c0e1e7c67c67671/train__stdscaler_ohe__ridge/03_train_model",
+  "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/local/test_toy_20260112_115006/grid/113451fc475c4d519c0e1e7c67c67671/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+  "recommended_best_score": 0.008638732173673351,
+  "recommended_primary_metric": "rmse",
+  "recommended_composite_score": 0.0,
+  "recommended_metrics": {
+    "r2": 0.9997932636557981,
+    "rmse": 0.008638732173673351,
+    "mae": 0.008211243859786391,
+    "mse": 7.46276935684591e-05
+  },
+  "ranking_score_key": "composite_score",
+  "ranking_direction": "maximize",
+  "scoring": {
+    "metrics": [
+      "r2",
+      "rmse",
+      "mae",
+      "mse"
+    ],
+    "weights": {
+      "r2": 1.0,
+      "rmse": -1.0,
+      "mae": -0.5,
+      "mse": -0.2
+    },
+    "normalization": "minmax"
+  }
+}

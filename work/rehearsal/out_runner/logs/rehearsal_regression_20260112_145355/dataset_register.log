@@ -1,0 +1,8 @@
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+ClearML Task: created new task id=8858fd571056470eb5dbcf968ebcedcb
+ClearML results page: http://localhost:8080/projects/d79b701d52ec4ea485f95b5511c143bc/experiments/8858fd571056470eb5dbcf968ebcedcb/output/log
+ClearML results page: http://localhost:8080/projects/3f5d6bb2cbca4610814986661a82199a/experiments/b68db6d2d1974ba28c0db5ba25691a96/output/log
+ClearML dataset page: http://localhost:8080/datasets/simple/3f5d6bb2cbca4610814986661a82199a/experiments/b68db6d2d1974ba28c0db5ba25691a96
+Uploading dataset changes (1 files compressed to 7.21 KiB) to http://localhost:8081
+File compression and upload completed: total size 7.21 KiB, 1 chunk(s) stored (average size 7.21 KiB)

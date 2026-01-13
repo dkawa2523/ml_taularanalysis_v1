@@ -1,0 +1,18 @@
+{
+  "processed_dataset_hash": "0d04abe93431647ef713d37d397e91014a6da5844250b6d4b5979ef608b924a8",
+  "raw_dataset_hash": "30660cadb1fa476e10a68064a7130f5fff22252a291f1709a669dd6bc1890f54",
+  "raw_dataset_id": null,
+  "recipe_hash": "7887efea9c84c68baea8f1f0f9a255b4f49d119173213d19b1a3ab7afe35670c",
+  "split_hash": "8aa818dc1c1e4aebd0939754d3ecc60c630509aa7f7577f4773a5ea65645cd2e",
+  "schema_hash": "f1e9046bfac301fb0198e3f25099bfcca189d73797fc32fd4196267443952f24",
+  "bundle_hash": "49151a1b97fd19325bf29824e39891b3a84beb6aff9543de3e0e89e0dd9eda72",
+  "preprocess_variant": "stdscaler_ohe",
+  "task_type": "regression",
+  "target_column": "target",
+  "n_rows": 4,
+  "n_features": 4,
+  "store_features": true,
+  "created_at": "2026-01-07T11:54:12Z",
+  "schema_version": "v1",
+  "usecase_id": "test_toy_reg_20260107_115412"
+}

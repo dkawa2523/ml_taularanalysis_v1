@@ -1,0 +1,27 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-12T20:44:35Z",
+  "inputs": {
+    "run_dataset_register": false,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_ensemble": true,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": false
+  },
+  "outputs": {
+    "grid_run_id": "4eeb39d98bca4d0e99ee6227e785203b",
+    "pipeline_run_path": "work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_204408/99_pipeline/pipeline_run.json",
+    "plan_path": "work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_204408/99_pipeline/plan.json",
+    "run_summary_path": "work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_204408/99_pipeline/run_summary.json"
+  },
+  "hashes": {
+    "config_hash": "2b39b5f0369a54e1917ca53e012d304645505a6bf10ea0bf6b1ba65986d510bf",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

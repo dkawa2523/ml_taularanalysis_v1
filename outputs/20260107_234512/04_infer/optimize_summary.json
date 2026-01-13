@@ -1,0 +1,8 @@
+{
+  "n_trials": 20,
+  "direction": "maximize",
+  "objective_keys": [
+    "prediction"
+  ],
+  "search_space": []
+}
