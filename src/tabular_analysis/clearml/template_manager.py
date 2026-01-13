@@ -15,6 +15,7 @@ class TemplateContext:
     project_root: str
     usecase_id: str
     schema_version: str
+    template_set_id: str
 
 
 @dataclass(frozen=True)
@@ -87,17 +88,24 @@ def _dedupe(values: Iterable[Any]) -> list[str]:
 def load_default_context(repo_root: Path) -> TemplateContext:
     run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
     if not run_cfg_path.exists():
-        return TemplateContext(project_root="MFG", usecase_id="TabularAnalysis", schema_version="v1")
+        return TemplateContext(
+            project_root="MFG",
+            usecase_id="unknown",
+            schema_version="v1",
+            template_set_id="ta_v1",
+        )
     cfg = OmegaConf.load(run_cfg_path)
     clearml_cfg = getattr(cfg, "clearml", None)
     project_root = getattr(clearml_cfg, "project_root", None) or "MFG"
     template_usecase_id = getattr(clearml_cfg, "template_usecase_id", None)
-    usecase_id = template_usecase_id or getattr(cfg, "usecase_id", None) or "TabularAnalysis"
+    template_set_id = getattr(clearml_cfg, "template_set_id", None) or "ta_v1"
+    usecase_id = template_usecase_id or getattr(cfg, "usecase_id", None) or "unknown"
     schema_version = getattr(cfg, "schema_version", None) or "v1"
     return TemplateContext(
         project_root=str(project_root),
         usecase_id=str(usecase_id),
         schema_version=str(schema_version),
+        template_set_id=str(template_set_id),
     )
 
 
@@ -111,6 +119,7 @@ def load_template_specs(spec_path: Path, ctx: TemplateContext) -> list[TemplateS
         "project_root": ctx.project_root,
         "usecase_id": ctx.usecase_id,
         "schema_version": ctx.schema_version,
+        "template_set_id": ctx.template_set_id,
     }
     specs: list[TemplateSpec] = []
     for name, payload in templates.items():
@@ -190,7 +199,8 @@ def _find_tag(tags: Iterable[str], prefix: str) -> str | None:
 
 
 def build_tag_candidates(tags: Iterable[str], process: str) -> list[list[str]]:
-    base = _dedupe(["template:true", f"process:{process}"])
+    template_set_tag = _find_tag(tags, "template_set:")
+    base = _dedupe(["template:true", f"process:{process}", template_set_tag])
     usecase_tag = _find_tag(tags, "usecase:")
     schema_tag = _find_tag(tags, "schema:")
     candidates: list[list[str]] = []

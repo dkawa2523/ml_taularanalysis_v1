@@ -9,6 +9,8 @@ from pathlib import Path
 import re
 from typing import Any, Iterable, Mapping
 
+from ..clearml.project_layout import build_project_path, resolve_process_name
+
 
 @dataclass
 class ClearMLIdentity:
@@ -191,12 +193,16 @@ def _filter_properties(values: Mapping[str, Any]) -> dict[str, Any]:
     return filtered
 
 
-def build_project_name(project_root: str, usecase_id: str, stage: str) -> str:
-    root = _normalize_str(project_root) or "MFG"
-    stage_value = _normalize_str(stage) or "unknown"
-    usecase_value = _normalize_str(usecase_id) or "unknown"
-    root = root.rstrip("/")
-    return f"{root}/TabularAnalysis/{usecase_value}/{stage_value}"
+def build_project_name(
+    cfg: Any,
+    *,
+    stage: str | None = None,
+    process_name: str | None = None,
+    usecase_id: str | None = None,
+) -> str:
+    usecase_value = _normalize_str(usecase_id) or _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+    process_value = resolve_process_name(cfg, process_name=process_name, stage=stage)
+    return build_project_path(cfg, process_name=process_value, usecase_id=usecase_value)
 
 
 def resolve_clearml_identity(cfg: Any, *, now: datetime | None = None) -> ClearMLIdentity:
@@ -228,7 +234,7 @@ def apply_clearml_identity(cfg: Any, *, stage: str, now: datetime | None = None)
     identity = resolve_clearml_identity(cfg, now=now)
     _set_cfg_value(cfg, "run.usecase_id", identity.usecase_id)
     _set_cfg_value(cfg, "run.clearml.project_root", identity.project_root)
-    project_name = build_project_name(identity.project_root, identity.usecase_id, stage)
+    project_name = build_project_name(cfg, stage=stage, usecase_id=identity.usecase_id)
     _set_cfg_value(cfg, "run.clearml.project_name", project_name)
     return identity
 
@@ -266,7 +272,7 @@ def resolve_clearml_metadata(
         extra_tags=platform_adapter._cfg_value(cfg, "run.clearml.extra_tags") or [],
         tags=identity.tags,
     )
-    project_name = build_project_name(identity.project_root, identity.usecase_id, stage)
+    project_name = build_project_name(cfg, stage=stage, process_name=task_name, usecase_id=identity.usecase_id)
     return {
         "project_root": identity.project_root,
         "project_name": project_name,

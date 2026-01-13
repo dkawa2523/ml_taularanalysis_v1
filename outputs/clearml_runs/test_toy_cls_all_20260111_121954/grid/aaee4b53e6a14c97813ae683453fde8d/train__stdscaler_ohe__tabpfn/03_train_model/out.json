@@ -1,0 +1,17 @@
+{
+  "processed_dataset_id": "f1eea115e41d4403abe8b90af40eb80c",
+  "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+  "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779",
+  "train_task_id": "7afdd5128c044acca7279c97aa8fb5c1",
+  "model_id": null,
+  "best_score": null,
+  "primary_metric": "accuracy",
+  "task_type": "classification",
+  "status": "failed",
+  "error": {
+    "type": "ModelWeightsUnavailableError",
+    "message": "Required weights for model 'TabPFNClassifier' are not available. Authentication error downloading from 'Prior-Labs/tabpfn_2_5'.\nThis model is gated and requires you to accept its terms.\n\nPlease follow these steps:\n1. Visit https://huggingface.co/Prior-Labs/tabpfn_2_5 in your browser and accept the terms of use.\n2. Log in to your Hugging Face account via the command line by running:\n   hf auth login\n(Alternatively, you can set the HF_TOKEN environment variable with a read token).\n\nFor detailed instructions, see https://docs.priorlabs.ai/how-to-access-gated-models Auto-download was enabled but weights could not be retrieved. Check network access or pre-download the weights."
+  },
+  "model_variant": "tabpfn",
+  "n_classes": 2
+}

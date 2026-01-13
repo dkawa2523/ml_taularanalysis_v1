@@ -1,0 +1,548 @@
+{
+  "method": "mean_topk",
+  "selection_metric": "rmse",
+  "direction": "minimize",
+  "top_k": 1,
+  "preprocess_variant": "stdscaler_ohe",
+  "included": [
+    {
+      "train_task_id": "d902074c67e7473bbb0b31cf94eb9c75",
+      "model_variant": "logistic_regression",
+      "metric_value": 0.27386127875258304,
+      "preds_ref": "fallback_rerun"
+    }
+  ],
+  "skipped": [
+    {
+      "train_task_id": "baf41cd090bf412590ecd1d33ffadbf7",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "in_progress"
+    },
+    {
+      "train_task_id": "2aa73401cd5045eaa2ba53ffab007002",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task 2aa73401cd5045eaa2ba53ffab007002."
+    },
+    {
+      "train_task_id": "43ca7b4032214e9f84bf9e9b5dfbaa2a",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 43ca7b4032214e9f84bf9e9b5dfbaa2a."
+    },
+    {
+      "train_task_id": "34dc6d3063164a44a4c8acad099795fa",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "in_progress"
+    },
+    {
+      "train_task_id": "b605dfa8f4ce47c3aee4b0db872b3d3a",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task b605dfa8f4ce47c3aee4b0db872b3d3a."
+    },
+    {
+      "train_task_id": "046ba5be351444259cc1b0c653980a3d",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 046ba5be351444259cc1b0c653980a3d."
+    },
+    {
+      "train_task_id": "7da82184e84a4577ad0bc9b0d3195a16",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task 7da82184e84a4577ad0bc9b0d3195a16."
+    },
+    {
+      "train_task_id": "10872d6f260747528c697adaabfd76c9",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task 10872d6f260747528c697adaabfd76c9."
+    },
+    {
+      "train_task_id": "a70851bb88534fe3b01fe23d77ec66f1",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "in_progress"
+    },
+    {
+      "train_task_id": "21dad267eb104ab88ccea28f5fb12d5c",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "created"
+    },
+    {
+      "train_task_id": "7b9de57f4505410a82746a623392cec3",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "stopped"
+    },
+    {
+      "train_task_id": "1195c2d6c7044a81878905981dd7d3f6",
+      "model_variant": "ensemble_mean_topk",
+      "reason": "preprocess_mismatch",
+      "details": "unknown"
+    },
+    {
+      "train_task_id": "4591c5e8c4064d5d8cb6bc9d32e313da",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task 4591c5e8c4064d5d8cb6bc9d32e313da."
+    },
+    {
+      "train_task_id": "0f5be44b5b2e48d69e6a63d452f12b1c",
+      "model_variant": "ensemble_mean_topk",
+      "reason": "preprocess_mismatch",
+      "details": "unknown"
+    },
+    {
+      "train_task_id": "f017af70a8964ffb89a7cd1a26edaef5",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task f017af70a8964ffb89a7cd1a26edaef5."
+    },
+    {
+      "train_task_id": "f349261c00dd48879b27bc23bc5ad1a6",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task f349261c00dd48879b27bc23bc5ad1a6."
+    },
+    {
+      "train_task_id": "b1211c6d059542418aa027a1f797dea3",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task b1211c6d059542418aa027a1f797dea3."
+    },
+    {
+      "train_task_id": "d419b4e65aad486db4b00a0a728bad84",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task d419b4e65aad486db4b00a0a728bad84."
+    },
+    {
+      "train_task_id": "6131cb082e6e411b98caf9bce2fd9f6d",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "Artifact model_bundle.joblib not found on ClearML task 6131cb082e6e411b98caf9bce2fd9f6d."
+    },
+    {
+      "train_task_id": "967d058ec8c04010ab320be7d5ba1e10",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "26faa8b2d00344c0b64afb4e11191c78",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'xgboost'"
+    },
+    {
+      "train_task_id": "d93015c58bd0447ba6e1609e597c4e24",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "67e07734b37449f89a806df5560f353b",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'lightgbm'"
+    },
+    {
+      "train_task_id": "795c533293d44ce48e8f894096469227",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'catboost'"
+    },
+    {
+      "train_task_id": "eaa8e37ff51544d5992f20aa01eb6277",
+      "model_variant": "mlp",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "88bd1ec94870492eb2a91912996ca59f",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'lightgbm'"
+    },
+    {
+      "train_task_id": "e9a431f423f94e9290dd8d76a9a79d9c",
+      "model_variant": "svr",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "456813bea678440094a20b0aed271949",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'xgboost'"
+    },
+    {
+      "train_task_id": "8fd14440da224a3fb5a592e0612c6959",
+      "model_variant": "svc",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "45d5db04cb8541759e0cdc40b25b3468",
+      "model_variant": "extra_trees",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "80779c9030394e97833644b2c32e74ae",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'catboost'"
+    },
+    {
+      "train_task_id": "ecbdf97c1d044cada28614b6bbcad01d",
+      "model_variant": "knn",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "7c0d053e0a1844818bc2ffd9fdbdbefe",
+      "model_variant": "logistic_regression",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "f1cf9069f6084e5087dd43845515e12e",
+      "model_variant": "random_forest",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "18df80a2fa924e22a6c0f4dc24086536",
+      "model_variant": "gaussian_process",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "78f8406754214ecd99038a78a56c7eb2",
+      "model_variant": "ridge",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "947188cd11754578a5bcfaa134dca9dd",
+      "model_variant": "gradient_boosting",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "3735256955c64a918200ad3d198432ec",
+      "model_variant": "ridge",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "d56644d70e1b4941abdade9075c8d66d",
+      "model_variant": "logistic_regression",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "70d95636519141a2a07690e5241504a9",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'xgboost'"
+    },
+    {
+      "train_task_id": "9b32325ecda74a33b50cc1cc000df13d",
+      "model_variant": "knn",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "7afdd5128c044acca7279c97aa8fb5c1",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "398952d29cea41bbbde58c0a84aa9ad0",
+      "model_variant": "mlp",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "fa84f1941b6842b882c0d989bdba1cad",
+      "model_variant": "svc",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "3bd36dab27d147ea99347dcf3d8724a3",
+      "model_variant": "random_forest",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "b73e74af5bd54fa1b3dd545ab1479152",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'lightgbm'"
+    },
+    {
+      "train_task_id": "afffffdcff664c06967fe5f1c291d60b",
+      "model_variant": "svr",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "b939979a1f024f88a6959965ec5e7386",
+      "model_variant": "unknown",
+      "reason": "missing_model_bundle",
+      "details": "No module named 'catboost'"
+    },
+    {
+      "train_task_id": "13ae97dcaca945f99a3b2604b70100d2",
+      "model_variant": "gradient_boosting",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "2a5e5554c5554e7e8d17b6d525d2164e",
+      "model_variant": "extra_trees",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "19fdd8793c79476286e7e9b37f735bd9",
+      "model_variant": "gaussian_process",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "303d3efe28e44a12bf3a9177e11a0243",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "created"
+    },
+    {
+      "train_task_id": "ed2f15d8e60d4bdd99cbb821928455e3",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task ed2f15d8e60d4bdd99cbb821928455e3."
+    },
+    {
+      "train_task_id": "a6ce32e6d1724a5d8a83dfcc61ba269e",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task a6ce32e6d1724a5d8a83dfcc61ba269e."
+    },
+    {
+      "train_task_id": "e73df1c3979d4e96aff19ea2d5db5e4a",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task e73df1c3979d4e96aff19ea2d5db5e4a."
+    },
+    {
+      "train_task_id": "1fa768d7300745c8baed8bdb9fd8b2b5",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 1fa768d7300745c8baed8bdb9fd8b2b5."
+    },
+    {
+      "train_task_id": "6c34fa5de79149978051733845302f17",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 6c34fa5de79149978051733845302f17."
+    },
+    {
+      "train_task_id": "adb8201f93584be98ff4e17b744d0d79",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task adb8201f93584be98ff4e17b744d0d79."
+    },
+    {
+      "train_task_id": "fbcc744edbec4ea491e355a0d9dceff6",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task fbcc744edbec4ea491e355a0d9dceff6."
+    },
+    {
+      "train_task_id": "2ef87656a0414e0f956f48e6643c4803",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 2ef87656a0414e0f956f48e6643c4803."
+    },
+    {
+      "train_task_id": "cf46f92d6b2546c081948e458d388ce4",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task cf46f92d6b2546c081948e458d388ce4."
+    },
+    {
+      "train_task_id": "c083675fcece41e195295e8f65d52bdc",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task c083675fcece41e195295e8f65d52bdc."
+    },
+    {
+      "train_task_id": "6dd9276f28a74f408953eb4d84503a09",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 6dd9276f28a74f408953eb4d84503a09."
+    },
+    {
+      "train_task_id": "722e3e892ed643d7a791fd7e8b7ef535",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task 722e3e892ed643d7a791fd7e8b7ef535."
+    },
+    {
+      "train_task_id": "c8ee027a205b4b0a91d3216e9d59d22c",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task c8ee027a205b4b0a91d3216e9d59d22c."
+    },
+    {
+      "train_task_id": "d2a4df52d7544f4585add79b85184ce6",
+      "model_variant": "unknown",
+      "reason": "missing_out_json",
+      "details": "Artifact out.json not found on ClearML task d2a4df52d7544f4585add79b85184ce6."
+    },
+    {
+      "train_task_id": "f64c688d4f5a4828b145063a332e18f9",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "created"
+    },
+    {
+      "train_task_id": "f0471216fe774173947386bc253045b3",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "created"
+    },
+    {
+      "train_task_id": "9fc5ec21344a44ce89293cd3d9205938",
+      "model_variant": "logistic_regression",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "d43f94247e694432a7b0c4ad85103f01",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "b69d86fe67e247f4aeb9a4c61be6e93e",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "9d7a606bcb964d3bb1700e5dee479c54",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "bc1938ff0a17433db3e5fc106d8cdbe2",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "2e8dd3ad9def4cf4ae16c5e826c66055",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "687f8240dc394418a7544e8bd9472a05",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "e0d5bdadc26946f8ac91ccf98207b6d8",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "d78a907262c34417baac935ab53e432c",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "4ca401eeb70b4e8987b16fd2f5ac079f",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "7fffbb148d8e4977bccf98f4c5f770e2",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "286056d1834c44c7b21e9ad39526f1a5",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "9375fd4d0254417785bd46dc5cad98fe",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "35e4fb1932ea4fdba93883404a5ffe04",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "7f784081b4fa4c4489fd3540a3a867c3",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "7a0ea40ea4b746fc983bd21085e41c10",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "94fe3b9cd2ff4f73b51e6731fc7fcd01",
+      "model_variant": "unknown",
+      "reason": "status_incomplete",
+      "details": "failed"
+    },
+    {
+      "train_task_id": "babe81b3bf184528bf9ea9b776365757",
+      "model_variant": "random_forest",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "ff618912b8ea4e0c923d1246d891268b",
+      "model_variant": "logistic_regression",
+      "reason": "metric_missing",
+      "details": "rmse"
+    },
+    {
+      "train_task_id": "846aabb45c5d4e4ba0848eee24dca8ac",
+      "model_variant": "ridge",
+      "reason": "preds_invalid",
+      "details": "[Errno 2] No such file or directory: '/Users/kawahito/.clearml/cache/storage_manager/global/fa2b5ca189aa4ab7d6d513cf48213119.model_bundle.joblib'"
+    }
+  ],
+  "created_at": "2026-01-13T00:02:25Z",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "schema_version": "v1"
+}

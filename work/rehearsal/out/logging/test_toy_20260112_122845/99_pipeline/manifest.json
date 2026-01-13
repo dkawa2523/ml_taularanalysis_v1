@@ -1,0 +1,27 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-12T12:28:50Z",
+  "inputs": {
+    "run_dataset_register": false,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_ensemble": false,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": false
+  },
+  "outputs": {
+    "grid_run_id": "3c853cafb6f04dc8b6fc95ae22755ea8",
+    "pipeline_run_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/99_pipeline/pipeline_run.json",
+    "plan_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/99_pipeline/plan.json",
+    "run_summary_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/99_pipeline/run_summary.json"
+  },
+  "hashes": {
+    "config_hash": "ba1467b87e765cc8b6cc3090028c3c090ee8ed211df7354fa4ffec7e523f8764",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

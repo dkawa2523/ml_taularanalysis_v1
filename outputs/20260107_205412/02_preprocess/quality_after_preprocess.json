@@ -1,0 +1,22 @@
+{
+  "rows": 4,
+  "columns_before": 3,
+  "columns_after": 4,
+  "dropped_columns": {
+    "count": 0,
+    "columns": []
+  },
+  "missing": {
+    "before": {
+      "missing_total": 1,
+      "missing_rate": 0.08333333333333333,
+      "missing_columns": 1
+    },
+    "after": {
+      "missing_total": 0,
+      "missing_rate": 0.0,
+      "missing_columns": 0
+    },
+    "reduced_total": 1
+  }
+}

@@ -52,6 +52,7 @@ def main() -> int:
             "task=pipeline",
             "run.clearml.enabled=false",
             f"run.output_dir={out_root}",
+            "data.raw_dataset_id=demo",
             "pipeline.plan_only=true",
             "pipeline.grid.preprocess_variants=[stdscaler_ohe]",
             "pipeline.grid.model_variants=[ridge,lasso]",

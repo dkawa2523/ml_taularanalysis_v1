@@ -2,7 +2,7 @@
 task:
   name: train_model
   stage: "03_train_model"
-  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/03_train_model"
+  project_name: "${run.clearml.project_root}${run.clearml.project_layout.separator}${run.clearml.project_layout.solution_root}${run.clearml.project_layout.separator}${run.usecase_id}${run.clearml.project_layout.separator}${run.clearml.project_layout.group_map.train_model}"
 
 train:
   model: ${model_variant.name}

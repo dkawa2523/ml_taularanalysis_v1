@@ -1,0 +1,115 @@
+{
+  "report_version": 1,
+  "grid_run_id": "fe8f247a46de4d6c8c86df0652df55c3",
+  "status": "ready",
+  "summary": {
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "primary_metric": "rmse",
+    "best_score": 0.3133085191754989,
+    "models_tried": 1,
+    "train_task_ref": "f07788060a95420c9dd7dd14e50ec756",
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "plan_only": false,
+    "recommendation_rationale": "Top-ranked by rmse (minimize). require_comparable=True."
+  },
+  "dataset": {
+    "raw_dataset_id": null,
+    "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+    "rows": 240,
+    "feature_columns": 3,
+    "target_column": "target",
+    "id_columns": [],
+    "drop_columns": []
+  },
+  "data_quality": {},
+  "split": {
+    "preprocess_variant": "stdscaler_ohe",
+    "strategy": "random",
+    "test_size": 0.2,
+    "seed": 42,
+    "group_column": null,
+    "time_column": null,
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  },
+  "comparability": {
+    "require_comparable": true,
+    "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "task_type": "regression",
+    "seed": 42,
+    "excluded_count": 0,
+    "warning_count": 0
+  },
+  "top_models": [
+    {
+      "rank": 1,
+      "composite_score": 0.0,
+      "best_score": 0.3133085191754989,
+      "primary_metric_ci_low": null,
+      "primary_metric_ci_mid": null,
+      "primary_metric_ci_high": null,
+      "primary_metric": "rmse",
+      "task_type": "regression",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "train_task_ref": "f07788060a95420c9dd7dd14e50ec756",
+      "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+      "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+      "r2": 0.8342114308265305,
+      "rmse": 0.3133085191754989,
+      "mae": 0.2573882706799682,
+      "mse": 0.09816222818794396
+    }
+  ],
+  "recommendation": {
+    "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "train_task_ref": "f07788060a95420c9dd7dd14e50ec756",
+    "primary_metric": "rmse",
+    "best_score": 0.3133085191754989,
+    "direction": "minimize",
+    "primary_metric_ci": null,
+    "task_type": "regression",
+    "n_classes": null,
+    "threshold": null,
+    "thresholding": null,
+    "calibration": null,
+    "imbalance": {
+      "enabled": false,
+      "strategy": "class_weight",
+      "applied": false
+    },
+    "uncertainty": {
+      "enabled": false,
+      "method": "conformal_split",
+      "alpha": 0.1,
+      "q": null
+    }
+  },
+  "notes": {
+    "thresholding": null,
+    "calibration": null,
+    "imbalance": {
+      "enabled": false,
+      "strategy": "class_weight",
+      "applied": false
+    },
+    "uncertainty": {
+      "enabled": false,
+      "method": "conformal_split",
+      "alpha": 0.1,
+      "q": null
+    }
+  },
+  "next_actions": [
+    "Try additional model variants for a stronger baseline.",
+    "Try alternative preprocessing variants for robustness.",
+    "Enable pipeline.hpo to explore parameter grids on promising models."
+  ]
+}

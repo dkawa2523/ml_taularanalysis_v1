@@ -1,0 +1,385 @@
+run:
+  usecase_id: rehearsal_regression_20260112_204408
+  output_dir: work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_204408
+  schema_version: v1
+  grid_run_id: 4eeb39d98bca4d0e99ee6227e785203b
+  retrain_run_id: null
+  clearml:
+    enabled: true
+    execution: logging
+    code_ref:
+      mode: branch
+      repository: auto
+      branch: auto
+      commit: auto
+    code_repository: auto
+    code_branch: auto
+    code_version_mode: branch_head
+    project_root: MFG
+    project_name: MFG/TabularAnalysis/rehearsal_regression_20260112_204408/00_Pipelines
+    template_usecase_id: TabularAnalysis
+    template_set_id: ta_v1
+    queue_name: null
+    clone_from_task_id: null
+    extra_tags: []
+    parent_task_id: null
+    reporting:
+      enable_scalars: true
+      enable_plots: true
+      enable_tables: true
+    project_layout:
+      solution_root: TabularAnalysis
+      separator: /
+      misc_group: Misc
+      group_map:
+        dataset_register: 01_Datasets
+        preprocess: 02_Preprocess
+        train_model: 03_TrainModels
+        train_ensemble: 04_Ensembles
+        infer: 05_Infer
+        leaderboard: 06_Leaderboards
+        pipeline: 00_Pipelines
+        promote_model: 07_Promote
+    hyperparams:
+      sections:
+        inputs:
+        - run.usecase_id
+        - run.output_dir
+        - run.schema_version
+        - run.grid_run_id
+        - run.retrain_run_id
+        - data.dataset_path
+        - data.target_column
+        - data.id_columns
+        - data.drop_columns
+        - infer.mode
+        - infer.input_path
+        - infer.input_json
+        - infer.validation.mode
+        - infer.batch.inputs_path
+        - infer.batch.inputs_json
+        dataset:
+        - data.raw_dataset_id
+        - data.processed_dataset_id
+        preprocess:
+        - preprocess.variant
+        - preprocess.*
+        - data.split.*
+        - ops.processed_dataset.*
+        model:
+        - train.model
+        - train.params
+        - model_variant.name
+        - model_variant.params
+        eval:
+        - eval.*
+        - leaderboard.require_comparable
+        - leaderboard.top_k
+        pipeline:
+        - pipeline.*
+        clearml:
+        - run.clearml.enabled
+        - run.clearml.execution
+        - run.clearml.project_root
+        - run.clearml.project_name
+        - run.clearml.task_name
+        - run.clearml.queue_name
+        - run.clearml.clone_from_task_id
+        - run.clearml.extra_tags
+        - run.clearml.policy.name
+        - run.clearml.code_ref.*
+        - run.clearml.reporting.*
+        - run.clearml.code_repository
+        - run.clearml.code_branch
+        - run.clearml.code_version_mode
+        - run.clearml.template_usecase_id
+        - run.clearml.template_set_id
+    policy:
+      name: test_minimal
+      tags: []
+      properties: {}
+    task_name: pipeline
+  alerts:
+    enabled: false
+    sinks:
+      file:
+        enabled: true
+        path: null
+      stdout:
+        enabled: false
+      webhook:
+        enabled: false
+        url: null
+        timeout_sec: 5
+  usecase_id_policy:
+    name: test_dataset_timestamp
+    strategy: dataset_timestamp
+    prefix: test
+    timestamp_format: '%Y%m%d_%H%M%S'
+    dataset_id_paths:
+    - retrain.dataset_id
+    - retrain.dataset_path
+    - data.raw_dataset_id
+    - data.processed_dataset_id
+    - data.dataset_path
+    fallback: unknown
+ops:
+  processed_dataset:
+    store_features: true
+exec_policy:
+  limits:
+    max_jobs: 50
+    max_models: 10
+    max_hpo_trials: 0
+  queues:
+    default: ${run.clearml.queue_name}
+    pipeline: ${exec_policy.queues.default}
+    dataset_register: ${exec_policy.queues.default}
+    preprocess: ${exec_policy.queues.default}
+    train_model: ${exec_policy.queues.default}
+    train_model_heavy: gpu
+    leaderboard: ${exec_policy.queues.default}
+    infer: ${exec_policy.queues.default}
+    model_variants: {}
+    heavy_model_variants: []
+  selection:
+    calibration: false
+    uncertainty: false
+    ci: false
+monitor:
+  drift:
+    enabled: false
+    sample_n: 5000
+    metrics:
+    - psi
+    - ks
+    alert_thresholds:
+      psi: 0.2
+data:
+  quality:
+    mode: warn
+    enabled: true
+    max_rows_scan: 50000
+    fail_on_duplicates: false
+    fail_on_leak: false
+    thresholds:
+      missing_rate_warn: 0.2
+      missing_rate_fail: 0.5
+      duplicates_rate_warn: 0.01
+      duplicates_rate_fail: 0.05
+      constant_columns_warn: 1
+      constant_columns_fail: 5
+      mixed_type_columns_warn: 1
+      mixed_type_columns_fail: 5
+      high_cardinality_ratio_warn: 0.8
+      high_cardinality_ratio_fail: 1.01
+      high_cardinality_min_unique: 20
+      high_cardinality_count_fail: 9999
+      id_like_ratio_warn: 0.98
+      id_like_ratio_fail: 1.01
+      id_like_min_unique: 20
+      leak_near_match_warn: 0.98
+      leak_correlation_warn: 0.98
+      leak_mapping_accuracy_warn: 0.98
+    name_patterns:
+      leak_suspect:
+      - target
+      - label
+      - outcome
+      - response
+      id_suspect:
+      - id
+      - uuid
+      - guid
+  dataset_path: work/rehearsal/out_runner/data/rehearsal_regression_20260112_204408/toy_regression.csv
+  raw_dataset_id: 877e84a2980b4c538031c5976d1389ae
+  processed_dataset_id: null
+  target_column: target
+  id_columns: []
+  drop_columns: []
+  split:
+    strategy: random
+    test_size: 0.2
+    seed: 42
+    group_column: null
+    time_column: null
+eval:
+  task_type: regression
+  primary_metric: rmse
+  direction: auto
+  cv_folds: 5
+  seed: 42
+  ci:
+    enabled: false
+    n_boot: 200
+    alpha: 0.05
+    seed: 0
+  thresholding:
+    enabled: false
+    metric: f1
+    grid:
+    - 0.05
+    - 0.1
+    - 0.15
+    - 0.2
+    - 0.25
+    - 0.3
+    - 0.35
+    - 0.4
+    - 0.45
+    - 0.5
+    - 0.55
+    - 0.6
+    - 0.65
+    - 0.7
+    - 0.75
+    - 0.8
+    - 0.85
+    - 0.9
+    - 0.95
+  calibration:
+    enabled: false
+    method: sigmoid
+    mode: prefit
+  uncertainty:
+    enabled: false
+    method: conformal_split
+    alpha: 0.1
+    use_abs_residual: true
+  imbalance:
+    enabled: false
+    strategy: class_weight
+    class_weight: balanced
+  classification:
+    mode: auto
+    top_k: 1
+  metrics:
+    regression:
+    - r2
+    - mse
+    - rmse
+    - mae
+    classification_multiclass:
+    - accuracy
+    - f1_macro
+    - logloss
+    classification_imbalance:
+    - pr_auc
+    - balanced_accuracy
+    - fbeta
+    fbeta_beta: 1.0
+ensemble:
+  enabled: true
+  method: mean_topk
+  top_k: 1
+  selection_metric: ${eval.primary_metric}
+  exclude_variants: []
+  fallback_rerun_predict: true
+viz:
+  enabled: true
+  max_features: 20
+  max_points: 1000
+  confusion_normalize: true
+  roc_curve: true
+  heavy:
+    enabled: false
+group:
+  preprocess:
+    preprocess_variant:
+      name: stdscaler_ohe
+      numeric_scaler: standard
+      categorical_encoder: onehot
+      handle_unknown: ignore
+  model:
+    model_variant:
+      name: ridge
+      framework: sklearn
+      class_path:
+        regression: sklearn.linear_model.Ridge
+        classification: sklearn.linear_model.RidgeClassifier
+      params:
+        alpha: 1.0
+        random_state: ${eval.seed}
+  split:
+    split_variant:
+      name: random
+      strategy: random
+  infer_mode:
+    infer_mode:
+      name: single
+      input_format: json
+task:
+  name: pipeline
+  stage: 99_pipeline
+  project_name: ${run.clearml.project_root}${run.clearml.project_layout.separator}${run.clearml.project_layout.solution_root}${run.clearml.project_layout.separator}${run.usecase_id}${run.clearml.project_layout.separator}${run.clearml.project_layout.group_map.pipeline}
+pipeline:
+  run_dataset_register: false
+  run_preprocess: true
+  run_train: true
+  run_leaderboard: true
+  run_infer: false
+  plan_only: false
+  dry_run: false
+  preprocess_variants:
+  - stdscaler_ohe
+  model_variants:
+  - ridge
+  - elasticnet
+  - lasso
+  builder:
+    train_project_per_preprocess: true
+  grid:
+    preprocess_variants:
+    - stdscaler_ohe
+    model_variants:
+    - ridge
+    max_jobs: ${exec_policy.limits.max_jobs}
+  hpo:
+    enabled: false
+    params:
+      ridge:
+        alpha:
+        - 0.1
+        - 1.0
+        - 10.0
+  profile: default
+  groups:
+    preprocess:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_inapplicable: skip
+    train:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_missing_dependency: skip
+    ensemble:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_insufficient_candidates: skip
+    leaderboard:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+  fail_policy:
+    allow_skipped: true
+    allowed_failures: 0
+    fail_fast: false
+    min_successful_train_tasks: 1
+  limits:
+    max_preprocess_variants: 3
+    max_train_tasks: 30
+    max_ensemble_tasks: 10
+  parallelism:
+    max_concurrent_steps: 4
+    max_concurrent_train: 4

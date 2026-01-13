@@ -60,7 +60,7 @@ def main() -> int:
         found = True
         new_verify = [
             "python -m compileall -q src",
-            "python -c "import sys; sys.path.insert(0,'src'); import tabular_analysis.ops.print_clearml_identity as m; print('ok')"",
+            'python -c "import sys; sys.path.insert(0,\'src\'); import tabular_analysis.ops.print_clearml_identity as m; print(\'ok\')"',
         ]
         if t.get("verify") != new_verify:
             t["verify"] = new_verify

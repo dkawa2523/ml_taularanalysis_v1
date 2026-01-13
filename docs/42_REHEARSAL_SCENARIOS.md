@@ -64,7 +64,7 @@ python tools/rehearsal/run_rehearsal.py --mode logging
 ```
 
 UIで確認すること（詳細: `docs/55_CLEARML_UI_CHECKLIST.md` / `docs/53_CLEARML_HYPERPARAMETERS_CONTRACT.md`）：
-- Projects配下が `.../TabularAnalysis/<usecase_id>/...` になっている
+- Projects配下が `.../<solution_root>/<usecase_id>/<process_group>` になっている
 - 各Taskに `config_resolved.yaml / out.json / manifest.json` がArtifactsとしてある
 - leaderboardに `leaderboard.csv / recommendation.json / decision_summary.md` がある
 - preprocess で processed dataset が Datasets に作成されている（`processed_dataset_id` と一致）
@@ -106,10 +106,15 @@ clearml-agent daemon --queue default --foreground
 
 3) PipelineController で実行（同じデータ条件を使う）
 ```bash
+python -m tabular_analysis.cli task=dataset_register \
+  run.clearml.enabled=true run.clearml.execution=logging \
+  data.dataset_path=/path/to/data.csv data.target_column=target
+
 python -m tabular_analysis.cli task=pipeline \
   run.clearml.enabled=true \
   run.clearml.execution=pipeline_controller \
-  run.clearml.queue_name=default
+  run.clearml.queue_name=default \
+  data.raw_dataset_id=<RAW_DATASET_ID>
 ```
 
 UIで確認すること：
@@ -117,7 +122,7 @@ UIで確認すること：
 - pipeline task から子タスクが生成され、Queue に投入されている
 - child tasks の `clearml.execution` が `logging` になっている（HyperParameters）
 - `pipeline_run.json` が pipeline task の artifact にある
-- 子タスクが `.../TabularAnalysis/<usecase_id>/01_dataset_register` などの階層に生成される
+- 子タスクが `.../<solution_root>/<usecase_id>/02_Preprocess` などの階層に生成される
 
 ---
 

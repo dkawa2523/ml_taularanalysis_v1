@@ -1,0 +1,11 @@
+# @package ensemble
+defaults:
+  - base
+  - _self_
+
+method: weighted
+weighted:
+  search: linear
+  n_samples: 1500
+  seed: 42
+  top_k_max: 5

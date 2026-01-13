@@ -11,7 +11,7 @@ See also: `docs/03_CLEARML_UI_CONTRACT.md`, `docs/50_CLEARML_PROCESSED_DATASET_C
 - [ ] `usecase_id` is known (from `work/rehearsal/rehearsal_log.md` or output dir).
 
 ## 1. Project tree and required artifacts
-- [ ] Project path matches `<ROOT>/TabularAnalysis/<usecase_id>/<Stage>`.
+- [ ] Project path matches `<ROOT>/<solution_root>/<usecase_id>/<process_group>`.
 - [ ] Each task has `config_resolved.yaml`, `out.json`, `manifest.json` as artifacts.
 - [ ] Tags and user properties include required keys (see `docs/03_CLEARML_UI_CONTRACT.md`).
 - [ ] Pipeline task has `pipeline_run.json` (if pipeline ran).

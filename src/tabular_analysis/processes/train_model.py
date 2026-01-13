@@ -18,9 +18,16 @@ from typing import Any
 import warnings
 
 from ..clearml.datasets import get_processed_dataset_local_copy, get_raw_dataset_local_copy
-from ..clearml.hparams import connect_train_model
 from ..clearml.naming import apply_train_model_naming
-from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
+from ..clearml.reporting import (
+    plots_enabled,
+    report_plotly,
+    report_scalar,
+    report_table,
+    scalars_enabled,
+    tables_enabled,
+)
+from ..clearml.ui_logger import log_debug_table
 from ..feature_engineering.categorical import encode_target_for_mean
 from ..io.bundle_io import load_bundle, save_bundle
 from ..metrics.regression import REGRESSION_METRIC_ORDER, compute_regression_metrics
@@ -29,6 +36,7 @@ from .drift_report import annotate_profile, resolve_drift_settings, sample_frame
 from ..ops.clearml_identity import apply_clearml_identity
 from ..platform_adapter import (
     hash_config,
+    emit_skip,
     init_task_context,
     is_clearml_enabled,
     resolve_output_dir,
@@ -45,7 +53,8 @@ from ..registry.metrics import (
     metric_requires_proba,
     metric_supports_thresholding,
 )
-from ..registry.models import ModelWeightsUnavailableError, build_model
+from ..registry import list_model_variants
+from ..registry.models import MissingOptionalDependencyError, ModelWeightsUnavailableError, build_model
 from ..uncertainty.conformal import compute_split_conformal_quantile
 from ..viz.plots import (
     plot_confusion_matrix,
@@ -53,6 +62,7 @@ from ..viz.plots import (
     plot_interval_width_histogram,
     plot_reliability_curve,
     plot_regression_residuals,
+    plot_true_pred_scatter,
     plot_roc_curve,
     write_confusion_matrix_csv,
 )
@@ -186,6 +196,19 @@ def _resolve_regression_metrics(cfg: Any) -> list[str]:
         seen.add(key)
         ordered.append(key)
     return ordered
+
+
+def _resolve_eval_context(cfg: Any, *, task_type: str) -> tuple[str, str, int, int]:
+    primary_metric = (
+        _normalize_str(getattr(getattr(cfg, "eval", None), "primary_metric", None)) or "rmse"
+    ).lower()
+    direction = _normalize_str(getattr(getattr(cfg, "eval", None), "direction", None))
+    if not direction or direction == "auto":
+        direction = metric_direction(primary_metric, task_type)
+    direction = direction.lower()
+    cv_folds = int(getattr(getattr(cfg, "eval", None), "cv_folds", 0) or 0)
+    cv_seed = int(getattr(getattr(cfg, "eval", None), "seed", 42) or 42)
+    return primary_metric, direction, cv_folds, cv_seed
 
 
 def _resolve_viz_settings(cfg: Any) -> dict[str, Any]:
@@ -1163,6 +1186,17 @@ def _merge_model_variant(cfg: Any) -> dict[str, Any]:
     return merged_variant
 
 
+def _find_model_spec(variant_id: str, *, task_type: str | None) -> Any | None:
+    try:
+        specs = list_model_variants(task_type=task_type, defaults_only=False)
+    except Exception:
+        return None
+    for spec in specs:
+        if spec.id == variant_id:
+            return spec
+    return None
+
+
 def _extract_feature_importance(
     model: Any, feature_names: list[str] | None
 ) -> tuple[list[str], list[float]] | None:
@@ -1398,6 +1432,57 @@ def _build_prediction_sample(
     return df.head(max_rows)
 
 
+def _write_preds_valid(
+    output_dir: Path,
+    *,
+    y_true: Any,
+    y_pred: Any,
+    y_proba: Any | None,
+    task_type: str,
+    class_labels: list[str] | None,
+) -> tuple[Path | None, Path | None, dict[str, Any] | None]:
+    try:
+        import numpy as np  # type: ignore
+        import pandas as pd  # type: ignore
+    except Exception:
+        return None, None, None
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    n = min(len(y_true_arr), len(y_pred_arr))
+    if n <= 0:
+        return None, None, None
+    payload: dict[str, Any] = {
+        "y_true": y_true_arr[:n],
+        "y_pred": y_pred_arr[:n],
+    }
+    preds_schema: dict[str, Any] = {"task_type": task_type}
+    classes_path: Path | None = None
+    if task_type == "classification":
+        if y_proba is not None:
+            proba_arr = np.asarray(y_proba)
+            if proba_arr.ndim == 1:
+                proba_arr = np.stack([1.0 - proba_arr, proba_arr], axis=1)
+            if class_labels is None or len(class_labels) != int(proba_arr.shape[1]):
+                class_labels = [str(i) for i in range(int(proba_arr.shape[1]))]
+            for idx, label in enumerate(class_labels):
+                payload[f"proba__{label}"] = proba_arr[:n, idx]
+        preds_schema["classes"] = class_labels
+        preds_schema["has_proba"] = y_proba is not None
+        if class_labels is not None:
+            classes_path = output_dir / "artifacts" / "classes.json"
+            classes_path.parent.mkdir(parents=True, exist_ok=True)
+            classes_path.write_text(
+                json.dumps(class_labels, ensure_ascii=True, indent=2), encoding="utf-8"
+            )
+    artifacts_dir = output_dir / "artifacts"
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
+    preds_path = artifacts_dir / "preds_valid.parquet"
+    df = pd.DataFrame(payload)
+    df.to_parquet(preds_path, index=False)
+    preds_schema["columns"] = list(df.columns)
+    return preds_path, classes_path, preds_schema
+
+
 def _record_model_failure(
     *,
     ctx: Any,
@@ -1473,6 +1558,80 @@ def _record_model_failure(
     write_manifest(ctx, manifest)
 
 
+def _record_model_skip(
+    *,
+    ctx: Any,
+    cfg: Any,
+    processed_dataset_id: str | None,
+    split_hash: str | None,
+    recipe_hash: str | None,
+    model_variant_name: str,
+    primary_metric: str,
+    direction: str,
+    cv_folds: int,
+    cv_seed: int,
+    task_type: str,
+    n_classes: int | None,
+    reason: str,
+    detail: Any | None = None,
+) -> None:
+    train_task_id = _resolve_task_id(ctx)
+    out = {
+        "processed_dataset_id": processed_dataset_id,
+        "split_hash": split_hash,
+        "recipe_hash": recipe_hash,
+        "train_task_id": train_task_id,
+        "model_id": None,
+        "best_score": None,
+        "primary_metric": primary_metric,
+        "task_type": task_type,
+        "model_variant": model_variant_name,
+    }
+    if n_classes is not None:
+        out["n_classes"] = n_classes
+    emit_skip(ctx, reason=reason, detail=detail, out=out)
+
+    clearml_enabled = is_clearml_enabled(cfg)
+    versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
+    inputs = {
+        "processed_dataset_id": processed_dataset_id,
+        "split_hash": split_hash,
+        "recipe_hash": recipe_hash,
+        "model_variant": model_variant_name,
+        "primary_metric": primary_metric,
+        "direction": direction,
+        "cv_folds": cv_folds,
+        "seed": cv_seed,
+        "task_type": task_type,
+    }
+    outputs = {
+        "model_id": None,
+        "best_score": None,
+        "primary_metric": primary_metric,
+        "task_type": task_type,
+        "status": "skipped",
+        "reason": reason,
+    }
+    if n_classes is not None:
+        outputs["n_classes"] = n_classes
+    hashes = {"config_hash": hash_config(cfg)}
+    if split_hash:
+        hashes["split_hash"] = split_hash
+    if recipe_hash:
+        hashes["recipe_hash"] = recipe_hash
+    manifest = {
+        "schema_version": versions.get("schema_version", "unknown"),
+        "code_version": versions.get("code_version", "unknown"),
+        "platform_version": versions.get("platform_version", "unknown"),
+        "process": "train_model",
+        "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "inputs": inputs,
+        "outputs": outputs,
+        "hashes": hashes,
+    }
+    write_manifest(ctx, manifest)
+
+
 def run(cfg: Any) -> None:
     _ensure_variant_cfg(cfg)
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
@@ -1486,6 +1645,8 @@ def run(cfg: Any) -> None:
     )
     save_config_resolved(ctx, cfg)
     clearml_enabled = is_clearml_enabled(cfg)
+    task_type = _normalize_task_type(getattr(getattr(cfg, "eval", None), "task_type", None))
+    primary_metric, direction, cv_folds, cv_seed = _resolve_eval_context(cfg, task_type=task_type)
 
     processed_ref = _normalize_str(getattr(getattr(cfg, "data", None), "processed_dataset_id", None))
     processed_ref_path: Path | None = None
@@ -1501,6 +1662,36 @@ def run(cfg: Any) -> None:
 
     if preprocess_out_path.exists():
         preprocess_out = _load_json(preprocess_out_path)
+        if _normalize_str(preprocess_out.get("status")) == "skipped":
+            processed_dataset_id = _normalize_str(preprocess_out.get("processed_dataset_id"))
+            split_hash = _normalize_str(preprocess_out.get("split_hash"))
+            recipe_hash = _normalize_str(preprocess_out.get("recipe_hash"))
+            model_variant = _merge_model_variant(cfg)
+            model_variant_name = _normalize_str(model_variant.get("name")) or "unknown"
+            skip_reason = _normalize_str(preprocess_out.get("reason")) or "inapplicable"
+            skip_detail = {
+                "upstream": "preprocess",
+                "preprocess_reason": preprocess_out.get("reason"),
+                "preprocess_detail": preprocess_out.get("detail"),
+                "preprocess_run_dir": str(preprocess_run_dir),
+            }
+            _record_model_skip(
+                ctx=ctx,
+                cfg=cfg,
+                processed_dataset_id=processed_dataset_id,
+                split_hash=split_hash,
+                recipe_hash=recipe_hash,
+                model_variant_name=model_variant_name,
+                primary_metric=primary_metric,
+                direction=direction,
+                cv_folds=cv_folds,
+                cv_seed=cv_seed,
+                task_type=task_type,
+                n_classes=None,
+                reason=skip_reason,
+                detail=skip_detail,
+            )
+            return
         processed_dataset_id = _normalize_str(preprocess_out.get("processed_dataset_id"))
         split_hash = _normalize_str(preprocess_out.get("split_hash"))
         recipe_hash = _normalize_str(preprocess_out.get("recipe_hash"))
@@ -1543,8 +1734,6 @@ def run(cfg: Any) -> None:
     if not bundle_path.exists():
         raise FileNotFoundError(f"preprocess_bundle.joblib not found: {bundle_path}")
     preprocess_bundle = load_bundle(bundle_path)
-
-    task_type = _normalize_task_type(getattr(getattr(cfg, "eval", None), "task_type", None))
 
     processed_dataset_path: Path | None = None
     if processed_ref_path is not None:
@@ -1689,6 +1878,27 @@ def run(cfg: Any) -> None:
     model_variant_name = _normalize_str(model_variant.get("name")) or "unknown"
     model_variant_fit = dict(model_variant)
     model_variant_fit["params"] = dict(model_variant.get("params") or {})
+    model_spec = _find_model_spec(model_variant_name, task_type=task_type)
+    if model_spec is not None:
+        missing = list(model_spec.missing_dependencies() or [])
+        if missing:
+            _record_model_skip(
+                ctx=ctx,
+                cfg=cfg,
+                processed_dataset_id=processed_dataset_id,
+                split_hash=split_hash,
+                recipe_hash=recipe_hash,
+                model_variant_name=model_variant_name,
+                primary_metric=primary_metric,
+                direction=direction,
+                cv_folds=cv_folds,
+                cv_seed=cv_seed,
+                task_type=task_type,
+                n_classes=n_classes,
+                reason="missing_dependency",
+                detail={"missing": missing, "model_variant": model_variant_name},
+            )
+            return
 
     imbalance_report: dict[str, Any] = {
         "enabled": bool(imbalance_cfg.get("enabled")),
@@ -1731,27 +1941,6 @@ def run(cfg: Any) -> None:
                 f"Imbalance strategy '{imbalance_cfg.get('strategy')}' was skipped: "
                 f"{imbalance_report.get('reason')}"
             )
-
-    primary_metric = (
-        _normalize_str(getattr(getattr(cfg, "eval", None), "primary_metric", None)) or "rmse"
-    ).lower()
-    direction = _normalize_str(getattr(getattr(cfg, "eval", None), "direction", None))
-    if not direction or direction == "auto":
-        direction = metric_direction(primary_metric, task_type)
-    direction = direction.lower()
-
-    connect_train_model(
-        ctx,
-        cfg,
-        processed_dataset_id=processed_dataset_id,
-        task_type=task_type,
-        primary_metric=primary_metric,
-        model_variant=model_variant_name,
-        model_params=model_variant_fit.get("params") if isinstance(model_variant_fit, dict) else None,
-    )
-
-    cv_folds = int(getattr(getattr(cfg, "eval", None), "cv_folds", 0) or 0)
-    cv_seed = int(getattr(getattr(cfg, "eval", None), "seed", 42) or 42)
 
     calibration_report_path: Path | None = None
     calibration_plot_path: Path | None = None
@@ -1958,6 +2147,24 @@ def run(cfg: Any) -> None:
                     "mean": float(np.mean(scores)) if scores else None,
                     "std": float(np.std(scores)) if scores else None,
                 }
+    except MissingOptionalDependencyError as exc:
+        _record_model_skip(
+            ctx=ctx,
+            cfg=cfg,
+            processed_dataset_id=processed_dataset_id,
+            split_hash=split_hash,
+            recipe_hash=recipe_hash,
+            model_variant_name=model_variant_name,
+            primary_metric=primary_metric,
+            direction=direction,
+            cv_folds=cv_folds,
+            cv_seed=cv_seed,
+            task_type=task_type,
+            n_classes=n_classes,
+            reason="missing_dependency",
+            detail={"module": exc.module, "class_path": exc.class_path, "extra": exc.extra},
+        )
+        return
     except ModelWeightsUnavailableError as exc:
         _record_model_failure(
             ctx=ctx,
@@ -2000,6 +2207,15 @@ def run(cfg: Any) -> None:
 
     metrics_path = ctx.output_dir / "metrics.json"
     metrics_path.write_text(json.dumps(metrics_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    preds_path, classes_path, preds_schema = _write_preds_valid(
+        ctx.output_dir,
+        y_true=y_val,
+        y_pred=y_val_pred,
+        y_proba=y_val_proba,
+        task_type=task_type,
+        class_labels=class_labels,
+    )
 
     metrics_ci_path: Path | None = None
     if ci_payload is not None:
@@ -2147,63 +2363,96 @@ def run(cfg: Any) -> None:
                 )
 
     if clearml_enabled:
-        if task_type == "regression":
-            for name in REGRESSION_METRIC_ORDER:
-                if name in metrics_holdout:
-                    log_scalar(ctx.task, "metrics", name, metrics_holdout[name], step=0)
-        if best_score is not None and (
-            task_type != "regression" or primary_metric not in REGRESSION_METRIC_ORDER
-        ):
-            log_scalar(ctx.task, "metrics", primary_metric, best_score, step=0)
-        if debug_sample is not None:
+        plots_on = plots_enabled(cfg)
+        scalars_on = scalars_enabled(cfg)
+        tables_on = tables_enabled(cfg)
+        if scalars_on:
+            if task_type == "regression":
+                for name in REGRESSION_METRIC_ORDER:
+                    if name in metrics_holdout:
+                        report_scalar(
+                            ctx.task,
+                            "metrics",
+                            name,
+                            metrics_holdout[name],
+                            iteration=0,
+                            cfg=cfg,
+                        )
+            if best_score is not None and (
+                task_type != "regression" or primary_metric not in REGRESSION_METRIC_ORDER
+            ):
+                report_scalar(
+                    ctx.task,
+                    "metrics",
+                    primary_metric,
+                    best_score,
+                    iteration=0,
+                    cfg=cfg,
+                )
+        if tables_on and debug_sample is not None:
             log_debug_table(ctx.task, "train_model", "prediction_sample", debug_sample, step=0)
-        if viz_settings["enabled"]:
+        if viz_settings["enabled"] and plots_on:
             if importance_names and importance_scores:
                 fig = _build_plotly_feature_importance(
                     importance_names,
                     importance_scores,
                     top_n=viz_settings["max_features"],
                 )
-                log_plotly(
+                report_plotly(
                     ctx.task,
                     "train_model",
                     "feature_importance",
                     fig or feature_importance_plot_path,
-                    step=0,
+                    iteration=0,
+                    cfg=cfg,
                 )
             if task_type == "regression":
-                metrics_table = build_regression_metrics_table(regression_metrics or metrics_holdout)
-                log_plotly(
-                    ctx.task,
-                    "train_model",
-                    "metrics_table",
-                    metrics_table,
-                    step=0,
-                )
+                metrics_payload = regression_metrics or metrics_holdout
+                if tables_on:
+                    metrics_table = build_regression_metrics_table(metrics_payload)
+                    report_table(
+                        ctx.task,
+                        "train_model",
+                        "metrics_table",
+                        metrics_table or metrics_payload,
+                        iteration=0,
+                        cfg=cfg,
+                        output_path=ctx.output_dir / "metrics_table.png",
+                    )
                 scatter = build_true_pred_scatter(
                     y_val,
                     y_val_pred,
                     r2=metrics_holdout.get("r2"),
                     max_points=viz_settings["max_points"],
                 )
-                log_plotly(
+                scatter_path = None
+                if scatter is None:
+                    scatter_path = plot_true_pred_scatter(
+                        y_val,
+                        y_val_pred,
+                        ctx.output_dir / "true_vs_pred.png",
+                        max_points=viz_settings["max_points"],
+                    )
+                report_plotly(
                     ctx.task,
                     "train_model",
                     "true_vs_pred",
-                    scatter,
-                    step=0,
+                    scatter or scatter_path,
+                    iteration=0,
+                    cfg=cfg,
                 )
                 fig = build_residuals_plot(
                     y_val,
                     y_val_pred,
                     max_points=viz_settings["max_points"],
                 )
-                log_plotly(
+                report_plotly(
                     ctx.task,
                     "train_model",
                     "residuals",
                     fig or residuals_plot_path,
-                    step=0,
+                    iteration=0,
+                    cfg=cfg,
                 )
             else:
                 fig = _build_plotly_confusion_matrix(
@@ -2212,21 +2461,23 @@ def run(cfg: Any) -> None:
                     class_names=class_names,
                     normalize=viz_settings["confusion_normalize"],
                 )
-                log_plotly(
+                report_plotly(
                     ctx.task,
                     "train_model",
                     "confusion_matrix",
                     fig or confusion_plot_path,
-                    step=0,
+                    iteration=0,
+                    cfg=cfg,
                 )
                 if y_val_proba is not None and n_classes == 2:
                     fig = _build_plotly_roc_curve(y_val, y_val_proba[:, 1])
-                    log_plotly(
+                    report_plotly(
                         ctx.task,
                         "train_model",
                         "roc_curve",
                         fig or roc_plot_path,
-                        step=0,
+                        iteration=0,
+                        cfg=cfg,
                     )
 
     model_id = str(model_bundle_path)
@@ -2346,6 +2597,10 @@ def run(cfg: Any) -> None:
         upload_artifact(ctx, "metrics.json", metrics_path)
         if metrics_ci_path is not None:
             upload_artifact(ctx, metrics_ci_path.name, metrics_ci_path)
+        if preds_path is not None:
+            upload_artifact(ctx, preds_path.name, preds_path)
+        if classes_path is not None:
+            upload_artifact(ctx, classes_path.name, classes_path)
         upload_artifact(ctx, "model_bundle.joblib", model_bundle_path)
         upload_artifact(ctx, "model_card.md", model_card_path)
         if postprocess_path is not None:
@@ -2386,6 +2641,12 @@ def run(cfg: Any) -> None:
         "recipe_hash": recipe_hash,
         "task_type": task_type,
     }
+    if preds_path is not None:
+        out["preds_valid_path"] = str(preds_path)
+    if preds_schema is not None:
+        out["preds_schema"] = preds_schema
+    if classes_path is not None:
+        out["classes_path"] = str(classes_path)
     if n_classes is not None:
         out["n_classes"] = n_classes
     if class_labels is not None:

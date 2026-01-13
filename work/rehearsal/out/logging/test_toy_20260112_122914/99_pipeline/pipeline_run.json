@@ -1,0 +1,283 @@
+{
+  "grid_run_id": "105504592d714abf801e4c4784817ed6",
+  "plan_only": false,
+  "planned_jobs": 1,
+  "executed_jobs": 1,
+  "skipped_due_to_policy": 0,
+  "limit_exceeded": false,
+  "limit_violations": null,
+  "plan": {
+    "base_output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914",
+    "profile": "default",
+    "groups": {},
+    "run_dataset_register": false,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_ensemble": false,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "hpo_enabled": false,
+    "hpo_params_cfg": {
+      "ridge": {
+        "alpha": [
+          0.1,
+          1.0,
+          10.0
+        ]
+      }
+    },
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "pipeline_limits": {
+      "max_preprocess_variants": 3,
+      "max_train_tasks": 30,
+      "max_ensemble_tasks": 10
+    },
+    "parallelism": {
+      "max_concurrent_steps": 4,
+      "max_concurrent_train": 4
+    },
+    "max_jobs": 50,
+    "max_models": 10,
+    "max_hpo_trials": 0,
+    "plan_only": false,
+    "plan_info": {
+      "raw_jobs": 1,
+      "planned_jobs": 1,
+      "skipped_due_to_policy": 0
+    },
+    "train_jobs": [
+      {
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge",
+        "trial": {
+          "params": {},
+          "hpo_run_id": null,
+          "suffix": null
+        }
+      }
+    ],
+    "preprocess_targets": [
+      "stdscaler_ohe"
+    ],
+    "run_overrides": {
+      "run.grid_run_id": "105504592d714abf801e4c4784817ed6",
+      "run.usecase_id": "test_toy_20260112_122914",
+      "run.schema_version": "v1",
+      "run.retrain_run_id": null,
+      "ops/usecase_id_policy": "test_dataset_timestamp",
+      "run.clearml.enabled": true,
+      "run.clearml.execution": "logging",
+      "run.clearml.project_root": "MFG",
+      "run.clearml.queue_name": null,
+      "run.clearml.clone_from_task_id": null,
+      "ops/clearml_policy": "test_minimal"
+    },
+    "data_overrides": {
+      "data.raw_dataset_id": "0faa456a53f541ad93a73895e5fdd202",
+      "data.target_column": "target",
+      "data.split.strategy": "random",
+      "data.split.test_size": 0.2,
+      "data.split.seed": 42
+    },
+    "downstream_data_overrides": {
+      "data.raw_dataset_id": "0faa456a53f541ad93a73895e5fdd202",
+      "data.target_column": "target",
+      "data.split.strategy": "random",
+      "data.split.test_size": 0.2,
+      "data.split.seed": 42
+    },
+    "eval_overrides": {
+      "eval.primary_metric": "rmse",
+      "eval.direction": "auto",
+      "eval.cv_folds": 5,
+      "eval.seed": 42,
+      "eval.task_type": "regression",
+      "eval.classification.mode": "auto",
+      "eval.classification.top_k": 1,
+      "eval.metrics.classification_multiclass": [
+        "accuracy",
+        "f1_macro",
+        "logloss"
+      ],
+      "eval.calibration.enabled": false,
+      "eval.uncertainty.enabled": false,
+      "eval.ci.enabled": false
+    },
+    "base_extra_tags": [],
+    "queues": {
+      "default": null,
+      "pipeline": null,
+      "dataset_register": null,
+      "preprocess": null,
+      "train_model": null,
+      "train_ensemble": null,
+      "train_model_heavy": "gpu",
+      "leaderboard": null,
+      "infer": null,
+      "model_variants": {},
+      "heavy_model_variants": []
+    },
+    "steps": {
+      "preprocess": [
+        {
+          "step_name": "preprocess__stdscaler_ohe",
+          "task_name": "preprocess",
+          "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe",
+          "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess",
+          "parents": [],
+          "queue": null,
+          "overrides": {
+            "group/preprocess": "stdscaler_ohe",
+            "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe",
+            "run.clearml.project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/02_Preprocess"
+          },
+          "preprocess_variant": "stdscaler_ohe",
+          "project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/02_Preprocess"
+        }
+      ],
+      "train": [
+        {
+          "step_name": "train__stdscaler_ohe__ridge",
+          "task_name": "train_model",
+          "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge",
+          "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge/03_train_model",
+          "parents": [
+            "preprocess__stdscaler_ohe"
+          ],
+          "queue": null,
+          "overrides": {
+            "group/model": "ridge",
+            "train.inputs.preprocess_run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess",
+            "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge",
+            "run.clearml.project_layout.group_map.train_model": "03_TrainModels/stdscaler_ohe",
+            "run.clearml.extra_tags": [
+              "grid_cell:stdscaler_ohe__ridge"
+            ],
+            "run.clearml.project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/03_TrainModels/stdscaler_ohe"
+          },
+          "preprocess_variant": "stdscaler_ohe",
+          "model_variant": "ridge",
+          "hpo_run_id": null,
+          "hpo_params": null,
+          "inputs": {
+            "processed_dataset_id": {
+              "from_step": "preprocess__stdscaler_ohe",
+              "source": "preprocess"
+            }
+          },
+          "project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/03_TrainModels/stdscaler_ohe"
+        }
+      ],
+      "ensemble": [],
+      "leaderboard": {
+        "step_name": "leaderboard",
+        "task_name": "leaderboard",
+        "run_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard/05_leaderboard",
+        "parents": [
+          "train__stdscaler_ohe__ridge"
+        ],
+        "queue": null,
+        "overrides": {
+          "run.output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard",
+          "leaderboard.top_k": 10,
+          "run.clearml.project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/06_Leaderboards"
+        },
+        "project_name": "MFG/TabularAnalysis/test_toy_20260112_122914/06_Leaderboards"
+      },
+      "infer": null
+    },
+    "task_counts": {
+      "preprocess": 1,
+      "train": 1,
+      "ensemble": 0,
+      "leaderboard": 1,
+      "infer": 0,
+      "total": 3
+    }
+  },
+  "dataset_register_ref": null,
+  "preprocess_ref": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe",
+      "status": "failed",
+      "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=preprocess run.grid_run_id=105504592d714abf801e4c4784817ed6 run.usecase_id=test_toy_20260112_122914 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=967d058ec8c04010ab320be7d5ba1e10 data.raw_dataset_id=0faa456a53f541ad93a73895e5fdd202 data.target_column=target data.split.strategy=random data.split.test_size=0.2 data.split.seed=42 group/preprocess=stdscaler_ohe run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe run.clearml.project_name=MFG/TabularAnalysis/test_toy_20260112_122914/02_Preprocess\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1085, in _ensure_clearml_parent\n    setter(str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/clearml/backend_interface/task/task.py\", line 1996, in set_parent\n    assert parent != self.id\nAssertionError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1210, in init_task_context\n    _ensure_clearml_parent(task, _normalize_str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1087, in _ensure_clearml_parent\n    raise PlatformAdapterError(f\"Failed to set ClearML parent task: {exc}\") from exc\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to set ClearML parent task: \n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/preprocess.py\", line 365, in run\n    ctx = init_task_context(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1218, in init_task_context\n    raise PlatformAdapterError(f\"Failed to init ClearML task via ml-platform: {e}\") from e\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to init ClearML task via ml-platform: Failed to set ClearML parent task: \n"
+    }
+  ],
+  "train_refs": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "status": "failed",
+      "error": "Command failed (exit=1)\n$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=train_model run.grid_run_id=105504592d714abf801e4c4784817ed6 run.usecase_id=test_toy_20260112_122914 run.schema_version=v1 ops/usecase_id_policy=test_dataset_timestamp run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=MFG ops/clearml_policy=test_minimal run.clearml.parent_task_id=967d058ec8c04010ab320be7d5ba1e10 data.raw_dataset_id=0faa456a53f541ad93a73895e5fdd202 data.target_column=target data.split.strategy=random data.split.test_size=0.2 data.split.seed=42 eval.primary_metric=rmse eval.direction=auto eval.cv_folds=5 eval.seed=42 eval.task_type=regression eval.classification.mode=auto eval.classification.top_k=1 eval.metrics.classification_multiclass=['accuracy','f1_macro','logloss'] eval.calibration.enabled=false eval.uncertainty.enabled=false eval.ci.enabled=false group/model=ridge train.inputs.preprocess_run_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/preprocess__stdscaler_ohe/02_preprocess run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/train__stdscaler_ohe__ridge run.clearml.project_layout.group_map.train_model=03_TrainModels/stdscaler_ohe run.clearml.extra_tags=['grid_cell:stdscaler_ohe__ridge'] run.clearml.project_name=MFG/TabularAnalysis/test_toy_20260112_122914/03_TrainModels/stdscaler_ohe\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1085, in _ensure_clearml_parent\n    setter(str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/lib/python3.10/site-packages/clearml/backend_interface/task/task.py\", line 1996, in set_parent\n    assert parent != self.id\nAssertionError\n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1210, in init_task_context\n    _ensure_clearml_parent(task, _normalize_str(parent_task_id))\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1087, in _ensure_clearml_parent\n    raise PlatformAdapterError(f\"Failed to set ClearML parent task: {exc}\") from exc\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to set ClearML parent task: \n\nThe above exception was the direct cause of the following exception:\n\nTraceback (most recent call last):\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 196, in _run_module_as_main\n    return _run_code(code, main_globals, None,\n  File \"/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/runpy.py\", line 86, in _run_code\n    exec(code, run_globals)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 137, in <module>\n    main()\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/cli.py\", line 133, in main\n    runner(cfg)\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/processes/train_model.py\", line 1639, in run\n    ctx = init_task_context(\n  File \"/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/src/tabular_analysis/platform_adapter.py\", line 1218, in init_task_context\n    raise PlatformAdapterError(f\"Failed to init ClearML task via ml-platform: {e}\") from e\ntabular_analysis.platform_adapter.PlatformAdapterError: Failed to init ClearML task via ml-platform: Failed to set ClearML parent task: \n"
+    }
+  ],
+  "ensemble_refs": [],
+  "leaderboard_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122914/grid/105504592d714abf801e4c4784817ed6/leaderboard/05_leaderboard",
+    "status": "skipped",
+    "reason": "no_successful_train"
+  },
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": false,
+      "params": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "pipeline_limits": {
+      "max_preprocess_variants": 3,
+      "max_train_tasks": 30,
+      "max_ensemble_tasks": 10
+    },
+    "parallelism": {
+      "max_concurrent_steps": 4,
+      "max_concurrent_train": 4
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    },
+    "fail_policy": {
+      "allow_skipped": true,
+      "allowed_failures": 0,
+      "fail_fast": false,
+      "min_successful_train_tasks": 1
+    }
+  }
+}

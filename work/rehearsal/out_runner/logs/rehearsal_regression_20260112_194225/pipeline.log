@@ -1,0 +1,5 @@
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+ClearML Task: created new task id=b576a5975ffc41f2a74aab1da49c0aa8
+ClearML results page: http://localhost:8080/projects/8fbf7ddc0f72422f962c326803595e3a/experiments/b576a5975ffc41f2a74aab1da49c0aa8/output/log
+ClearML Monitor: GPU monitoring failed getting GPU reading, switching off GPU monitoring

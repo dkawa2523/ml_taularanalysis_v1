@@ -1,0 +1,12 @@
+{
+  "leaderboard_csv": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_234453/grid/220a6c0c9a40439fbc8fff270abce597/leaderboard/05_leaderboard/leaderboard.csv",
+  "recommended_train_task_id": "9c3c460ada7f4c318a1036bea216e2f3",
+  "recommended_train_task_ref": "9c3c460ada7f4c318a1036bea216e2f3",
+  "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_234453/grid/220a6c0c9a40439fbc8fff270abce597/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+  "recommended_best_score": 0.3133085191754989,
+  "recommended_primary_metric": "rmse",
+  "recommended_composite_score": 0.37037037037037035,
+  "ranking_score_key": "composite_score",
+  "ranking_direction": "maximize",
+  "excluded_count": 0
+}

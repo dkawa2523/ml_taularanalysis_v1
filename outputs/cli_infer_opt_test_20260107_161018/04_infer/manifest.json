@@ -1,0 +1,25 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "infer",
+  "created_at": "2026-01-07T07:10:25Z",
+  "inputs": {
+    "model_id": "/Users/kawahito/.clearml/cache/storage_manager/global/205aefdec57281d501cc2c5273c91fba.model_bundle.joblib",
+    "train_task_id": "9fc5ec21344a44ce89293cd3d9205938",
+    "mode": "single",
+    "input_path": null,
+    "processed_dataset_id": "9d5ba8d651eb47f786676aba8e9a1b04",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  },
+  "outputs": {
+    "predictions_path": "outputs/cli_infer_opt_test_20260107_161018/04_infer/prediction.json",
+    "input_preview_path": "outputs/cli_infer_opt_test_20260107_161018/04_infer/input_preview.json"
+  },
+  "hashes": {
+    "config_hash": "199f858607100bdf4f0b48a717ad4e31ca8828ac38d77b8fa14cbf73f7212767",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "predictions_path": "outputs/cli_logging_test_20260107_153725/04_infer/prediction.json",
+  "input_preview_path": "outputs/cli_logging_test_20260107_153725/04_infer/input_preview.json",
+  "mode": "single",
+  "model_id": "/Users/kawahito/.clearml/cache/storage_manager/global/07720e401501e43f63f43fa0ad860da7.model_bundle.joblib",
+  "train_task_id": "d902074c67e7473bbb0b31cf94eb9c75",
+  "schema_validation": {
+    "mode": "warn",
+    "ok": true,
+    "warnings_count": 0,
+    "errors_count": 0
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T073",
+      "title": "ClearML Script の repository/branch が platform を指してしまう不具合を修正（solution repo を指す）",
+      "md": "work/tasks/T073_clearml_script_repo_branch_fix.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**",
+        "tools/**"
+      ]
+    },
+    {
+      "id": "T074",
+      "title": "ClearML Agent 実行で src/ レイアウトを import 可能にする（entrypoint wrapper 追加）",
+      "md": "work/tasks/T074_clearml_entrypoint_wrapper.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "tools/**",
+        "src/**",
+        "docs/**",
+        "conf/**"
+      ]
+    },
+    {
+      "id": "T075",
+      "title": "ClearML Agent で Hydra list override が分割されないよう entry_point を正規化",
+      "md": "work/tasks/T075_entrypoint_hydra_list_canonicalize.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "docs/**",
+        "conf/**",
+        "tools/**"
+      ]
+    },
+    {
+      "id": "T076",
+      "title": "テンプレTask/Docsを整備（repository/entry_point/運用トラブルシュート）",
+      "md": "work/tasks/T076_templates_and_docs.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "src/**",
+        "docs/**",
+        "conf/**",
+        "tools/**"
+      ]
+    }
+  ]
+}

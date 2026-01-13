@@ -61,6 +61,6 @@
 - 決定事項: remote 実行の entry_point は `tools/clearml_entrypoint.py` に統一する
 - 決定事項: template task は tags + repository/branch/entry_point の一致で決定し、mismatch は `template:deprecated` 化する
 - 決定事項: `status=failed` の template は set_script せずタグ更新のみで除外する
-- 決定事項: `run.clearml.code_version_mode` は `branch_head` を既定（pin は設定で切替）
+- 決定事項: `run.clearml.code_ref.mode` は `branch` を既定（pin は設定で切替）
 - 決定事項: template 適用時に `script.diff` を空にしてリモート適用エラーを避ける
 - 決定事項: TabPFN は `auto_download=true`（HF token 必須の場合あり）

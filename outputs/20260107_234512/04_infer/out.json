@@ -1,0 +1,21 @@
+{
+  "mode": "optimize",
+  "model_id": "dry_run",
+  "train_task_id": null,
+  "schema_validation": {
+    "mode": "warn",
+    "ok": true,
+    "warnings_count": 0,
+    "errors_count": 0
+  },
+  "optimize": {
+    "n_trials": 20,
+    "direction": "maximize",
+    "objective_keys": [
+      "prediction"
+    ]
+  },
+  "optimize_trials_path": "outputs/20260107_234512/04_infer/optimize_trials.csv",
+  "optimize_summary_path": "outputs/20260107_234512/04_infer/optimize_summary.json",
+  "dry_run": true
+}

@@ -1,0 +1,95 @@
+{
+  "report_version": 1,
+  "grid_run_id": "a583451b2f154ec4afb802dcae785f40",
+  "status": "incomplete",
+  "summary": {
+    "recommended_model_id": null,
+    "primary_metric": null,
+    "best_score": null,
+    "models_tried": 2,
+    "train_task_ref": null,
+    "planned_jobs": 2,
+    "executed_jobs": 2,
+    "skipped_due_to_policy": 0,
+    "plan_only": false,
+    "recommendation_rationale": null
+  },
+  "dataset": {
+    "raw_dataset_id": null,
+    "processed_dataset_id": null,
+    "rows": null,
+    "feature_columns": null,
+    "target_column": null,
+    "id_columns": [],
+    "drop_columns": []
+  },
+  "data_quality": {},
+  "split": {
+    "preprocess_variant": "stdscaler_ohe",
+    "strategy": null,
+    "test_size": null,
+    "seed": null,
+    "group_column": null,
+    "time_column": null,
+    "split_hash": null,
+    "recipe_hash": null
+  },
+  "comparability": {
+    "processed_dataset_id": null,
+    "split_hash": null,
+    "recipe_hash": null,
+    "primary_metric": null
+  },
+  "top_models": [
+    {
+      "rank": 1,
+      "model_variant": "logistic_regression",
+      "preprocess_variant": "stdscaler_ohe",
+      "primary_metric": null,
+      "best_score": null,
+      "model_id": null,
+      "train_task_ref": null,
+      "primary_metric_ci_low": null,
+      "primary_metric_ci_mid": null,
+      "primary_metric_ci_high": null
+    },
+    {
+      "rank": 2,
+      "model_variant": "random_forest",
+      "preprocess_variant": "stdscaler_ohe",
+      "primary_metric": null,
+      "best_score": null,
+      "model_id": null,
+      "train_task_ref": null,
+      "primary_metric_ci_low": null,
+      "primary_metric_ci_mid": null,
+      "primary_metric_ci_high": null
+    }
+  ],
+  "recommendation": {
+    "model_id": null,
+    "train_task_ref": null,
+    "primary_metric": null,
+    "best_score": null,
+    "direction": null,
+    "primary_metric_ci": null,
+    "task_type": null,
+    "n_classes": null,
+    "threshold": null,
+    "thresholding": null,
+    "calibration": null,
+    "imbalance": null,
+    "uncertainty": null
+  },
+  "notes": {
+    "thresholding": null,
+    "calibration": null,
+    "imbalance": null,
+    "uncertainty": null
+  },
+  "next_actions": [
+    "Wait for training/leaderboard to finish, then regenerate the report.",
+    "Run leaderboard to select the best model explicitly.",
+    "Try alternative preprocessing variants for robustness."
+  ]
+}

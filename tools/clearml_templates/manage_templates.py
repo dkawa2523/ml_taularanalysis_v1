@@ -34,6 +34,7 @@ class PlanContext:
     project_root: str
     usecase_id: str
     schema_version: str
+    template_set_id: str
 
 
 def _repo_root() -> Path:
@@ -54,29 +55,35 @@ def _load_yaml(path: Path) -> dict[str, Any]:
 def _load_run_defaults(repo_root: Path) -> PlanContext:
     run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
     if not run_cfg_path.exists():
-        return PlanContext(project_root="MFG", usecase_id="TabularAnalysis", schema_version="v1")
+        return PlanContext(
+            project_root="MFG",
+            usecase_id="unknown",
+            schema_version="v1",
+            template_set_id="unknown",
+        )
     cfg = OmegaConf.load(run_cfg_path)
     clearml_cfg = getattr(cfg, "clearml", None)
     project_root = getattr(clearml_cfg, "project_root", None) or "MFG"
-    usecase_id = getattr(cfg, "usecase_id", None) or "TabularAnalysis"
+    template_usecase_id = getattr(clearml_cfg, "template_usecase_id", None)
+    template_set_id = getattr(clearml_cfg, "template_set_id", None) or "unknown"
+    usecase_id = template_usecase_id or getattr(cfg, "usecase_id", None) or "unknown"
     schema_version = getattr(cfg, "schema_version", None) or "v1"
     return PlanContext(
         project_root=str(project_root),
         usecase_id=str(usecase_id),
         schema_version=str(schema_version),
+        template_set_id=str(template_set_id),
     )
 
 
-def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
+def _load_code_ref_mode(repo_root: Path, override: str | None) -> str:
     if override:
-        return str(override)
+        return platform_adapter.resolve_clearml_code_ref_mode(None, override=str(override))
     run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
     if not run_cfg_path.exists():
-        return "branch_head"
+        return "branch"
     cfg = OmegaConf.load(run_cfg_path)
-    clearml_cfg = getattr(cfg, "clearml", None)
-    value = getattr(clearml_cfg, "code_version_mode", None)
-    return str(value) if value else "branch_head"
+    return platform_adapter.resolve_clearml_code_ref_mode(cfg)
 
 
 class _SafeFormatDict(dict):
@@ -104,6 +111,7 @@ def _load_templates(spec_path: Path, ctx: PlanContext) -> list[TemplateSpec]:
         "project_root": ctx.project_root,
         "usecase_id": ctx.usecase_id,
         "schema_version": ctx.schema_version,
+        "template_set_id": ctx.template_set_id,
     }
     specs: list[TemplateSpec] = []
     for name, payload in templates.items():
@@ -302,7 +310,18 @@ def _apply_templates(
     for spec in templates:
         module, script, entry_args = _parse_entrypoint(spec.entrypoint)
         entry_point = f"-m {module}" if module else script
-        spec_cfg = {"run": {"clearml": {"code_version_mode": version_mode}}}
+        spec_cfg = {
+            "run": {
+                "clearml": {
+                    "code_ref": {
+                        "mode": version_mode,
+                        "repository": "auto",
+                        "branch": "auto",
+                        "commit": "auto",
+                    }
+                }
+            }
+        }
         script_spec = platform_adapter.resolve_clearml_script_spec(
             spec_cfg,
             entry_point_override=entry_point,
@@ -330,7 +349,16 @@ def _apply_templates(
                     diff="",
                 ):
                     print(f"Update template {spec.name}: script")
-                else:
+                tags_updated = platform_adapter.ensure_clearml_task_tags(str(existing_id), spec.tags)
+                if tags_updated:
+                    print(f"Update template {spec.name}: tags")
+                props_updated = platform_adapter.ensure_clearml_task_properties(
+                    str(existing_id),
+                    spec.properties_minimal,
+                )
+                if props_updated:
+                    print(f"Update template {spec.name}: properties")
+                if not (tags_updated or props_updated):
                     print(f"Reuse template {spec.name}: {existing_id}")
                 continue
             except Exception:
@@ -411,9 +439,14 @@ def main() -> int:
     parser.add_argument("--project-root", default=None)
     parser.add_argument("--usecase-id", default=None)
     parser.add_argument("--schema-version", default=None)
+    parser.add_argument("--template-set-id", default=None)
     parser.add_argument("--repo", default=None)
     parser.add_argument("--branch", default=None)
-    parser.add_argument("--code-version-mode", default=None)
+    parser.add_argument(
+        "--code-version-mode",
+        default=None,
+        help="Override run.clearml.code_ref.mode (branch|commit|none; legacy: branch_head|pin_commit).",
+    )
 
     args = parser.parse_args()
 
@@ -425,6 +458,7 @@ def main() -> int:
         project_root=str(args.project_root or defaults.project_root),
         usecase_id=str(args.usecase_id or defaults.usecase_id),
         schema_version=str(args.schema_version or defaults.schema_version),
+        template_set_id=str(args.template_set_id or defaults.template_set_id),
     )
 
     spec_path = Path(args.spec)
@@ -440,8 +474,8 @@ def main() -> int:
         return 0
 
     repo_url = args.repo or _detect_repo_url(repo_root)
-    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
-    print(f"code_version_mode: {version_mode}")
+    version_mode = _load_code_ref_mode(repo_root, args.code_version_mode)
+    print(f"code_ref.mode: {version_mode}")
     if args.apply:
         _apply_templates(
             templates,

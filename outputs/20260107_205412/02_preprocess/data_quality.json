@@ -1,0 +1,93 @@
+{
+  "rows_total": 4,
+  "rows_scanned": 4,
+  "columns": 4,
+  "columns_scanned": 4,
+  "scan_sampled": false,
+  "target_column": "target",
+  "task_type": "regression",
+  "id_columns": [],
+  "dtype_counts": {
+    "float64": 3,
+    "object": 1
+  },
+  "missing_total": 1,
+  "missing_rate_total": 0.0625,
+  "missing_columns": 1,
+  "missing_top": [
+    {
+      "column": "feature2",
+      "missing_count": 1,
+      "missing_rate": 0.25
+    }
+  ],
+  "duplicates_count": 0,
+  "duplicates_rate": 0.0,
+  "constant_columns": [],
+  "mixed_type_columns": [],
+  "mixed_type_details": [],
+  "high_cardinality_columns": [],
+  "high_cardinality_details": [],
+  "high_cardinality_threshold": 0.8,
+  "id_like_columns": [],
+  "name_suspects": [],
+  "quality_thresholds": {
+    "high_cardinality_ratio_warn": 0.8,
+    "high_cardinality_min_unique": 20,
+    "id_like_ratio_warn": 0.98,
+    "id_like_min_unique": 20,
+    "leak_near_match_warn": 0.98,
+    "leak_correlation_warn": 0.98,
+    "leak_mapping_accuracy_warn": 0.98,
+    "mixed_type_columns_warn": 1,
+    "mixed_type_columns_fail": 5
+  },
+  "leak_suspects": [
+    {
+      "column": "feature2",
+      "reason": "high_correlation",
+      "severity": "warning",
+      "score": -0.9933992677987827
+    }
+  ],
+  "leak_summary": {
+    "available": true,
+    "exact_match": [],
+    "near_match": [],
+    "correlation_top": [
+      {
+        "column": "feature2",
+        "corr": -0.9933992677987827
+      },
+      {
+        "column": "feature1",
+        "corr": -0.04323377011671169
+      }
+    ],
+    "mapping_suspects": [],
+    "thresholds": {
+      "near_match": 0.98,
+      "correlation": 0.98,
+      "mapping_accuracy": 0.98
+    }
+  },
+  "quality_issues": [
+    {
+      "type": "leak",
+      "severity": "warn",
+      "count": 1,
+      "detail": {
+        "columns": [
+          {
+            "column": "feature2",
+            "reason": "high_correlation",
+            "severity": "warning",
+            "score": -0.9933992677987827
+          }
+        ]
+      }
+    }
+  ],
+  "quality_status": "warn",
+  "quality_issue_count": 1
+}

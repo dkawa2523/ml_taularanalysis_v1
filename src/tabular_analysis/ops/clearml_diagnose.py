@@ -83,7 +83,7 @@ def _task_script_summary(script: dict[str, Any]) -> str:
     branch = _normalize_str(script.get("branch")) or "none"
     entry = normalize_clearml_entry_point(script.get("entry_point")) or "none"
     version = _normalize_str(script.get("version_num")) or ""
-    version_text = version if version else "branch_head"
+    version_text = version if version else "branch"
     return f"repo={repo} branch={branch} entry_point={entry} version={version_text}"
 
 
@@ -100,6 +100,7 @@ def _report_templates(
         project_root=str(defaults.project_root),
         usecase_id=str(defaults.usecase_id),
         schema_version=str(defaults.schema_version),
+        template_set_id=str(defaults.template_set_id),
     )
     spec_path = repo_root / "conf" / "clearml" / "templates.yaml"
     specs = template_manager.load_template_specs(spec_path, ctx)
@@ -158,7 +159,7 @@ def _report_templates(
                 tag_mismatches.append(f"missing tags: {', '.join(missing_tags)}")
             script_mismatches = clearml_script_mismatches(spec, script)
             mismatches = [*tag_mismatches, *script_mismatches]
-            deprecated = "template:deprecated" in tags
+            deprecated = "template:deprecated" in tags or "obsolete:true" in tags
             if not mismatches and not deprecated and selected_task_id is None:
                 selected_task_id = task_id
                 print(f"  [ok] {task_id} status={status} {_task_script_summary(script)}")
@@ -222,7 +223,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         "--code-version-mode",
         type=str,
         default=None,
-        help="Override run.clearml.code_version_mode (branch_head|pin_commit).",
+        help="Override run.clearml.code_ref.mode (branch|commit|none; legacy: branch_head|pin_commit).",
     )
     parser.add_argument("--queue", action="append", default=[], help="Queue name to scan for stale tasks.")
     parser.add_argument("--force", action="store_true", help="Enable destructive actions (not used).")

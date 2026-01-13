@@ -1,0 +1,33 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "train_model",
+  "created_at": "2026-01-07T07:10:21Z",
+  "inputs": {
+    "processed_dataset_id": "9d5ba8d651eb47f786676aba8e9a1b04",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779",
+    "model_variant": "logistic_regression",
+    "primary_metric": "f1",
+    "direction": "max",
+    "cv_folds": 5,
+    "seed": 42,
+    "task_type": "classification"
+  },
+  "outputs": {
+    "model_id": "outputs/cli_infer_opt_test_20260107_161018/03_train_model/model_bundle.joblib",
+    "best_score": 0.9230769230769231,
+    "primary_metric": "f1",
+    "task_type": "classification",
+    "n_classes": 2,
+    "best_threshold": 0.4,
+    "threshold_metric": "f1",
+    "threshold_score": 0.9230769230769231
+  },
+  "hashes": {
+    "config_hash": "1d6f4ff8399265b2ca4d6511c9d12df2bbdfb9e964c21ce02677abba37fe059e",
+    "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+    "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779"
+  }
+}

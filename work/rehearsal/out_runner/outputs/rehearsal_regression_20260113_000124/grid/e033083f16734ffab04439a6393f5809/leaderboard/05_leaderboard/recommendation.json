@@ -1,0 +1,30 @@
+{
+  "recommended_train_task_ref": "db6d8531a6604218b2f80723ce49e0ee",
+  "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260113_000124/grid/e033083f16734ffab04439a6393f5809/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+  "recommended_best_score": 0.3133085191754989,
+  "recommended_primary_metric": "rmse",
+  "recommended_composite_score": 0.37037037037037035,
+  "recommended_metrics": {
+    "r2": 0.8342114308265305,
+    "rmse": 0.3133085191754989,
+    "mae": 0.2573882706799682,
+    "mse": 0.09816222818794396
+  },
+  "ranking_score_key": "composite_score",
+  "ranking_direction": "maximize",
+  "scoring": {
+    "metrics": [
+      "r2",
+      "rmse",
+      "mae",
+      "mse"
+    ],
+    "weights": {
+      "r2": 1.0,
+      "rmse": -1.0,
+      "mae": -0.5,
+      "mse": -0.2
+    },
+    "normalization": "minmax"
+  }
+}

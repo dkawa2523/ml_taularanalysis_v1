@@ -82,18 +82,17 @@ def _print_script_check(script: dict[str, Any], cfg: Any) -> int:
     )
     expected_branch = platform_adapter.detect_git_branch(_repo_root()) or ""
     expected_entry = "tools/clearml_entrypoint.py"
-    clearml_cfg = getattr(getattr(cfg, "run", None), "clearml", None)
-    version_mode = str(getattr(clearml_cfg, "code_version_mode", None) or "branch_head")
+    version_mode = platform_adapter.resolve_clearml_code_ref_mode(cfg)
 
     print("pipeline script:")
     print(f"  repository: {repo or 'none'}")
     print(f"  branch: {branch or 'none'}")
     print(f"  entry_point: {entry_point or 'none'}")
-    print(f"  version_num: {version_num or 'branch_head'}")
+    print(f"  version_num: {version_num or 'branch'}")
     print(f"  expected repo: {expected_repo or 'none'}")
     print(f"  expected branch: {expected_branch or 'none'}")
     print(f"  expected entry_point: {expected_entry}")
-    print(f"  code_version_mode: {version_mode}")
+    print(f"  code_ref.mode: {version_mode}")
 
     exit_code = 0
     if expected_repo and repo != expected_repo:
@@ -105,10 +104,10 @@ def _print_script_check(script: dict[str, Any], cfg: Any) -> int:
     if entry_point != expected_entry:
         print("[warn] entry_point mismatch")
         exit_code = 1
-    if version_mode == "branch_head" and version_num:
-        print("[warn] version_num should be empty for branch_head")
+    if version_mode == "branch" and version_num:
+        print("[warn] version_num should be empty for branch mode")
         exit_code = 1
-    if version_mode == "pin_commit" and expected_repo:
+    if version_mode == "commit" and expected_repo:
         commit = _git_head()
         if not version_num or not commit or not commit.startswith(version_num):
             print("[warn] version_num does not match HEAD")
@@ -131,25 +130,18 @@ def main(argv: list[str] | None = None) -> int:
     run_dir = output_root / "99_pipeline"
     log_path = output_root / "clearml_probe.log"
 
-    overrides = [
-        "task=pipeline",
+    dataset_overrides = [
+        "task=dataset_register",
         "run.clearml.enabled=true",
-        "run.clearml.execution=pipeline_controller_local",
-        "pipeline.run_dataset_register=true",
-        "pipeline.run_preprocess=false",
-        "pipeline.run_train=false",
-        "pipeline.run_leaderboard=false",
-        "pipeline.run_infer=false",
+        "run.clearml.execution=logging",
         f"data.dataset_path={_format_value(args.dataset_path)}",
         f"data.target_column={_format_value(args.target_column)}",
         f"run.output_dir={str(output_root)}",
     ]
-    if args.queue:
-        overrides.append(f"run.clearml.queue_name={args.queue}")
     if args.usecase_id:
-        overrides.append(f"run.usecase_id={args.usecase_id}")
+        dataset_overrides.append(f"run.usecase_id={args.usecase_id}")
 
-    cmd = [sys.executable, "-m", "tabular_analysis.cli", *overrides]
+    cmd = [sys.executable, "-m", "tabular_analysis.cli", *dataset_overrides]
     env = os.environ.copy()
     if args.config_dir:
         env["TABULAR_ANALYSIS_CONFIG_DIR"] = str(Path(args.config_dir).expanduser())
@@ -162,6 +154,51 @@ def main(argv: list[str] | None = None) -> int:
         text=True,
     )
     log_path.write_text(proc.stdout or "", encoding="utf-8")
+    if proc.returncode != 0:
+        print(f"dataset_register failed (exit={proc.returncode})")
+        print(f"log: {log_path}")
+        return proc.returncode
+
+    dataset_out_path = output_root / "01_dataset_register" / "out.json"
+    if not dataset_out_path.exists():
+        print("dataset_register outputs not found; check the log.")
+        print(f"log: {log_path}")
+        return 1
+    dataset_out = json.loads(dataset_out_path.read_text(encoding="utf-8"))
+    raw_dataset_id = str(dataset_out.get("raw_dataset_id") or "").strip()
+    if not raw_dataset_id:
+        print("raw_dataset_id not found in dataset_register output.")
+        print(f"log: {log_path}")
+        return 1
+
+    pipeline_overrides = [
+        "task=pipeline",
+        "run.clearml.enabled=true",
+        "run.clearml.execution=pipeline_controller_local",
+        "pipeline.run_preprocess=false",
+        "pipeline.run_train=false",
+        "pipeline.run_leaderboard=false",
+        "pipeline.run_infer=false",
+        f"data.raw_dataset_id={_format_value(raw_dataset_id)}",
+        f"run.output_dir={str(output_root)}",
+    ]
+    if args.queue:
+        pipeline_overrides.append(f"run.clearml.queue_name={args.queue}")
+    if args.usecase_id:
+        pipeline_overrides.append(f"run.usecase_id={args.usecase_id}")
+
+    cmd = [sys.executable, "-m", "tabular_analysis.cli", *pipeline_overrides]
+    proc = subprocess.run(
+        cmd,
+        cwd=str(_repo_root()),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True,
+    )
+    log_path.write_text(
+        (log_path.read_text(encoding="utf-8") + "\n" + (proc.stdout or "")), encoding="utf-8"
+    )
     if proc.returncode != 0:
         print(f"pipeline run failed (exit={proc.returncode})")
         print(f"log: {log_path}")

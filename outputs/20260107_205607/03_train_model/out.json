@@ -1,0 +1,21 @@
+{
+  "model_id": "outputs/20260107_205607/03_train_model/model_bundle.joblib",
+  "train_task_id": null,
+  "best_score": 1.099999999999996,
+  "primary_metric": "rmse",
+  "processed_dataset_id": "local:0d04abe93431647ef713d37d397e91014a6da5844250b6d4b5979ef608b924a8",
+  "split_hash": "8aa818dc1c1e4aebd0939754d3ecc60c630509aa7f7577f4773a5ea65645cd2e",
+  "recipe_hash": "7887efea9c84c68baea8f1f0f9a255b4f49d119173213d19b1a3ab7afe35670c",
+  "task_type": "regression",
+  "imbalance": {
+    "enabled": false,
+    "strategy": "class_weight",
+    "applied": false
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

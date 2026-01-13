@@ -22,8 +22,14 @@ from ..clearml.datasets import (
     get_raw_dataset_local_copy,
     resolve_dataset_version,
 )
-from ..clearml.hparams import connect_preprocess
-from ..clearml.ui_logger import report_plotly
+from ..clearml.naming import apply_preprocess_naming
+from ..clearml.reporting import (
+    plots_enabled,
+    report_plotly,
+    report_table,
+    tables_enabled,
+)
+from ..clearml.ui_logger import log_debug_table, log_debug_text
 from ..io.bundle_io import save_bundle
 from ..io.schema import infer_schema
 from ..ops.clearml_identity import apply_clearml_identity
@@ -32,6 +38,7 @@ from ..platform_adapter import (
     hash_config,
     hash_recipe,
     hash_split,
+    emit_skip,
     init_task_context,
     is_clearml_enabled,
     resolve_version_props,
@@ -47,6 +54,7 @@ from ..feature_engineering.categorical import (
     encode_target_for_mean,
     normalize_encoding,
 )
+from ..registry import list_preprocess_variants
 from ..registry.preprocessors import infer_feature_types
 from ..viz.data_profile import (
     build_missing_rate_comparison_bar,
@@ -161,6 +169,21 @@ def _hash_payload(payload: dict[str, Any]) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def _find_preprocess_spec(variant_id: str, *, task_type: str | None) -> Any | None:
+    try:
+        specs = list_preprocess_variants(
+            task_type=task_type,
+            defaults_only=False,
+            filter_inapplicable=False,
+        )
+    except Exception:
+        return None
+    for spec in specs:
+        if spec.id == variant_id:
+            return spec
+    return None
+
+
 def _ensure_variant_cfg(cfg: Any, source_path: str, target_path: str) -> None:
     try:
         from omegaconf import OmegaConf  # type: ignore
@@ -221,6 +244,7 @@ def _missing_stats(df, columns: Iterable[str]) -> dict[str, Any]:
 def _log_preprocess_profile(
     ctx: Any,
     *,
+    cfg: Any,
     df,
     processed_df,
     feature_columns: list[str],
@@ -228,6 +252,8 @@ def _log_preprocess_profile(
     categorical_features: list[str],
     processed_feature_columns: list[str],
 ) -> None:
+    if not plots_enabled(cfg):
+        return
     processed_numeric, processed_categorical = infer_feature_types(
         processed_df, processed_feature_columns
     )
@@ -250,7 +276,15 @@ def _log_preprocess_profile(
         output_dir=ctx.output_dir,
         title="Raw vs Processed Summary",
     )
-    report_plotly(ctx.task, "preprocess", "raw_vs_processed_summary", table_fig, step=0)
+    report_table(
+        ctx.task,
+        "preprocess",
+        "raw_vs_processed_summary",
+        table_fig,
+        iteration=0,
+        cfg=cfg,
+        output_path=ctx.output_dir / "preprocess_summary.png",
+    )
 
     missing_fig = build_missing_rate_comparison_bar(
         float(raw_summary.get("missing_rate", 0.0)),
@@ -258,7 +292,74 @@ def _log_preprocess_profile(
         output_dir=ctx.output_dir,
         title="Missing Rate (raw vs processed)",
     )
-    report_plotly(ctx.task, "preprocess", "missing_rate", missing_fig, step=0)
+    report_plotly(ctx.task, "preprocess", "missing_rate", missing_fig, iteration=0, cfg=cfg)
+
+
+def _select_sample_columns(
+    df,
+    feature_columns: list[str],
+    target_column: str | None,
+    max_columns: int,
+) -> list[str]:
+    columns = [col for col in feature_columns if col in df.columns]
+    target_col = target_column if target_column and target_column in df.columns else None
+    if target_col and target_col in columns:
+        columns.remove(target_col)
+    if max_columns <= 0:
+        if target_col:
+            columns.append(target_col)
+        return columns
+    if target_col:
+        if max_columns == 1:
+            return [target_col]
+        return [*columns[: max_columns - 1], target_col]
+    return columns[:max_columns]
+
+
+def _log_preprocess_debug_samples(
+    ctx: Any,
+    *,
+    cfg: Any,
+    df,
+    processed_df,
+    feature_columns: list[str],
+    processed_feature_columns: list[str],
+    target_column: str,
+    max_rows: int = 5,
+    max_input_columns: int = 20,
+    max_output_columns: int = 12,
+) -> None:
+    if ctx is None or getattr(ctx, "task", None) is None or not tables_enabled(cfg):
+        return
+    raw_sample = None
+    processed_sample = None
+    try:
+        raw_cols = _select_sample_columns(df, feature_columns, target_column, max_input_columns)
+        raw_sample = df[raw_cols].head(max_rows) if raw_cols else df.head(max_rows)
+    except Exception:
+        raw_sample = None
+    try:
+        processed_cols = _select_sample_columns(
+            processed_df, processed_feature_columns, target_column, max_output_columns
+        )
+        processed_sample = (
+            processed_df[processed_cols].head(max_rows)
+            if processed_cols
+            else processed_df.head(max_rows)
+        )
+    except Exception:
+        processed_sample = None
+
+    if raw_sample is not None:
+        log_debug_table(ctx.task, "preprocess", "raw_sample", raw_sample, step=0)
+    else:
+        log_debug_text(ctx.task, "preprocess", "raw_sample", "raw sample unavailable", step=0)
+    if processed_sample is not None:
+        log_debug_table(ctx.task, "preprocess", "processed_sample", processed_sample, step=0)
+    else:
+        log_debug_text(
+            ctx.task, "preprocess", "processed_sample", "processed sample unavailable", step=0
+        )
 
 
 def _split_indices(
@@ -333,6 +434,7 @@ def _split_indices(
 def run(cfg: Any) -> None:
     _ensure_variant_cfg(cfg, "group.preprocess.preprocess_variant", "preprocess_variant")
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
+    apply_preprocess_naming(cfg)
     ctx = init_task_context(
         cfg,
         stage=cfg.task.stage,
@@ -400,13 +502,110 @@ def run(cfg: Any) -> None:
     if not feature_columns:
         raise ValueError("No feature columns remain after applying target/id/drop exclusions.")
 
+    task_type = _normalize_task_type(getattr(getattr(cfg, "eval", None), "task_type", None))
+
+    preprocess_variant = _to_container(getattr(cfg, "preprocess_variant", {})) or {}
+    preprocess_variant_name = _normalize_str(preprocess_variant.get("name")) or _normalize_str(
+        getattr(getattr(cfg, "preprocess", None), "variant", None)
+    ) or "unknown"
+
+    schema = infer_schema(df[feature_columns])
+    spec = _find_preprocess_spec(preprocess_variant_name, task_type=task_type)
+    if spec is not None:
+        missing = list(spec.missing_dependencies() or [])
+        if missing:
+            raw_dataset_id_value = raw_dataset_id_input
+            if not raw_dataset_id_value and dataset_path_value:
+                raw_dataset_id_value = f"local:{raw_dataset_hash}"
+            skip_detail = {"missing": missing, "variant": preprocess_variant_name}
+            emit_skip(
+                ctx,
+                reason="missing_dependency",
+                detail=skip_detail,
+                out={
+                    "processed_dataset_id": None,
+                    "split_hash": None,
+                    "recipe_hash": None,
+                    "processed_dataset_hash": None,
+                    "preprocess_variant": preprocess_variant_name,
+                    "task_type": task_type,
+                },
+            )
+            versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
+            manifest = {
+                "schema_version": versions.get("schema_version", "unknown"),
+                "code_version": versions.get("code_version", "unknown"),
+                "platform_version": versions.get("platform_version", "unknown"),
+                "process": "preprocess",
+                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "inputs": {
+                    "raw_dataset_id": raw_dataset_id_value,
+                    "preprocess_variant": preprocess_variant_name,
+                    "task_type": task_type,
+                },
+                "outputs": {
+                    "processed_dataset_id": None,
+                    "split_hash": None,
+                    "recipe_hash": None,
+                    "status": "skipped",
+                    "reason": "missing_dependency",
+                },
+                "hashes": {"config_hash": hash_config(cfg)},
+            }
+            write_manifest(ctx, manifest)
+            return
+        applicability = spec.check_applicability(schema)
+        if not applicability.ok:
+            raw_dataset_id_value = raw_dataset_id_input
+            if not raw_dataset_id_value and dataset_path_value:
+                raw_dataset_id_value = f"local:{raw_dataset_hash}"
+            skip_detail = {
+                "reason": applicability.reason,
+                "variant": preprocess_variant_name,
+            }
+            emit_skip(
+                ctx,
+                reason="inapplicable",
+                detail=skip_detail,
+                out={
+                    "processed_dataset_id": None,
+                    "split_hash": None,
+                    "recipe_hash": None,
+                    "processed_dataset_hash": None,
+                    "preprocess_variant": preprocess_variant_name,
+                    "task_type": task_type,
+                },
+            )
+            versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
+            manifest = {
+                "schema_version": versions.get("schema_version", "unknown"),
+                "code_version": versions.get("code_version", "unknown"),
+                "platform_version": versions.get("platform_version", "unknown"),
+                "process": "preprocess",
+                "created_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "inputs": {
+                    "raw_dataset_id": raw_dataset_id_value,
+                    "preprocess_variant": preprocess_variant_name,
+                    "task_type": task_type,
+                },
+                "outputs": {
+                    "processed_dataset_id": None,
+                    "split_hash": None,
+                    "recipe_hash": None,
+                    "status": "skipped",
+                    "reason": "inapplicable",
+                },
+                "hashes": {"config_hash": hash_config(cfg)},
+            }
+            write_manifest(ctx, manifest)
+            return
+
     split_cfg = getattr(cfg.data, "split", None)
     split_strategy = _normalize_str(getattr(split_cfg, "strategy", None)) or "random"
     split_test_size = float(getattr(split_cfg, "test_size", 0.2))
     split_seed = int(getattr(split_cfg, "seed", 42))
     split_group_column = _normalize_str(getattr(split_cfg, "group_column", None))
     split_time_column = _normalize_str(getattr(split_cfg, "time_column", None))
-    task_type = _normalize_task_type(getattr(getattr(cfg, "eval", None), "task_type", None))
     if split_strategy.lower() == "stratified" and task_type != "classification":
         raise ValueError("data.split.strategy=stratified requires eval.task_type=classification.")
 
@@ -441,21 +640,6 @@ def run(cfg: Any) -> None:
     split_hash = hash_split(split_payload)
     store_features = _normalize_bool(
         _cfg_value(cfg, "ops.processed_dataset.store_features", True), default=True
-    )
-
-    preprocess_variant = _to_container(getattr(cfg, "preprocess_variant", {})) or {}
-    preprocess_variant_name = _normalize_str(preprocess_variant.get("name")) or _normalize_str(
-        getattr(getattr(cfg, "preprocess", None), "variant", None)
-    ) or "unknown"
-    connect_preprocess(
-        ctx,
-        cfg,
-        raw_dataset_id=raw_dataset_id_input,
-        dataset_path=dataset_path_value if not raw_dataset_id_input else None,
-        preprocess_variant=preprocess_variant_name,
-        split_strategy=split_strategy,
-        split_seed=split_seed,
-        store_features=store_features,
     )
 
     numeric_impute = _normalize_str(getattr(getattr(cfg, "preprocess", None), "numeric_impute", None))
@@ -578,12 +762,22 @@ def run(cfg: Any) -> None:
     if clearml_enabled:
         _log_preprocess_profile(
             ctx,
+            cfg=cfg,
             df=df,
             processed_df=processed_df,
             feature_columns=feature_columns,
             numeric_features=numeric_features,
             categorical_features=categorical_features,
             processed_feature_columns=processed_feature_columns,
+        )
+        _log_preprocess_debug_samples(
+            ctx,
+            cfg=cfg,
+            df=df,
+            processed_df=processed_df,
+            feature_columns=feature_columns,
+            processed_feature_columns=processed_feature_columns,
+            target_column=target_column,
         )
 
     processed_path = ctx.output_dir / "processed_dataset.parquet"
@@ -617,7 +811,6 @@ def run(cfg: Any) -> None:
     }
     processed_dataset_hash = _hash_payload(processed_id_payload)
 
-    schema = infer_schema(df[feature_columns])
     schema["target_column"] = target_column
     schema["id_columns"] = id_columns
     schema["drop_columns"] = drop_columns
@@ -668,6 +861,9 @@ def run(cfg: Any) -> None:
 
     usecase_id = _normalize_str(getattr(getattr(cfg, "run", None), "usecase_id", None)) or "unknown"
     schema_version = _normalize_str(getattr(getattr(cfg, "run", None), "schema_version", None)) or "unknown"
+    schema_tag = schema_version
+    if not schema_tag.lower().startswith("v"):
+        schema_tag = f"v{schema_tag}"
 
     meta_payload = {
         "processed_dataset_hash": processed_dataset_hash,
@@ -712,14 +908,17 @@ def run(cfg: Any) -> None:
     processed_dataset_version: str | None = None
     if clearml_enabled:
         dataset_name = (
-            f"processed__{usecase_id}__{preprocess_variant_name}__{split_hash}__v{schema_version}"
+            f"processed__{usecase_id}__{preprocess_variant_name}__{split_hash}__{schema_tag}"
         )
-        dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
+        clearml_cfg = getattr(getattr(cfg, "run", None), "clearml", None)
+        dataset_project = _normalize_str(getattr(clearml_cfg, "project_name", None))
+        if not dataset_project:
+            dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
         dataset_tags = [
             f"usecase:{usecase_id}",
             "process:preprocess",
             "type:processed",
-            f"schema:v{schema_version}",
+            f"schema:{schema_tag}",
         ]
         parent_ids = None
         if raw_dataset_id_input and not raw_dataset_id_input.startswith("local:"):

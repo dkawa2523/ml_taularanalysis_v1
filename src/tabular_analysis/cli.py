@@ -65,6 +65,10 @@ def _select_runner(task_name: str):
         from .processes.train_model import run
 
         return run
+    if task_name == "train_ensemble":
+        from .processes.train_ensemble import run
+
+        return run
     if task_name == "leaderboard":
         from .processes.leaderboard import run
 
@@ -104,10 +108,17 @@ def main(argv: Optional[List[str]] = None) -> None:
         action="store_true",
         help="Compose config and print it, then exit.",
     )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print pipeline plan only (equivalent to pipeline.dry_run=true).",
+    )
     args, overrides = parser.parse_known_args(argv)
 
     config_dir = _resolve_config_dir()
     with initialize_config_dir(version_base=None, config_dir=str(config_dir)):
+        if args.dry_run:
+            overrides.append("pipeline.dry_run=true")
         cfg = compose(config_name="config", overrides=overrides)
 
     if args.print_config:

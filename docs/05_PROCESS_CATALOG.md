@@ -57,7 +57,31 @@
 - `model_id` / `best_score` などは null になる（leaderboard 側で除外される）
 
 **追加 Artifacts**
-- `metrics.json`, `model_bundle/*`
+- `metrics.json`, `preds_valid.parquet`, `classes.json`（classification のみ）, `model_bundle/*`
+
+## train_ensemble
+**入力**
+- `run.usecase_id`
+- `preprocess.variant`
+- `ensemble.method` / `ensemble.top_k` / `ensemble.selection_metric`
+- `ensemble.exclude_variants` / `ensemble.fallback_rerun_predict`
+- `ensemble.weighted.search` / `ensemble.weighted.n_samples` / `ensemble.weighted.seed` / `ensemble.weighted.top_k_max`（method=weighted）
+- `ensemble.stacking.meta_model` / `ensemble.stacking.cv_folds` / `ensemble.stacking.seed` / `ensemble.stacking.require_test_split`（method=stacking）
+
+**出力（out.json）**
+- `processed_dataset_id`
+- `split_hash`
+- `recipe_hash`
+- `train_task_id`
+- `model_id`
+- `best_score`
+- `primary_metric`
+- `task_type`
+- `n_classes`（classification のみ）
+
+**追加 Artifacts**
+- `metrics.json`, `ensemble_spec.json`, `model_bundle.joblib`
+- stacking 時は `ensemble_spec.json` に `primary_metric_source` / `meta_model` / `meta_training_protocol` を記録
 
 ## leaderboard
 **入力**

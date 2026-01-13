@@ -31,12 +31,33 @@ python tools/tests/verify_all.py --quick
 ```
 
 ## Flow
-### 1) Pipeline 実行（train + leaderboard まで）
+### 1) dataset_register（raw_dataset_id を取得）
+Local mode（ClearML 無効）:
+```bash
+python -m tabular_analysis.cli task=dataset_register \
+  run.clearml.enabled=false \
+  run.output_dir=outputs/20260101_120000 \
+  data.dataset_path=/path/to/data.csv \
+  data.target_column=target
+```
+
+ClearML logging mode（ローカル実行 + ログ記録）:
+```bash
+python -m tabular_analysis.cli task=dataset_register \
+  run.clearml.enabled=true \
+  run.clearml.execution=logging \
+  run.output_dir=outputs/20260101_120000 \
+  data.dataset_path=/path/to/data.csv \
+  data.target_column=target
+```
+
+### 2) Pipeline 実行（train + leaderboard まで）
 Local mode（ClearML 無効）:
 ```bash
 python -m tabular_analysis.cli task=pipeline \
   run.clearml.enabled=false \
   run.output_dir=outputs/20260101_120000 \
+  data.raw_dataset_id=local:<RAW_DATASET_ID> \
   data.dataset_path=/path/to/data.csv \
   data.target_column=target
 ```
@@ -46,15 +67,53 @@ ClearML logging mode（ローカル実行 + ログ記録）:
 python -m tabular_analysis.cli task=pipeline \
   run.clearml.enabled=true \
   run.clearml.execution=logging \
-  run.output_dir=outputs/20260101_120000
+  run.output_dir=outputs/20260101_120000 \
+  data.raw_dataset_id=<RAW_DATASET_ID>
 ```
 
-Agent/clone mode を使う場合は queue と clone 元の Task を指定します。
+Agent 実行は PipelineController を使う。
 ```bash
 python -m tabular_analysis.cli task=pipeline \
   run.clearml.enabled=true \
-  run.clearml.execution=agent \
-  run.clearml.queue_name=default
+  run.clearml.execution=pipeline_controller \
+  run.clearml.queue_name=default \
+  data.raw_dataset_id=<RAW_DATASET_ID>
+```
+
+### 2.1) Dry-run（plan だけ確認）
+実行前に plan を確認し、タスク数と project 階層を把握します。
+```bash
+python -m tabular_analysis.cli task=pipeline --dry-run \
+  run.clearml.enabled=true \
+  run.clearml.execution=pipeline_controller \
+  data.raw_dataset_id=<RAW_DATASET_ID>
+```
+
+確認ポイント:
+- preprocess/train/ensemble の件数
+- fail_policy / limits / parallelism の値
+- project layout の例が意図通りか
+
+limits を超えた場合は、`pipeline.groups.*` の include/exclude を調整するか、
+`pipeline.limits.max_*` を試験時のみ一時的に引き上げます。
+
+### 2.2) Full run（安全に上限を引き上げる）
+1) dry-run で plan を確認
+2) queue/agent の空きと並列数を確認
+3) `pipeline.limits.*` と `pipeline.parallelism.*` を明示指定して実行
+
+例:
+```bash
+python -m tabular_analysis.cli task=pipeline \
+  run.clearml.enabled=true \
+  run.clearml.execution=pipeline_controller \
+  run.clearml.queue_name=default \
+  data.raw_dataset_id=<RAW_DATASET_ID> \
+  pipeline.limits.max_preprocess_variants=5 \
+  pipeline.limits.max_train_tasks=50 \
+  pipeline.limits.max_ensemble_tasks=5 \
+  pipeline.parallelism.max_concurrent_steps=6 \
+  pipeline.parallelism.max_concurrent_train=4
 ```
 
 ### 2) Leaderboard レビュー

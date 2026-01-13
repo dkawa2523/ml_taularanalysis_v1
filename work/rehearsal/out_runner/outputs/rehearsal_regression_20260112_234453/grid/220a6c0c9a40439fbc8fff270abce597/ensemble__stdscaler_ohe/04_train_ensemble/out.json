@@ -1,0 +1,46 @@
+{
+  "model_id": null,
+  "train_task_id": "7da82184e84a4577ad0bc9b0d3195a16",
+  "best_score": null,
+  "primary_metric": "rmse",
+  "task_type": "regression",
+  "preprocess_variant": "stdscaler_ohe",
+  "ensemble_method": "mean_topk",
+  "status": "skipped",
+  "reason": "insufficient_candidates",
+  "detail": {
+    "available": 15,
+    "included": 0,
+    "required": 1,
+    "skipped_reasons": [
+      {
+        "reason": "status_incomplete",
+        "count": 27
+      },
+      {
+        "reason": "metric_missing",
+        "count": 23
+      },
+      {
+        "reason": "missing_preds_valid",
+        "count": 23
+      },
+      {
+        "reason": "missing_model_bundle",
+        "count": 17
+      },
+      {
+        "reason": "missing_out_json",
+        "count": 16
+      },
+      {
+        "reason": "preds_invalid",
+        "count": 15
+      },
+      {
+        "reason": "preprocess_mismatch",
+        "count": 2
+      }
+    ]
+  }
+}

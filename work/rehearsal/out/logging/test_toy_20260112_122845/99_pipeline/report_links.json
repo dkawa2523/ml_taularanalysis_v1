@@ -1,0 +1,26 @@
+{
+  "grid_run_id": "3c853cafb6f04dc8b6fc95ae22755ea8",
+  "pipeline": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/99_pipeline",
+    "task_id": "beafc36729064744a53ca59c5766c825",
+    "clearml_url": "http://localhost:8080/projects/0c75d8c4e4424fa199f3d27eff8000d0/experiments/beafc36729064744a53ca59c5766c825/output/log"
+  },
+  "dataset_register": null,
+  "preprocess": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/grid/3c853cafb6f04dc8b6fc95ae22755ea8/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe"
+    }
+  ],
+  "train": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/grid/3c853cafb6f04dc8b6fc95ae22755ea8/train__stdscaler_ohe__ridge/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge"
+    }
+  ],
+  "leaderboard": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260112_122845/grid/3c853cafb6f04dc8b6fc95ae22755ea8/leaderboard/05_leaderboard"
+  },
+  "infer": null
+}

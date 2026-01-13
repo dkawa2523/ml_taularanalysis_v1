@@ -15,8 +15,15 @@ import shutil
 from pathlib import Path
 from typing import Any, Iterable
 
-from ..clearml.hparams import connect_leaderboard
-from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
+from ..clearml.reporting import (
+    plots_enabled,
+    report_plotly,
+    report_scalar,
+    report_table,
+    scalars_enabled,
+    tables_enabled,
+)
+from ..clearml.ui_logger import log_debug_table
 from ..io.bundle_io import load_bundle
 from ..ops.clearml_identity import apply_clearml_identity
 from ..platform_adapter import (
@@ -562,15 +569,6 @@ def run(cfg: Any) -> None:
     expected_seed = _normalize_int(getattr(getattr(cfg, "eval", None), "seed", None))
     expected_task_type = _normalize_str(getattr(getattr(cfg, "eval", None), "task_type", None)) or "regression"
 
-    connect_leaderboard(
-        ctx,
-        cfg,
-        primary_metric=expected_primary_metric,
-        direction=expected_direction,
-        require_comparable=require_comparable,
-        top_k=top_k,
-    )
-
     ref_values: dict[str, Any] = {
         "processed_dataset_id": None,
         "split_hash": None,
@@ -789,6 +787,11 @@ def run(cfg: Any) -> None:
                 manifest_path = None
             if out_path is not None and manifest_path is not None:
                 out = _load_json(out_path)
+                if _normalize_str(out.get("status")) == "skipped":
+                    skip_reason = _normalize_str(out.get("reason")) or "skipped"
+                    excluded.append(str(ref))
+                    warnings.append(f"{ref}: skipped ({skip_reason})")
+                    continue
                 manifest = _load_json(manifest_path)
                 metrics_payload = None
                 model_bundle_path = None
@@ -825,6 +828,11 @@ def run(cfg: Any) -> None:
                     entry_errors.append(f"out.json/manifest.json missing under {run_dir}")
                 else:
                     out = _load_json(out_path)
+                    if _normalize_str(out.get("status")) == "skipped":
+                        skip_reason = _normalize_str(out.get("reason")) or "skipped"
+                        excluded.append(str(ref))
+                        warnings.append(f"{ref}: skipped ({skip_reason})")
+                        continue
                     manifest = _load_json(manifest_path)
                     metrics_payload = None
                     model_bundle_path = _resolve_model_bundle_path(run_dir, _normalize_str(out.get("model_id")))
@@ -1036,6 +1044,9 @@ def run(cfg: Any) -> None:
     summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
 
     if clearml_enabled and rows:
+        plots_on = plots_enabled(cfg)
+        scalars_on = scalars_enabled(cfg)
+        tables_on = tables_enabled(cfg)
         ranking_score_label = (
             "Composite Score"
             if use_composite
@@ -1043,58 +1054,89 @@ def run(cfg: Any) -> None:
         )
         best_primary_score = recommended.get("best_score")
         best_composite_score = recommended.get("composite_score")
-        if use_composite and best_composite_score is not None:
-            log_scalar(ctx.task, "leaderboard", "best_score", best_composite_score, step=0)
-            if best_primary_score is not None:
-                log_scalar(
+        if scalars_on:
+            if use_composite and best_composite_score is not None:
+                report_scalar(
                     ctx.task,
                     "leaderboard",
-                    "best_primary_score",
-                    best_primary_score,
-                    step=0,
+                    "best_score",
+                    best_composite_score,
+                    iteration=0,
+                    cfg=cfg,
                 )
-        elif best_primary_score is not None:
-            log_scalar(ctx.task, "leaderboard", "best_score", best_primary_score, step=0)
+                if best_primary_score is not None:
+                    report_scalar(
+                        ctx.task,
+                        "leaderboard",
+                        "best_primary_score",
+                        best_primary_score,
+                        iteration=0,
+                        cfg=cfg,
+                    )
+            elif best_primary_score is not None:
+                report_scalar(
+                    ctx.task,
+                    "leaderboard",
+                    "best_score",
+                    best_primary_score,
+                    iteration=0,
+                    cfg=cfg,
+                )
 
-        table_fig = build_leaderboard_table(
-            rows,
-            metric_names=scoring_metrics,
-            score_key=ranking_score_key,
-            score_label=ranking_score_label,
-            title="Leaderboard",
-        )
-        if table_fig is not None:
-            log_plotly(ctx.task, "leaderboard", "table", table_fig, step=0)
-        else:
-            log_debug_table(
-                ctx.task,
-                "leaderboard",
-                "table",
-                rows[: min(10, len(rows))],
-                step=0,
-            )
+        if plots_on:
+            if tables_on:
+                table_fig = build_leaderboard_table(
+                    rows,
+                    metric_names=scoring_metrics,
+                    score_key=ranking_score_key,
+                    score_label=ranking_score_label,
+                    title="Leaderboard",
+                )
+                report_table(
+                    ctx.task,
+                    "leaderboard",
+                    "table",
+                    table_fig or rows,
+                    iteration=0,
+                    cfg=cfg,
+                    output_path=ctx.output_dir / "leaderboard_table.png",
+                )
 
-        top_k_fig = build_top_k_bar(
-            rows,
-            score_key=ranking_score_key,
-            score_label=ranking_score_label,
-            title=f"Top-K {ranking_score_label}",
-        )
-        fallback_path = None
-        if top_k_fig is None:
-            fallback_path = write_top_k_bar_png(
+            top_k_fig = build_top_k_bar(
                 rows,
-                ctx.output_dir / "top_k_scores.png",
                 score_key=ranking_score_key,
                 score_label=ranking_score_label,
                 title=f"Top-K {ranking_score_label}",
             )
-        log_plotly(ctx.task, "leaderboard", "top_k_scores", top_k_fig or fallback_path, step=0)
-        log_debug_table(ctx.task, "leaderboard", "top_k_table", rows[: min(10, len(rows))], step=0)
+            fallback_path = None
+            if top_k_fig is None:
+                fallback_path = write_top_k_bar_png(
+                    rows,
+                    ctx.output_dir / "top_k_scores.png",
+                    score_key=ranking_score_key,
+                    score_label=ranking_score_label,
+                    title=f"Top-K {ranking_score_label}",
+                )
+            report_plotly(
+                ctx.task,
+                "leaderboard",
+                "top_k_scores",
+                top_k_fig or fallback_path,
+                iteration=0,
+                cfg=cfg,
+            )
+            if tables_on:
+                log_debug_table(
+                    ctx.task,
+                    "leaderboard",
+                    "top_k_table",
+                    rows[: min(10, len(rows))],
+                    step=0,
+                )
 
-        pareto_fig = build_pareto_scatter(rows, x_metric="r2", y_metric="rmse")
-        if pareto_fig is not None:
-            log_plotly(ctx.task, "leaderboard", "pareto", pareto_fig, step=0)
+            pareto_fig = build_pareto_scatter(rows, x_metric="r2", y_metric="rmse")
+            if pareto_fig is not None:
+                report_plotly(ctx.task, "leaderboard", "pareto", pareto_fig, iteration=0, cfg=cfg)
 
     max_models = min(5, len(rows))
     decision_rows = rows[:max_models]

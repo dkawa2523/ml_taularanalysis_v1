@@ -9,8 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..clearml.datasets import create_raw_dataset, get_raw_dataset_local_copy
-from ..clearml.hparams import connect_dataset_register
-from ..clearml.ui_logger import log_scalar, report_plotly
+from ..clearml.reporting import plots_enabled, report_plotly, report_scalar
 from ..platform_adapter import (
     hash_config,
     hash_recipe,
@@ -129,11 +128,35 @@ def _infer_schema(path: Path, output_dir: Path):
     return df, schema
 
 
-def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: list[Any]) -> None:
+def _log_data_profile(
+    ctx: Any,
+    df,
+    *,
+    cfg: Any,
+    target_column: str | None,
+    id_columns: list[Any],
+) -> None:
     summary = summarize_dataframe(df)
-    log_scalar(ctx.task, "dataset_register", "rows", summary.get("rows"), step=0)
-    log_scalar(ctx.task, "dataset_register", "columns", summary.get("columns"), step=0)
-    log_scalar(ctx.task, "dataset_register", "missing_rate", summary.get("missing_rate"), step=0)
+    report_scalar(ctx.task, "dataset_register", "rows", summary.get("rows"), iteration=0, cfg=cfg)
+    report_scalar(
+        ctx.task,
+        "dataset_register",
+        "columns",
+        summary.get("columns"),
+        iteration=0,
+        cfg=cfg,
+    )
+    report_scalar(
+        ctx.task,
+        "dataset_register",
+        "missing_rate",
+        summary.get("missing_rate"),
+        iteration=0,
+        cfg=cfg,
+    )
+
+    if not plots_enabled(cfg):
+        return
 
     exclude = {str(value) for value in id_columns if value is not None}
     if target_column:
@@ -151,7 +174,7 @@ def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: li
         max_columns=_PROFILE_SETTINGS["table_columns"],
         output_dir=ctx.output_dir,
     )
-    report_plotly(ctx.task, "dataset_register", "head_table", head_fig, step=0)
+    report_plotly(ctx.task, "dataset_register", "head_table", head_fig, iteration=0, cfg=cfg)
 
     missing_fig = build_missingness_bar(
         df,
@@ -159,7 +182,7 @@ def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: li
         max_columns=_PROFILE_SETTINGS["max_columns"],
         output_dir=ctx.output_dir,
     )
-    report_plotly(ctx.task, "dataset_register", "missingness", missing_fig, step=0)
+    report_plotly(ctx.task, "dataset_register", "missingness", missing_fig, iteration=0, cfg=cfg)
 
     for col, fig in build_numeric_histograms(
         df,
@@ -169,7 +192,14 @@ def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: li
         output_dir=ctx.output_dir,
         title_prefix="Numeric Histogram",
     ):
-        report_plotly(ctx.task, "dataset_register", _series_name("numeric_hist", col), fig, step=0)
+        report_plotly(
+            ctx.task,
+            "dataset_register",
+            _series_name("numeric_hist", col),
+            fig,
+            iteration=0,
+            cfg=cfg,
+        )
 
     for col, fig in build_categorical_topk_bars(
         df,
@@ -185,7 +215,8 @@ def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: li
             "dataset_register",
             _series_name("categorical_topk", col),
             fig,
-            step=0,
+            iteration=0,
+            cfg=cfg,
         )
 
     target_fig = build_target_distribution(
@@ -196,7 +227,14 @@ def _log_data_profile(ctx: Any, df, *, target_column: str | None, id_columns: li
         sample_rows=_PROFILE_SETTINGS["sample_rows"],
         output_dir=ctx.output_dir,
     )
-    report_plotly(ctx.task, "dataset_register", "target_distribution", target_fig, step=0)
+    report_plotly(
+        ctx.task,
+        "dataset_register",
+        "target_distribution",
+        target_fig,
+        iteration=0,
+        cfg=cfg,
+    )
 
 
 def run(cfg: Any) -> None:
@@ -214,14 +252,6 @@ def run(cfg: Any) -> None:
     dataset_path_value = _normalize_str(getattr(cfg.data, "dataset_path", None))
     raw_dataset_id_input = _normalize_str(getattr(cfg.data, "raw_dataset_id", None))
     target_column = _normalize_str(getattr(getattr(cfg, "data", None), "target_column", None))
-
-    connect_dataset_register(
-        ctx,
-        cfg,
-        dataset_path=dataset_path_value,
-        target_column=target_column,
-        raw_dataset_id=raw_dataset_id_input,
-    )
 
     raw_dataset_id: str | None = None
     raw_dataset_hash: str | None = None
@@ -247,7 +277,10 @@ def run(cfg: Any) -> None:
             usecase_id = _normalize_str(getattr(getattr(cfg, "run", None), "usecase_id", None)) or "unknown"
             schema_version = _normalize_str(getattr(getattr(cfg, "run", None), "schema_version", None)) or "unknown"
             dataset_name = f"{usecase_id}__raw__{dataset_file.stem}"
-            dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
+            clearml_cfg = getattr(getattr(cfg, "run", None), "clearml", None)
+            dataset_project = _normalize_str(getattr(clearml_cfg, "project_name", None))
+            if not dataset_project:
+                dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
             dataset_tags = [f"usecase:{usecase_id}", "process:dataset_register", f"schema:{schema_version}"]
             raw_dataset_id = create_raw_dataset(
                 cfg,
@@ -302,6 +335,7 @@ def run(cfg: Any) -> None:
         _log_data_profile(
             ctx,
             raw_df,
+            cfg=cfg,
             target_column=target_column,
             id_columns=id_columns,
         )

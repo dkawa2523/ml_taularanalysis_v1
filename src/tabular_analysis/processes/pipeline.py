@@ -1,13 +1,12 @@
 """pipeline process.
 
 T009: grid execution + task_id handoff.
-- dataset_register/preprocess/train/leaderboard/infer を独立タスクとして実行する接着剤
+- preprocess/train/leaderboard/infer を独立タスクとして実行する接着剤
 - grid_run_id を生成し、各タスクへ伝播させる
 """
 
 from __future__ import annotations
 
-import inspect
 import json
 import os
 from datetime import datetime, timezone
@@ -16,34 +15,34 @@ import subprocess
 import sys
 from typing import Any, Iterable, Mapping
 import uuid
-
-from ..clearml.templates import resolve_template_task_id
-from ..clearml.ui_logger import log_scalar
+from ..clearml.reporting import report_scalar, scalars_enabled
 from ..platform_adapter import (
-    apply_clearml_task_overrides,
+    build_clearml_code_ref,
     clearml_task_type_controller,
-    create_pipeline_controller,
+    create_pipeline_controller_from_template,
+    get_task_artifact_local_copy,
     hash_config,
     hash_recipe,
     hash_split,
     init_task_context,
     is_clearml_enabled,
-    pipeline_require_clearml_agent,
-    pipeline_step_task_id_ref,
     report_markdown,
+    resolve_clearml_task_url,
+    resolve_clearml_code_ref_mode,
     resolve_version_props,
     save_config_resolved,
     upload_artifact,
     write_manifest,
     write_out_json,
 )
-from ..ops.clearml_identity import apply_clearml_identity, build_project_name
+from ..ops.clearml_identity import apply_clearml_identity
 from ..reporting.pipeline_report import build_pipeline_report_bundle
 
 _STAGE_BY_TASK = {
     "dataset_register": "01_dataset_register",
     "preprocess": "02_preprocess",
     "train_model": "03_train_model",
+    "train_ensemble": "04_train_ensemble",
     "infer": "04_infer",
     "leaderboard": "05_leaderboard",
 }
@@ -167,6 +166,21 @@ def _to_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
+def _to_container(value: Any) -> Any:
+    if value is None:
+        return None
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception:
+        OmegaConf = None
+    if OmegaConf is not None and OmegaConf.is_config(value):
+        try:
+            return OmegaConf.to_container(value, resolve=True)
+        except Exception:
+            return value
+    return value
+
+
 def _to_value_list(value: Any) -> list[Any]:
     if value is None:
         return []
@@ -214,6 +228,38 @@ def _resolve_exec_policy_limits(cfg: Any) -> dict[str, int]:
     }
 
 
+def _resolve_pipeline_limits(cfg: Any) -> dict[str, int]:
+    limits_cfg = _to_mapping(_cfg_value(cfg, "pipeline.limits"))
+    max_preprocess = _to_int(limits_cfg.get("max_preprocess_variants"), 0)
+    max_train = _to_int(limits_cfg.get("max_train_tasks"), 0)
+    max_ensemble = _to_int(limits_cfg.get("max_ensemble_tasks"), 0)
+    if max_preprocess < 0:
+        max_preprocess = 0
+    if max_train < 0:
+        max_train = 0
+    if max_ensemble < 0:
+        max_ensemble = 0
+    return {
+        "max_preprocess_variants": max_preprocess,
+        "max_train_tasks": max_train,
+        "max_ensemble_tasks": max_ensemble,
+    }
+
+
+def _resolve_pipeline_parallelism(cfg: Any) -> dict[str, int]:
+    parallelism_cfg = _to_mapping(_cfg_value(cfg, "pipeline.parallelism"))
+    max_steps = _to_int(parallelism_cfg.get("max_concurrent_steps"), 0)
+    max_train = _to_int(parallelism_cfg.get("max_concurrent_train"), 0)
+    if max_steps < 0:
+        max_steps = 0
+    if max_train < 0:
+        max_train = 0
+    return {
+        "max_concurrent_steps": max_steps,
+        "max_concurrent_train": max_train,
+    }
+
+
 def _resolve_exec_policy_selection(cfg: Any) -> dict[str, bool]:
     selection_cfg = _to_mapping(_cfg_value(cfg, "exec_policy.selection"))
     selection: dict[str, bool] = {}
@@ -221,6 +267,24 @@ def _resolve_exec_policy_selection(cfg: Any) -> dict[str, bool]:
         if key in selection_cfg:
             selection[key] = bool(selection_cfg.get(key))
     return selection
+
+
+def _resolve_fail_policy(cfg: Any) -> dict[str, Any]:
+    policy_cfg = _to_mapping(_cfg_value(cfg, "pipeline.fail_policy"))
+    allow_skipped = bool(policy_cfg.get("allow_skipped", True))
+    allowed_failures = _to_int(policy_cfg.get("allowed_failures"), 0)
+    fail_fast = bool(policy_cfg.get("fail_fast", False))
+    min_successful = _to_int(policy_cfg.get("min_successful_train_tasks"), 1)
+    if allowed_failures < 0:
+        allowed_failures = 0
+    if min_successful < 0:
+        min_successful = 0
+    return {
+        "allow_skipped": allow_skipped,
+        "allowed_failures": allowed_failures,
+        "fail_fast": fail_fast,
+        "min_successful_train_tasks": min_successful,
+    }
 
 
 def _apply_exec_policy_selection(overrides: dict[str, Any], selection: Mapping[str, bool]) -> None:
@@ -258,6 +322,7 @@ def _resolve_exec_policy_queues(cfg: Any) -> dict[str, Any]:
         "dataset_register": _queue("dataset_register"),
         "preprocess": _queue("preprocess"),
         "train_model": _queue("train_model"),
+        "train_ensemble": _queue("train_ensemble"),
         "train_model_heavy": _queue("train_model_heavy"),
         "leaderboard": _queue("leaderboard"),
         "infer": _queue("infer"),
@@ -587,6 +652,9 @@ def _collect_run_overrides(
         overrides["run.clearml.project_root"] = getattr(clearml_cfg, "project_root", None)
         overrides["run.clearml.queue_name"] = getattr(clearml_cfg, "queue_name", None)
         overrides["run.clearml.clone_from_task_id"] = getattr(clearml_cfg, "clone_from_task_id", None)
+        parent_task_id = _normalize_str(_cfg_value(cfg, "run.clearml.parent_task_id"))
+        if parent_task_id:
+            overrides["run.clearml.parent_task_id"] = parent_task_id
         extra_tags = getattr(clearml_cfg, "extra_tags", None)
         if extra_tags:
             overrides["run.clearml.extra_tags"] = list(extra_tags)
@@ -638,6 +706,33 @@ def _build_downstream_data_overrides(
     return overrides
 
 
+_ENSEMBLE_OVERRIDE_KEYS = (
+    "ensemble.method",
+    "ensemble.top_k",
+    "ensemble.selection_metric",
+    "ensemble.exclude_variants",
+    "ensemble.fallback_rerun_predict",
+    "ensemble.weighted.search",
+    "ensemble.weighted.n_samples",
+    "ensemble.weighted.seed",
+    "ensemble.weighted.top_k_max",
+    "ensemble.stacking.meta_model",
+    "ensemble.stacking.cv_folds",
+    "ensemble.stacking.seed",
+    "ensemble.stacking.require_test_split",
+)
+
+
+def _collect_ensemble_overrides(cfg: Any) -> dict[str, Any]:
+    overrides: dict[str, Any] = {}
+    for key in _ENSEMBLE_OVERRIDE_KEYS:
+        value = _cfg_value(cfg, key)
+        if value is None:
+            continue
+        overrides[key] = _to_container(value)
+    return overrides
+
+
 def _collect_eval_overrides(cfg: Any) -> dict[str, Any]:
     eval_cfg = getattr(cfg, "eval", None)
     overrides: dict[str, Any] = {}
@@ -674,12 +769,6 @@ def _stage_dir(run_root: Path, task_name: str) -> Path:
     return run_root / stage
 
 
-def _clearml_project(cfg: Any, stage: str) -> str:
-    project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root")) or "MFG"
-    usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
-    return build_project_name(project_root, usecase_id, stage)
-
-
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -698,6 +787,17 @@ def _run_cli_task(args: list[str], *, cwd: Path, config_dir: Path | None) -> Non
     env = os.environ.copy()
     if config_dir is not None and "TABULAR_ANALYSIS_CONFIG_DIR" not in env:
         env["TABULAR_ANALYSIS_CONFIG_DIR"] = str(config_dir)
+    # Ensure child tasks create their own ClearML Task instead of reusing the pipeline task.
+    for key in (
+        "CLEARML_TASK_ID",
+        "TRAINS_TASK_ID",
+        "CLEARML_AGENT_TASK_ID",
+        "CLEARML_TASK",
+        "TASK_ID",
+        "CLEARML_PROC_MASTER_ID",
+        "TRAINS_PROC_MASTER_ID",
+    ):
+        env.pop(key, None)
     proc = subprocess.run(
         cmd,
         cwd=str(cwd),
@@ -774,6 +874,190 @@ def _resolve_model_set_variants(model_set: str) -> list[str]:
     return deduped
 
 
+def _normalize_option(value: Any) -> str:
+    text = _normalize_str(value)
+    return text.lower() if text else ""
+
+
+def _dedupe_variants(values: Iterable[Any]) -> list[str]:
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for item in values:
+        name = _normalize_str(item)
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        deduped.append(name)
+    return deduped
+
+
+def _resolve_pipeline_profile(cfg: Any) -> str:
+    profile = _normalize_option(_cfg_value(cfg, "pipeline.profile"))
+    return profile or "default"
+
+
+def _resolve_group_mode(cfg: Any, group: str) -> str:
+    mode = _normalize_option(_cfg_value(cfg, f"pipeline.groups.{group}.mode"))
+    return mode or "default"
+
+
+def _resolve_group_custom(cfg: Any, group: str) -> tuple[str, list[str], list[str]]:
+    base = _normalize_option(_cfg_value(cfg, f"pipeline.groups.{group}.custom.base")) or "default"
+    include = _dedupe_variants(_to_list(_cfg_value(cfg, f"pipeline.groups.{group}.custom.include")))
+    exclude = _dedupe_variants(_to_list(_cfg_value(cfg, f"pipeline.groups.{group}.custom.exclude")))
+    return base, include, exclude
+
+
+def _resolve_group_variants(
+    *,
+    group: str,
+    mode: str,
+    base: str,
+    include: list[str],
+    exclude: list[str],
+    all_specs: Iterable[Any],
+    default_specs: Iterable[Any],
+    on_missing_dependency: str | None = None,
+    on_inapplicable: str | None = None,
+    schema: Any | None = None,
+) -> tuple[list[str], dict[str, Any]]:
+    mode_key = mode or "default"
+    if mode_key not in ("none", "default", "custom"):
+        raise ValueError(f"Invalid pipeline.groups.{group}.mode: {mode}")
+    base_key = base or "default"
+    if mode_key == "custom" and base_key not in ("default", "none"):
+        raise ValueError(f"Invalid pipeline.groups.{group}.custom.base: {base}")
+
+    spec_list = list(all_specs)
+    spec_by_id = {spec.id: spec for spec in spec_list}
+    all_ids = set(spec_by_id.keys())
+
+    if mode_key == "custom":
+        for name in [*include, *exclude]:
+            if name not in all_ids:
+                raise ValueError(f"Unknown {group} variant: {name}")
+
+    default_ids = [spec.id for spec in default_specs]
+    selected: list[str]
+    if mode_key == "none":
+        selected = []
+    elif mode_key == "default":
+        selected = list(default_ids)
+    else:
+        selected = list(default_ids) if base_key == "default" else []
+        selected.extend(include)
+    selected = _dedupe_variants(selected)
+    if exclude:
+        excluded = set(exclude)
+        selected = [name for name in selected if name not in excluded]
+
+    skipped_missing: list[str] = []
+    skipped_inapplicable: list[str] = []
+    final: list[str] = []
+    on_missing = _normalize_option(on_missing_dependency) or "skip"
+    on_inapplicable = _normalize_option(on_inapplicable) or "skip"
+    for name in selected:
+        spec = spec_by_id.get(name)
+        if spec is None:
+            continue
+        missing = list(getattr(spec, "missing_dependencies")() or [])
+        if missing:
+            if on_missing == "error":
+                raise ValueError(
+                    f"{group} variant '{name}' requires missing dependencies: {', '.join(missing)}"
+                )
+            if on_missing != "include":
+                skipped_missing.append(name)
+                continue
+        applicability = getattr(spec, "check_applicability", None)
+        if callable(applicability):
+            result = applicability(schema)
+            if not getattr(result, "ok", True):
+                if on_inapplicable == "error":
+                    raise ValueError(
+                        f"{group} variant '{name}' is not applicable: {getattr(result, 'reason', None)}"
+                    )
+                if on_inapplicable != "include":
+                    skipped_inapplicable.append(name)
+                    continue
+        final.append(name)
+
+    info = {
+        "mode": mode_key,
+        "base": base_key if mode_key == "custom" else None,
+        "include": list(include),
+        "exclude": list(exclude),
+        "candidates": list(selected),
+        "variants": list(final),
+        "skipped_missing_dependencies": skipped_missing,
+        "skipped_inapplicable": skipped_inapplicable,
+    }
+    return final, info
+
+
+def _resolve_variants_v2(cfg: Any, *, group_modes: Mapping[str, str]) -> tuple[list[str], list[str], dict[str, Any]]:
+    from ..registry import (
+        list_default_model_variants,
+        list_default_preprocess_variants,
+        list_model_variants,
+        list_preprocess_variants,
+    )
+
+    task_type = _normalize_str(_cfg_value(cfg, "eval.task_type"))
+    schema = _cfg_value(cfg, "data.schema")
+
+    preprocess_mode = group_modes.get("preprocess") or "default"
+    preprocess_base, preprocess_include, preprocess_exclude = _resolve_group_custom(cfg, "preprocess")
+    preprocess_specs = list_preprocess_variants(
+        task_type=task_type,
+        schema=schema,
+        defaults_only=False,
+        filter_inapplicable=False,
+    )
+    preprocess_defaults = list_default_preprocess_variants(
+        task_type=task_type,
+        schema=schema,
+        filter_inapplicable=False,
+    )
+    preprocess_variants, preprocess_info = _resolve_group_variants(
+        group="preprocess",
+        mode=preprocess_mode,
+        base=preprocess_base,
+        include=preprocess_include,
+        exclude=preprocess_exclude,
+        all_specs=preprocess_specs,
+        default_specs=preprocess_defaults,
+        on_missing_dependency="skip",
+        on_inapplicable=_cfg_value(cfg, "pipeline.groups.preprocess.custom.on_inapplicable"),
+        schema=schema,
+    )
+
+    train_mode = group_modes.get("train") or "default"
+    train_base, train_include, train_exclude = _resolve_group_custom(cfg, "train")
+    model_specs = list_model_variants(task_type=task_type, defaults_only=False)
+    model_defaults = list_default_model_variants(task_type=task_type)
+    model_variants, train_info = _resolve_group_variants(
+        group="train",
+        mode=train_mode,
+        base=train_base,
+        include=train_include,
+        exclude=train_exclude,
+        all_specs=model_specs,
+        default_specs=model_defaults,
+        on_missing_dependency=_cfg_value(cfg, "pipeline.groups.train.custom.on_missing_dependency"),
+        on_inapplicable=None,
+        schema=None,
+    )
+
+    group_info = {
+        "preprocess": preprocess_info,
+        "train": train_info,
+        "ensemble": {"mode": group_modes.get("ensemble") or "default"},
+        "leaderboard": {"mode": group_modes.get("leaderboard") or "default"},
+    }
+    return preprocess_variants, model_variants, group_info
+
+
 def _resolve_variants(cfg: Any) -> tuple[list[str], list[str]]:
     preprocess_variants = _to_list(_cfg_value(cfg, "pipeline.preprocess_variants"))
     if not preprocess_variants:
@@ -808,14 +1092,76 @@ def _grid_cell_tag(preprocess_variant: str, model_variant: str) -> str:
     return f"grid_cell:{preprocess_variant}__{model_variant}"
 
 
+def _normalize_separator(value: Any) -> str:
+    text = _normalize_str(value)
+    return text if text else "/"
+
+
+def _strip_separator(text: str, sep: str) -> str:
+    if not text:
+        return text
+    if sep == "/":
+        return text.strip("/")
+    if len(sep) == 1:
+        return text.strip(sep)
+    while text.startswith(sep):
+        text = text[len(sep) :]
+    while text.endswith(sep):
+        text = text[: -len(sep)]
+    return text
+
+
+def _join_project_path(base: str, tail: str, sep: str) -> str:
+    if not base:
+        return tail
+    if not tail:
+        return base
+    return f"{_strip_separator(base, sep)}{sep}{_strip_separator(tail, sep)}"
+
+
+def _resolve_step_project_name(
+    cfg: Any,
+    *,
+    process_name: str,
+    preprocess_variant: str | None = None,
+    train_project_per_preprocess: bool = True,
+) -> str:
+    from ..clearml.project_layout import build_project_path
+
+    usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+    base = build_project_path(cfg, process_name=process_name, usecase_id=usecase_id)
+    if process_name == "train_model" and preprocess_variant and train_project_per_preprocess:
+        sep = _normalize_separator(_cfg_value(cfg, "run.clearml.project_layout.separator"))
+        return _join_project_path(base, _sanitize_component(preprocess_variant), sep)
+    return base
+
+
+def _build_train_project_group_override(
+    cfg: Any,
+    *,
+    preprocess_variant: str | None,
+    train_project_per_preprocess: bool,
+) -> dict[str, Any]:
+    if not train_project_per_preprocess:
+        return {}
+    if not preprocess_variant:
+        return {}
+    base_group = _normalize_str(_cfg_value(cfg, "run.clearml.project_layout.group_map.train_model"))
+    if not base_group:
+        return {}
+    sep = _normalize_separator(_cfg_value(cfg, "run.clearml.project_layout.separator"))
+    group_value = _join_project_path(base_group, _sanitize_component(preprocess_variant), sep)
+    return {"run.clearml.project_layout.group_map.train_model": group_value}
+
+
 def _build_plan_steps(
     cfg: Any,
     *,
     base_output_dir: Path,
     grid_run_id: str,
-    run_dataset_register: bool,
     run_preprocess: bool,
     run_train: bool,
+    run_ensemble: bool,
     run_leaderboard: bool,
     run_infer: bool,
     preprocess_targets: list[str],
@@ -824,36 +1170,21 @@ def _build_plan_steps(
     max_models: int,
     queues: Mapping[str, Any],
 ) -> dict[str, Any]:
-    dataset_step = None
     preprocess_steps: list[dict[str, Any]] = []
     preprocess_by_variant: dict[str, dict[str, Any]] = {}
     train_steps: list[dict[str, Any]] = []
+    ensemble_steps: list[dict[str, Any]] = []
     leaderboard_step = None
     infer_step = None
-
-    if run_dataset_register:
-        run_root = _build_run_root(base_output_dir, grid_run_id, "dataset_register")
-        step_queue = _select_queue(queues, "dataset_register")
-        overrides = {"run.output_dir": str(run_root)}
-        if step_queue:
-            overrides["run.clearml.queue_name"] = step_queue
-        dataset_step = {
-            "step_name": "dataset_register",
-            "task_name": "dataset_register",
-            "run_root": run_root,
-            "run_dir": _stage_dir(run_root, "dataset_register"),
-            "parents": [],
-            "queue": step_queue,
-            "overrides": overrides,
-        }
+    builder_cfg = _to_mapping(_cfg_value(cfg, "pipeline.builder"))
+    train_project_per_preprocess = bool(builder_cfg.get("train_project_per_preprocess", True))
 
     if run_preprocess:
         if not preprocess_targets:
-            raise ValueError("pipeline.grid.preprocess_variants is empty.")
+            raise ValueError("preprocess variants are empty.")
         for preprocess_variant in preprocess_targets:
             step_name = f"preprocess__{_sanitize_component(preprocess_variant)}"
             run_root = _build_run_root(base_output_dir, grid_run_id, f"preprocess__{preprocess_variant}")
-            parents = [dataset_step["step_name"]] if dataset_step else []
             overrides = {
                 "group/preprocess": preprocess_variant,
                 "run.output_dir": str(run_root),
@@ -861,15 +1192,23 @@ def _build_plan_steps(
             step_queue = _select_queue(queues, "preprocess")
             if step_queue:
                 overrides["run.clearml.queue_name"] = step_queue
+            project_name = _resolve_step_project_name(
+                cfg,
+                process_name="preprocess",
+                preprocess_variant=preprocess_variant,
+                train_project_per_preprocess=train_project_per_preprocess,
+            )
+            overrides["run.clearml.project_name"] = project_name
             step = {
                 "step_name": step_name,
                 "task_name": "preprocess",
                 "run_root": run_root,
                 "run_dir": _stage_dir(run_root, "preprocess"),
-                "parents": parents,
+                "parents": [],
                 "queue": step_queue,
                 "overrides": overrides,
                 "preprocess_variant": preprocess_variant,
+                "project_name": project_name,
             }
             preprocess_steps.append(step)
             preprocess_by_variant[preprocess_variant] = step
@@ -901,6 +1240,13 @@ def _build_plan_steps(
                 "train.inputs.preprocess_run_dir": str(preprocess_run_dir),
                 "run.output_dir": str(run_root),
             }
+            overrides.update(
+                _build_train_project_group_override(
+                    cfg,
+                    preprocess_variant=preprocess_variant,
+                    train_project_per_preprocess=train_project_per_preprocess,
+                )
+            )
             overrides.update(_build_hpo_param_overrides(hpo_params))
             grid_tag = _grid_cell_tag(preprocess_variant, model_variant)
             extra_tags = _merge_extra_tags(base_extra_tags, grid_tag)
@@ -911,6 +1257,13 @@ def _build_plan_steps(
             step_queue = _select_queue(queues, "train_model", model_variant=model_variant)
             if step_queue:
                 overrides["run.clearml.queue_name"] = step_queue
+            project_name = _resolve_step_project_name(
+                cfg,
+                process_name="train_model",
+                preprocess_variant=preprocess_variant,
+                train_project_per_preprocess=train_project_per_preprocess,
+            )
+            overrides["run.clearml.project_name"] = project_name
             train_steps.append(
                 {
                     "step_name": step_name,
@@ -924,6 +1277,54 @@ def _build_plan_steps(
                     "model_variant": model_variant,
                     "hpo_run_id": hpo_run_id,
                     "hpo_params": hpo_params or None,
+                    "inputs": {
+                        "processed_dataset_id": {
+                            "from_step": payload["step_name"],
+                            "source": "preprocess",
+                        }
+                    },
+                    "project_name": project_name,
+                }
+            )
+
+    if run_ensemble:
+        if not train_steps:
+            raise ValueError("train outputs are required before ensemble.")
+        ensemble_by_variant: dict[str, list[str]] = {}
+        for step in train_steps:
+            variant = str(step.get("preprocess_variant") or "unknown")
+            ensemble_by_variant.setdefault(variant, []).append(step["step_name"])
+        for preprocess_variant, parents in ensemble_by_variant.items():
+            step_name = f"ensemble__{_sanitize_component(preprocess_variant)}"
+            run_root = _build_run_root(
+                base_output_dir, grid_run_id, f"ensemble__{preprocess_variant}"
+            )
+            overrides = {
+                "run.output_dir": str(run_root),
+                "preprocess.variant": preprocess_variant,
+            }
+            overrides.update(_collect_ensemble_overrides(cfg))
+            step_queue = _select_queue(queues, "train_ensemble")
+            if step_queue:
+                overrides["run.clearml.queue_name"] = step_queue
+            project_name = _resolve_step_project_name(
+                cfg,
+                process_name="train_ensemble",
+                preprocess_variant=preprocess_variant,
+                train_project_per_preprocess=train_project_per_preprocess,
+            )
+            overrides["run.clearml.project_name"] = project_name
+            ensemble_steps.append(
+                {
+                    "step_name": step_name,
+                    "task_name": "train_ensemble",
+                    "run_root": run_root,
+                    "run_dir": _stage_dir(run_root, "train_ensemble"),
+                    "parents": parents,
+                    "queue": step_queue,
+                    "overrides": overrides,
+                    "preprocess_variant": preprocess_variant,
+                    "project_name": project_name,
                 }
             )
 
@@ -935,14 +1336,21 @@ def _build_plan_steps(
         step_queue = _select_queue(queues, "leaderboard")
         if step_queue:
             overrides["run.clearml.queue_name"] = step_queue
+        project_name = _resolve_step_project_name(
+            cfg,
+            process_name="leaderboard",
+            train_project_per_preprocess=train_project_per_preprocess,
+        )
+        overrides["run.clearml.project_name"] = project_name
         leaderboard_step = {
             "step_name": "leaderboard",
             "task_name": "leaderboard",
             "run_root": run_root,
             "run_dir": _stage_dir(run_root, "leaderboard"),
-            "parents": [step["step_name"] for step in train_steps],
+            "parents": [step["step_name"] for step in [*train_steps, *ensemble_steps]],
             "queue": step_queue,
             "overrides": overrides,
+            "project_name": project_name,
         }
 
     if run_infer:
@@ -957,6 +1365,12 @@ def _build_plan_steps(
         if step_queue:
             overrides["run.clearml.queue_name"] = step_queue
         parents = [leaderboard_step["step_name"]] if leaderboard_step else []
+        project_name = _resolve_step_project_name(
+            cfg,
+            process_name="infer",
+            train_project_per_preprocess=train_project_per_preprocess,
+        )
+        overrides["run.clearml.project_name"] = project_name
         infer_step = {
             "step_name": "infer",
             "task_name": "infer",
@@ -965,15 +1379,264 @@ def _build_plan_steps(
             "parents": parents,
             "queue": step_queue,
             "overrides": overrides,
+            "project_name": project_name,
         }
 
     return {
-        "dataset_register": dataset_step,
         "preprocess": preprocess_steps,
         "train": train_steps,
+        "ensemble": ensemble_steps,
         "leaderboard": leaderboard_step,
         "infer": infer_step,
     }
+
+
+def _count_plan_tasks(steps: Mapping[str, Any]) -> dict[str, int]:
+    preprocess_steps = steps.get("preprocess") if isinstance(steps, Mapping) else None
+    train_steps = steps.get("train") if isinstance(steps, Mapping) else None
+    ensemble_steps = steps.get("ensemble") if isinstance(steps, Mapping) else None
+    leaderboard_step = steps.get("leaderboard") if isinstance(steps, Mapping) else None
+    infer_step = steps.get("infer") if isinstance(steps, Mapping) else None
+    counts = {
+        "preprocess": len(preprocess_steps or []),
+        "train": len(train_steps or []),
+        "ensemble": len(ensemble_steps or []),
+        "leaderboard": 1 if leaderboard_step else 0,
+        "infer": 1 if infer_step else 0,
+    }
+    counts["total"] = sum(counts.values())
+    return counts
+
+
+def _format_limit_value(value: int) -> str:
+    return "unlimited" if value <= 0 else str(value)
+
+
+def _collect_project_examples(cfg: Any, plan: Mapping[str, Any]) -> dict[str, str]:
+    examples: dict[str, str] = {}
+    pipeline_project = _normalize_str(_cfg_value(cfg, "task.project_name"))
+    if pipeline_project:
+        examples["pipeline"] = pipeline_project
+    steps = plan.get("steps") if isinstance(plan, Mapping) else None
+    if not isinstance(steps, Mapping):
+        return examples
+    step_groups = [
+        ("preprocess", "preprocess"),
+        ("train", "train_model"),
+        ("ensemble", "train_ensemble"),
+        ("leaderboard", "leaderboard"),
+        ("infer", "infer"),
+    ]
+    for step_key, label in step_groups:
+        payload = steps.get(step_key)
+        project_name = None
+        if isinstance(payload, list) and payload:
+            project_name = _normalize_str(payload[0].get("project_name"))
+        elif isinstance(payload, Mapping):
+            project_name = _normalize_str(payload.get("project_name"))
+        if project_name:
+            examples[label] = project_name
+    return examples
+
+
+def _format_plan_summary(cfg: Any, plan: Mapping[str, Any]) -> str:
+    steps = plan.get("steps") if isinstance(plan, Mapping) else {}
+    counts = plan.get("task_counts") if isinstance(plan, Mapping) else None
+    if not isinstance(counts, Mapping):
+        counts = _count_plan_tasks(steps if isinstance(steps, Mapping) else {})
+    plan_info = plan.get("plan_info") if isinstance(plan, Mapping) else {}
+    pipeline_limits = plan.get("pipeline_limits") if isinstance(plan, Mapping) else None
+    if not isinstance(pipeline_limits, Mapping):
+        pipeline_limits = _resolve_pipeline_limits(cfg)
+    exec_limits = plan.get("limits") if isinstance(plan, Mapping) else None
+    if not isinstance(exec_limits, Mapping):
+        exec_limits = _resolve_exec_policy_limits(cfg)
+    parallelism = plan.get("parallelism") if isinstance(plan, Mapping) else None
+    if not isinstance(parallelism, Mapping):
+        parallelism = _resolve_pipeline_parallelism(cfg)
+    fail_policy = _resolve_fail_policy(cfg)
+    project_examples = _collect_project_examples(cfg, plan)
+
+    lines = [
+        "Pipeline plan (dry-run)",
+        (
+            "tasks: preprocess={preprocess} train={train} ensemble={ensemble} "
+            "leaderboard={leaderboard} infer={infer} total={total}"
+        ).format(**counts),
+        (
+            "train jobs: planned={planned} raw={raw} skipped_due_to_policy={skipped}"
+        ).format(
+            planned=_to_int(plan_info.get("planned_jobs"), 0),
+            raw=_to_int(plan_info.get("raw_jobs"), 0),
+            skipped=_to_int(plan_info.get("skipped_due_to_policy"), 0),
+        ),
+        (
+            "fail_policy: allow_skipped={allow_skipped} allowed_failures={allowed_failures} "
+            "fail_fast={fail_fast} min_successful_train_tasks={min_success}"
+        ).format(
+            allow_skipped=str(bool(fail_policy.get("allow_skipped"))).lower(),
+            allowed_failures=_to_int(fail_policy.get("allowed_failures"), 0),
+            fail_fast=str(bool(fail_policy.get("fail_fast"))).lower(),
+            min_success=_to_int(fail_policy.get("min_successful_train_tasks"), 0),
+        ),
+        (
+            "pipeline limits: max_preprocess_variants={pre} max_train_tasks={train} "
+            "max_ensemble_tasks={ensemble}"
+        ).format(
+            pre=_format_limit_value(_to_int(pipeline_limits.get("max_preprocess_variants"), 0)),
+            train=_format_limit_value(_to_int(pipeline_limits.get("max_train_tasks"), 0)),
+            ensemble=_format_limit_value(_to_int(pipeline_limits.get("max_ensemble_tasks"), 0)),
+        ),
+        (
+            "exec_policy limits: max_jobs={jobs} max_models={models} max_hpo_trials={hpo_trials}"
+        ).format(
+            jobs=_format_limit_value(_to_int(exec_limits.get("max_jobs"), 0)),
+            models=_format_limit_value(_to_int(exec_limits.get("max_models"), 0)),
+            hpo_trials=_format_limit_value(_to_int(exec_limits.get("max_hpo_trials"), 0)),
+        ),
+        (
+            "parallelism: max_concurrent_steps={steps} max_concurrent_train={train}"
+        ).format(
+            steps=_format_limit_value(_to_int(parallelism.get("max_concurrent_steps"), 0)),
+            train=_format_limit_value(_to_int(parallelism.get("max_concurrent_train"), 0)),
+        ),
+    ]
+
+    if project_examples:
+        lines.append("project layout examples:")
+        for key in ("pipeline", "preprocess", "train_model", "train_ensemble", "leaderboard", "infer"):
+            if key in project_examples:
+                lines.append(f"- {key}: {project_examples[key]}")
+    return "\n".join(lines)
+
+
+def _collect_limit_violations(cfg: Any, plan: Mapping[str, Any]) -> list[dict[str, Any]]:
+    steps = plan.get("steps") if isinstance(plan, Mapping) else {}
+    counts = plan.get("task_counts") if isinstance(plan, Mapping) else None
+    if not isinstance(counts, Mapping):
+        counts = _count_plan_tasks(steps if isinstance(steps, Mapping) else {})
+    limits = _resolve_pipeline_limits(cfg)
+    violations: list[dict[str, Any]] = []
+
+    preprocess_limit = _to_int(limits.get("max_preprocess_variants"), 0)
+    preprocess_count = _to_int(counts.get("preprocess"), 0)
+    if preprocess_limit > 0 and preprocess_count > preprocess_limit:
+        violations.append(
+            {
+                "key": "pipeline.limits.max_preprocess_variants",
+                "count": preprocess_count,
+                "limit": preprocess_limit,
+                "suggestions": [
+                    "Reduce pipeline.grid.preprocess_variants or pipeline.groups.preprocess.custom.include/exclude",
+                    "Set pipeline.groups.preprocess.mode=none or pipeline.run_preprocess=false for testing",
+                    "Raise pipeline.limits.max_preprocess_variants temporarily (test only)",
+                ],
+            }
+        )
+
+    train_limit = _to_int(limits.get("max_train_tasks"), 0)
+    train_count = _to_int(counts.get("train"), 0)
+    if train_limit > 0 and train_count > train_limit:
+        violations.append(
+            {
+                "key": "pipeline.limits.max_train_tasks",
+                "count": train_count,
+                "limit": train_limit,
+                "suggestions": [
+                    "Reduce pipeline.grid.model_variants / pipeline.model_set or pipeline.groups.train.custom.include/exclude",
+                    "Reduce HPO grid (pipeline.hpo.enabled/params) or exec_policy.limits.max_jobs",
+                    "Set pipeline.groups.train.mode=none or pipeline.run_train=false for testing",
+                    "Raise pipeline.limits.max_train_tasks temporarily (test only)",
+                ],
+            }
+        )
+
+    ensemble_limit = _to_int(limits.get("max_ensemble_tasks"), 0)
+    ensemble_count = _to_int(counts.get("ensemble"), 0)
+    if ensemble_limit > 0 and ensemble_count > ensemble_limit:
+        violations.append(
+            {
+                "key": "pipeline.limits.max_ensemble_tasks",
+                "count": ensemble_count,
+                "limit": ensemble_limit,
+                "suggestions": [
+                    "Disable ensemble.enabled or pipeline.groups.ensemble.mode=none",
+                    "Reduce preprocess variants (pipeline.grid.preprocess_variants)",
+                    "Raise pipeline.limits.max_ensemble_tasks temporarily (test only)",
+                ],
+            }
+        )
+
+    return violations
+
+
+def _format_limit_violation_report(violations: list[dict[str, Any]]) -> str:
+    if not violations:
+        return ""
+    sections: list[str] = ["Pipeline limits exceeded:"]
+    for violation in violations:
+        key = violation.get("key", "pipeline.limits")
+        count = _to_int(violation.get("count"), 0)
+        limit = _to_int(violation.get("limit"), 0)
+        sections.append(f"- {key}: {count} > {limit}")
+        for suggestion in violation.get("suggestions") or []:
+            sections.append(f"  - {suggestion}")
+    return "\n".join(sections)
+
+
+def _apply_concurrency_limit(steps: list[dict[str, Any]], max_concurrent: int) -> None:
+    if max_concurrent <= 0 or len(steps) <= max_concurrent:
+        return
+    for idx in range(max_concurrent, len(steps)):
+        parent_step = steps[idx - max_concurrent]
+        parent_name = _normalize_str(parent_step.get("step_name"))
+        if not parent_name:
+            continue
+        current = steps[idx]
+        parents = list(current.get("parents") or [])
+        if parent_name not in parents:
+            parents.append(parent_name)
+            current["parents"] = parents
+
+
+def _apply_parallelism_dependencies(
+    plan: Mapping[str, Any],
+    *,
+    max_concurrent_steps: int,
+    max_concurrent_train: int,
+) -> None:
+    steps = plan.get("steps") if isinstance(plan, Mapping) else None
+    if not isinstance(steps, Mapping):
+        return
+    if max_concurrent_steps > 0:
+        ordered: list[dict[str, Any]] = []
+        ordered.extend(list(steps.get("preprocess") or []))
+        ordered.extend(list(steps.get("train") or []))
+        ordered.extend(list(steps.get("ensemble") or []))
+        leaderboard_step = steps.get("leaderboard")
+        if isinstance(leaderboard_step, Mapping):
+            ordered.append(leaderboard_step)  # type: ignore[arg-type]
+        infer_step = steps.get("infer")
+        if isinstance(infer_step, Mapping):
+            ordered.append(infer_step)  # type: ignore[arg-type]
+        _apply_concurrency_limit(ordered, max_concurrent_steps)
+    if max_concurrent_train > 0:
+        _apply_concurrency_limit(list(steps.get("train") or []), max_concurrent_train)
+
+
+def _serialize_pipeline_plan(plan: Mapping[str, Any]) -> dict[str, Any]:
+    def _convert(value: Any) -> Any:
+        if isinstance(value, Path):
+            return str(value)
+        if isinstance(value, Mapping):
+            return {str(k): _convert(v) for k, v in value.items()}
+        if isinstance(value, (list, tuple)):
+            return [_convert(v) for v in value]
+        if isinstance(value, set):
+            return [_convert(v) for v in sorted(value)]
+        return value
+
+    return _convert(plan) if isinstance(plan, Mapping) else {}
 
 
 def _build_pipeline_plan(
@@ -984,25 +1647,49 @@ def _build_pipeline_plan(
 ) -> dict[str, Any]:
     base_output_dir = Path(getattr(cfg.run, "output_dir", "outputs")).expanduser().resolve()
     pipeline_cfg = getattr(cfg, "pipeline", None)
-    run_dataset_register = bool(getattr(pipeline_cfg, "run_dataset_register", False))
+    profile = _resolve_pipeline_profile(cfg)
+    group_modes = {}
+    if profile == "custom":
+        group_modes = {
+            "preprocess": _resolve_group_mode(cfg, "preprocess"),
+            "train": _resolve_group_mode(cfg, "train"),
+            "ensemble": _resolve_group_mode(cfg, "ensemble"),
+            "leaderboard": _resolve_group_mode(cfg, "leaderboard"),
+        }
     run_preprocess = bool(getattr(pipeline_cfg, "run_preprocess", True))
     run_train = bool(getattr(pipeline_cfg, "run_train", True))
+    ensemble_cfg = getattr(cfg, "ensemble", None)
+    run_ensemble = bool(getattr(ensemble_cfg, "enabled", False))
     run_leaderboard = bool(getattr(pipeline_cfg, "run_leaderboard", True))
     run_infer = bool(getattr(pipeline_cfg, "run_infer", False))
+    if profile == "custom":
+        run_preprocess = run_preprocess and group_modes.get("preprocess") != "none"
+        run_train = run_train and group_modes.get("train") != "none"
+        run_ensemble = run_ensemble and group_modes.get("ensemble") != "none"
+        run_leaderboard = run_leaderboard and group_modes.get("leaderboard") != "none"
 
     raw_dataset_id = _normalize_str(_cfg_value(cfg, "data.raw_dataset_id"))
     dataset_path_value = _normalize_str(_cfg_value(cfg, "data.dataset_path"))
-    if run_preprocess and not run_dataset_register and not raw_dataset_id:
-        raise ValueError(
-            "data.raw_dataset_id is required when pipeline.run_dataset_register is false."
-        )
+    run_dataset_register = bool(getattr(pipeline_cfg, "run_dataset_register", False))
+    if run_dataset_register:
+        raise ValueError("pipeline.run_dataset_register is not supported. Run dataset_register before pipeline.")
+    if not raw_dataset_id:
+        raise ValueError("data.raw_dataset_id is required for pipeline. Run dataset_register first.")
     if run_preprocess and raw_dataset_id and raw_dataset_id.startswith("local:") and not dataset_path_value:
         raise ValueError("data.dataset_path is required when data.raw_dataset_id is local.")
 
-    preprocess_variants, model_variants = _resolve_variants(cfg)
+    group_info: dict[str, Any] = {}
+    if profile == "custom":
+        preprocess_variants, model_variants, group_info = _resolve_variants_v2(
+            cfg, group_modes=group_modes
+        )
+    else:
+        preprocess_variants, model_variants = _resolve_variants(cfg)
     hpo_enabled, hpo_trials_by_model, hpo_params_cfg = _resolve_hpo_trials(cfg, model_variants)
     base_extra_tags = _to_list(_cfg_value(cfg, "run.clearml.extra_tags"))
     limits = _resolve_exec_policy_limits(cfg)
+    pipeline_limits = _resolve_pipeline_limits(cfg)
+    parallelism = _resolve_pipeline_parallelism(cfg)
     max_jobs = limits["max_jobs"]
     max_models = limits["max_models"]
     max_hpo_trials = limits["max_hpo_trials"]
@@ -1013,9 +1700,9 @@ def _build_pipeline_plan(
 
     if run_train:
         if not preprocess_variants:
-            raise ValueError("pipeline.grid.preprocess_variants is empty.")
+            raise ValueError("preprocess variants are empty.")
         if not model_variants:
-            raise ValueError("pipeline.grid.model_variants is empty.")
+            raise ValueError("model variants are empty.")
         train_jobs, plan_info, _ = _build_train_plan(
             preprocess_variants,
             model_variants,
@@ -1025,10 +1712,12 @@ def _build_pipeline_plan(
         )
 
     if run_preprocess and not preprocess_variants:
-        raise ValueError("pipeline.grid.preprocess_variants is empty.")
+        raise ValueError("preprocess variants are empty.")
 
     if run_train and not run_preprocess:
         raise ValueError("pipeline.run_preprocess=false cannot be combined with run_train=true.")
+    if run_ensemble and not run_train:
+        raise ValueError("ensemble.enabled=true requires pipeline.run_train=true.")
 
     run_overrides = _collect_run_overrides(cfg, grid_run_id, child_execution=child_execution)
     data_overrides = _collect_data_overrides(cfg)
@@ -1056,9 +1745,9 @@ def _build_pipeline_plan(
         cfg,
         base_output_dir=base_output_dir,
         grid_run_id=grid_run_id,
-        run_dataset_register=run_dataset_register,
         run_preprocess=run_preprocess,
         run_train=run_train,
+        run_ensemble=run_ensemble,
         run_leaderboard=run_leaderboard,
         run_infer=run_infer,
         preprocess_targets=preprocess_targets,
@@ -1067,12 +1756,16 @@ def _build_pipeline_plan(
         max_models=max_models,
         queues=queues,
     )
+    task_counts = _count_plan_tasks(steps)
 
     return {
         "base_output_dir": base_output_dir,
-        "run_dataset_register": run_dataset_register,
+        "profile": profile,
+        "groups": group_info,
+        "run_dataset_register": False,
         "run_preprocess": run_preprocess,
         "run_train": run_train,
+        "run_ensemble": run_ensemble,
         "run_leaderboard": run_leaderboard,
         "run_infer": run_infer,
         "preprocess_variants": preprocess_variants,
@@ -1080,6 +1773,8 @@ def _build_pipeline_plan(
         "hpo_enabled": hpo_enabled,
         "hpo_params_cfg": hpo_params_cfg,
         "limits": limits,
+        "pipeline_limits": pipeline_limits,
+        "parallelism": parallelism,
         "max_jobs": max_jobs,
         "max_models": max_models,
         "max_hpo_trials": max_hpo_trials,
@@ -1094,22 +1789,8 @@ def _build_pipeline_plan(
         "base_extra_tags": base_extra_tags,
         "queues": queues,
         "steps": steps,
+        "task_counts": task_counts,
     }
-
-
-def _collect_step_task_ids(controller: Any) -> dict[str, str]:
-    getter = getattr(controller, "get_processed_nodes", None)
-    nodes = getter() if callable(getter) else {}
-    payload: dict[str, str] = {}
-    for name, node in dict(nodes).items():
-        task_id = getattr(node, "executed", None)
-        if not task_id and getattr(node, "job", None):
-            job = node.job
-            if hasattr(job, "task_id"):
-                task_id = job.task_id() if callable(job.task_id) else job.task_id
-        if task_id:
-            payload[str(name)] = str(task_id)
-    return payload
 
 
 def _build_ref(*, run_dir: Path | None = None, task_id: str | None = None, **extras: Any) -> dict[str, Any]:
@@ -1124,515 +1805,380 @@ def _build_ref(*, run_dir: Path | None = None, task_id: str | None = None, **ext
     return ref
 
 
-def _add_pipeline_step(
-    controller: Any,
+def _run_local_pipeline(
+    cfg: Any,
+    grid_run_id: str,
     *,
-    execution_queue: str | None = None,
-    **kwargs: Any,
-) -> None:
-    add_step = getattr(controller, "add_step", None)
-    if not callable(add_step):
-        raise AttributeError("Pipeline controller does not support add_step.")
-    if execution_queue:
-        try:
-            signature = inspect.signature(add_step)
-        except Exception:
-            signature = None
-        if signature is not None and "execution_queue" in signature.parameters:
-            kwargs["execution_queue"] = execution_queue
-    add_step(**kwargs)
+    clearml_enabled: bool,
+    plan: Mapping[str, Any] | None = None,
+    parent_task_id: str | None = None,
+) -> dict[str, Any]:
+    from ..pipeline.driver_local import run_local_sequential
 
-
-def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) -> dict[str, Any]:
-    plan = _build_pipeline_plan(cfg, grid_run_id)
-    repo_root = _resolve_repo_root()
-    config_dir = repo_root / "conf"
-    run_overrides = dict(plan["run_overrides"])
-    data_overrides = dict(plan["data_overrides"])
-    downstream_data_overrides = dict(plan["downstream_data_overrides"])
-    eval_overrides = plan["eval_overrides"]
-    steps = plan["steps"]
-
-    dataset_register_ref: dict[str, Any] | None = None
-    preprocess_refs: list[dict[str, Any]] = []
-    train_refs: list[dict[str, Any]] = []
-    leaderboard_ref: dict[str, Any] | None = None
-    infer_ref: dict[str, Any] | None = None
-
-    executed_jobs = 0
-    leaderboard_out: dict[str, Any] | None = None
-    if not plan["plan_only"]:
-        if plan["run_dataset_register"]:
-            step = steps["dataset_register"]
-            if step is None:
-                raise ValueError("dataset_register step is missing.")
-            overrides = _merge_overrides(run_overrides, data_overrides, step["overrides"])
-            args = ["task=dataset_register", *_overrides_to_args(overrides)]
-            _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
-            dataset_register_ref = _build_ref(run_dir=step["run_dir"])
-            dataset_out = _load_json(step["run_dir"] / "out.json")
-            raw_dataset_id = _normalize_str(dataset_out.get("raw_dataset_id"))
-            if raw_dataset_id:
-                data_overrides["data.raw_dataset_id"] = raw_dataset_id
-                if plan["run_preprocess"]:
-                    downstream_data_overrides = _build_downstream_data_overrides(
-                        data_overrides, raw_dataset_id=raw_dataset_id
-                    )
-
-        preprocess_outputs: dict[str, dict[str, Any]] = {}
-        if plan["run_preprocess"]:
-            for step in steps["preprocess"]:
-                preprocess_variant = step.get("preprocess_variant")
-                overrides = _merge_overrides(run_overrides, downstream_data_overrides, step["overrides"])
-                args = ["task=preprocess", *_overrides_to_args(overrides)]
-                _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
-                out = _load_json(step["run_dir"] / "out.json")
-                preprocess_refs.append(
-                    _build_ref(
-                        run_dir=step["run_dir"],
-                        preprocess_variant=preprocess_variant,
-                        processed_dataset_id=out.get("processed_dataset_id"),
-                        split_hash=out.get("split_hash"),
-                        recipe_hash=out.get("recipe_hash"),
-                    )
-                )
-                preprocess_outputs[str(preprocess_variant)] = {"run_dir": step["run_dir"], "out": out}
-
-        if plan["run_train"]:
-            if not preprocess_outputs:
-                raise ValueError("preprocess outputs are required before train.")
-            for step in steps["train"]:
-                preprocess_variant = step.get("preprocess_variant")
-                payload = preprocess_outputs.get(str(preprocess_variant))
-                if payload is None:
-                    raise ValueError(f"preprocess output missing for {preprocess_variant}.")
-                preprocess_out = payload["out"]
-                processed_dataset_id = _normalize_str(preprocess_out.get("processed_dataset_id"))
-                overrides = _merge_overrides(
-                    run_overrides,
-                    downstream_data_overrides,
-                    eval_overrides,
-                    step["overrides"],
-                )
-                if processed_dataset_id:
-                    overrides["data.processed_dataset_id"] = processed_dataset_id
-                args = ["task=train_model", *_overrides_to_args(overrides)]
-                _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
-                out = _load_json(step["run_dir"] / "out.json")
-                train_refs.append(
-                    _build_ref(
-                        run_dir=step["run_dir"],
-                        preprocess_variant=preprocess_variant,
-                        model_variant=step.get("model_variant"),
-                        train_task_id=out.get("train_task_id"),
-                        model_id=out.get("model_id"),
-                        best_score=out.get("best_score"),
-                        primary_metric=out.get("primary_metric"),
-                        hpo_run_id=step.get("hpo_run_id"),
-                        hpo_params=step.get("hpo_params"),
-                    )
-                )
-            executed_jobs = len(train_refs)
-
-        if plan["run_leaderboard"]:
-            if not train_refs:
-                raise ValueError("train outputs are required before leaderboard.")
-            step = steps["leaderboard"]
-            if step is None:
-                raise ValueError("leaderboard step is missing.")
-            overrides = _merge_overrides(run_overrides, eval_overrides, step["overrides"])
-            if clearml_enabled:
-                train_task_ids = [
-                    ref.get("train_task_id") for ref in train_refs if ref.get("train_task_id")
-                ]
-                if not train_task_ids:
-                    raise ValueError("train_task_id is missing in train outputs (ClearML mode).")
-                overrides["leaderboard.train_task_ids"] = train_task_ids
-            else:
-                train_run_dirs = [ref.get("run_dir") for ref in train_refs if ref.get("run_dir")]
-                overrides["leaderboard.train_run_dirs"] = train_run_dirs
-            args = ["task=leaderboard", *_overrides_to_args(overrides)]
-            _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
-            leaderboard_out = _load_json(step["run_dir"] / "out.json")
-            leaderboard_ref = _build_ref(run_dir=step["run_dir"])
-
-        if plan["run_infer"]:
-            step = steps["infer"]
-            if step is None:
-                raise ValueError("infer step is missing.")
-            infer_cfg = getattr(cfg, "infer", None)
-            overrides = _merge_overrides(run_overrides, step["overrides"])
-            if clearml_enabled:
-                train_task_id = None
-                if leaderboard_out is not None:
-                    train_task_id = _normalize_str(leaderboard_out.get("recommended_train_task_id"))
-                train_task_id = train_task_id or _normalize_str(getattr(infer_cfg, "train_task_id", None))
-                model_id = _normalize_str(getattr(infer_cfg, "model_id", None))
-                if train_task_id:
-                    overrides["infer.train_task_id"] = train_task_id
-                elif model_id:
-                    overrides["infer.model_id"] = model_id
-                else:
-                    raise ValueError("infer requires train_task_id or model_id in ClearML mode.")
-            else:
-                model_id = None
-                train_task_ref = None
-                if leaderboard_out is not None:
-                    model_id = _normalize_str(leaderboard_out.get("recommended_model_id"))
-                    train_task_ref = _normalize_str(leaderboard_out.get("recommended_train_task_ref"))
-                if model_id:
-                    overrides["infer.model_id"] = model_id
-                elif train_task_ref:
-                    overrides["infer.train_task_id"] = train_task_ref
-                else:
-                    fallback_model = _normalize_str(getattr(infer_cfg, "model_id", None))
-                    fallback_task = _normalize_str(getattr(infer_cfg, "train_task_id", None))
-                    if fallback_model:
-                        overrides["infer.model_id"] = fallback_model
-                    elif fallback_task:
-                        overrides["infer.train_task_id"] = fallback_task
-                    else:
-                        raise ValueError("infer requires model_id or train_task_id.")
-            args = ["task=infer", *_overrides_to_args(overrides)]
-            _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
-            infer_ref = _build_ref(run_dir=step["run_dir"])
-
-    pipeline_run = {
-        "grid_run_id": grid_run_id,
-        "plan_only": plan["plan_only"],
-        "planned_jobs": int(plan["plan_info"].get("planned_jobs", 0)),
-        "executed_jobs": int(executed_jobs),
-        "skipped_due_to_policy": int(plan["plan_info"].get("skipped_due_to_policy", 0)),
-        "dataset_register_ref": dataset_register_ref,
-        "preprocess_ref": preprocess_refs,
-        "train_refs": train_refs,
-        "leaderboard_ref": leaderboard_ref,
-        "infer_ref": infer_ref,
-        "grid": {
-            "preprocess_variants": plan["preprocess_variants"],
-            "model_variants": plan["model_variants"],
-            "max_jobs": plan["max_jobs"],
-            "max_hpo_trials": plan["max_hpo_trials"],
-            "hpo": {
-                "enabled": plan["hpo_enabled"],
-                "params": plan["hpo_params_cfg"],
-            },
-        },
-        "policy": {
-            "limits": dict(plan["limits"]),
-            "selection": _resolve_exec_policy_selection(cfg),
-        },
-    }
-    return pipeline_run
+    return run_local_sequential(
+        cfg,
+        grid_run_id,
+        clearml_enabled=clearml_enabled,
+        plan=plan,
+        parent_task_id=parent_task_id,
+    )
 
 
 def _run_clearml_pipeline(
     cfg: Any,
     grid_run_id: str,
     *,
-    use_templates: bool,
     controller_execution: str | None = None,
+    plan: Mapping[str, Any] | None = None,
+    controller: Any | None = None,
+    parent_task_id: str | None = None,
 ) -> dict[str, Any]:
-    child_execution = "logging" if use_templates else None
-    controller_execution = _normalize_str(controller_execution) or ""
-    run_controller_locally = controller_execution != "pipeline_controller"
-    plan = _build_pipeline_plan(cfg, grid_run_id, child_execution=child_execution)
-    run_overrides = plan["run_overrides"]
-    data_overrides = plan["data_overrides"]
-    downstream_data_overrides = plan["downstream_data_overrides"]
-    eval_overrides = plan["eval_overrides"]
-    queues = plan["queues"]
-    steps = plan["steps"]
+    from ..pipeline.driver_controller import run_pipeline_controller
 
-    step_task_ids: dict[str, str] = {}
-    executed_jobs = 0
+    return run_pipeline_controller(
+        cfg,
+        grid_run_id,
+        controller_execution=controller_execution,
+        plan=plan,
+        controller=controller,
+        parent_task_id=parent_task_id,
+    )
 
-    if not plan["plan_only"]:
-        pipeline_queue = _select_queue(queues, "pipeline")
-        queue_candidates = [
-            pipeline_queue,
-            _select_queue(queues, "dataset_register"),
-            _select_queue(queues, "preprocess"),
-            _select_queue(queues, "train_model"),
-            _normalize_str(queues.get("train_model_heavy")),
-            _select_queue(queues, "leaderboard"),
-            _select_queue(queues, "infer"),
-        ]
-        queue_name = next((value for value in queue_candidates if value), None)
-        if not queue_name:
-            model_variant_queues = queues.get("model_variants") or {}
-            for value in model_variant_queues.values():
-                value = _normalize_str(value)
-                if value:
-                    queue_name = value
-                    break
 
-        pipeline_name = _normalize_str(_cfg_value(cfg, "run.clearml.task_name")) or "pipeline"
-        controller = create_pipeline_controller(cfg, name=pipeline_name, default_queue=pipeline_queue)
-        controller_overrides = _hydra_task_overrides()
-        if controller_overrides:
-            _ensure_override(controller_overrides, "task", "pipeline")
-            _ensure_override(controller_overrides, "run.grid_run_id", grid_run_id)
-            _ensure_override(controller_overrides, "run.output_dir", _cfg_value(cfg, "run.output_dir"))
-            _ensure_override(controller_overrides, "run.clearml.enabled", True)
-            _ensure_override(
-                controller_overrides,
-                "run.clearml.execution",
-                controller_execution or _cfg_value(cfg, "run.clearml.execution"),
-            )
-            _ensure_override(
-                controller_overrides,
-                "pipeline.run_dataset_register",
-                plan.get("run_dataset_register"),
-            )
-            _ensure_override(controller_overrides, "pipeline.run_preprocess", plan.get("run_preprocess"))
-            _ensure_override(controller_overrides, "pipeline.run_train", plan.get("run_train"))
-            _ensure_override(controller_overrides, "pipeline.run_leaderboard", plan.get("run_leaderboard"))
-            _ensure_override(controller_overrides, "pipeline.run_infer", plan.get("run_infer"))
-            _ensure_override(
-                controller_overrides,
-                "pipeline.grid.preprocess_variants",
-                plan.get("preprocess_variants"),
-            )
-            _ensure_override(
-                controller_overrides,
-                "pipeline.grid.model_variants",
-                plan.get("model_variants"),
-            )
-            _ensure_override(controller_overrides, "data.dataset_path", _cfg_value(cfg, "data.dataset_path"))
-            _ensure_override(controller_overrides, "data.target_column", _cfg_value(cfg, "data.target_column"))
-            _ensure_override(controller_overrides, "data.raw_dataset_id", _cfg_value(cfg, "data.raw_dataset_id"))
-            _ensure_override(controller_overrides, "run.usecase_id", _cfg_value(cfg, "run.usecase_id"))
+def _safe_load_json_optional(path: Path | None) -> dict[str, Any] | None:
+    if path is None or not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _resolve_artifact_path(cfg: Any, ref: Mapping[str, Any] | None, name: str) -> Path | None:
+    if not ref:
+        return None
+    run_dir = _normalize_str(ref.get("run_dir"))
+    if run_dir:
+        path = Path(run_dir) / name
+        if path.exists():
+            return path
+    if is_clearml_enabled(cfg):
+        task_id = _normalize_str(ref.get("task_id") or ref.get("train_task_id"))
+        if task_id:
+            try:
+                return get_task_artifact_local_copy(cfg, task_id, name)
+            except Exception:
+                return None
+    return None
+
+
+def _resolve_entry_status(out: Mapping[str, Any] | None, ref: Mapping[str, Any] | None) -> str:
+    if out:
+        status = _normalize_str(out.get("status"))
+        if status in ("skipped", "failed"):
+            return status
+        return "success"
+    if ref:
+        ref_status = _normalize_str(ref.get("status"))
+        if ref_status in ("skipped", "failed", "success"):
+            return ref_status
+    return "failed"
+
+
+def _artifact_ref(cfg: Any, ref: Mapping[str, Any] | None, artifact: str) -> dict[str, Any] | None:
+    if not ref:
+        return None
+    run_dir = _normalize_str(ref.get("run_dir"))
+    if run_dir:
+        path = Path(run_dir) / artifact
+        if path.exists():
+            return {"run_dir": run_dir, "path": str(path)}
+    task_id = _normalize_str(ref.get("task_id") or ref.get("train_task_id"))
+    if task_id:
+        return {"task_id": task_id, "artifact": artifact}
+    return None
+
+
+def _build_link_entry(
+    cfg: Any | None,
+    run_dir: str | None,
+    task_id: str | None,
+    *,
+    extra: Mapping[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    entry: dict[str, Any] = {}
+    if run_dir:
+        entry["run_dir"] = str(run_dir)
+    if task_id:
+        entry["task_id"] = str(task_id)
+        clearml_url = resolve_clearml_task_url(cfg, str(task_id)) if cfg is not None else None
+        if clearml_url:
+            entry["clearml_url"] = clearml_url
+    if extra:
+        entry.update(dict(extra))
+    return entry or None
+
+
+def _resolve_code_identity(cfg: Any) -> dict[str, Any]:
+    repo_root = _resolve_repo_root()
+    repo = None
+    branch = None
+    commit = None
+    try:
+        code_ref = build_clearml_code_ref(cfg, repo_root, mode_override="commit")
+        repo = _normalize_str(code_ref.get("repository"))
+        branch = _normalize_str(code_ref.get("branch"))
+        commit = _normalize_str(code_ref.get("version_num"))
+    except Exception:
+        try:
+            code_ref = build_clearml_code_ref(cfg, repo_root)
+            repo = repo or _normalize_str(code_ref.get("repository"))
+            branch = branch or _normalize_str(code_ref.get("branch"))
+        except Exception:
+            pass
+    return {"repository": repo, "branch": branch, "commit": commit}
+
+
+def _count_statuses(entries: list[Mapping[str, Any]]) -> dict[str, int]:
+    counts = {"total": len(entries), "success": 0, "failed": 0, "skipped": 0}
+    for entry in entries:
+        status = _normalize_str(entry.get("status"))
+        if status == "success":
+            counts["success"] += 1
+        elif status == "skipped":
+            counts["skipped"] += 1
         else:
-            controller_overrides_map = _merge_overrides(
-                _collect_run_overrides(cfg, grid_run_id, child_execution=None),
-                _collect_data_overrides(cfg),
-                _collect_eval_overrides(cfg),
-                {
-                    "task": "pipeline",
-                    "run.output_dir": _cfg_value(cfg, "run.output_dir"),
-                    "pipeline.run_dataset_register": plan.get("run_dataset_register"),
-                    "pipeline.run_preprocess": plan.get("run_preprocess"),
-                    "pipeline.run_train": plan.get("run_train"),
-                    "pipeline.run_leaderboard": plan.get("run_leaderboard"),
-                    "pipeline.run_infer": plan.get("run_infer"),
-                    "pipeline.grid.preprocess_variants": plan.get("preprocess_variants"),
-                    "pipeline.grid.model_variants": plan.get("model_variants"),
-                },
-            )
-            controller_overrides = _overrides_to_args(controller_overrides_map)
-        if controller_overrides:
-            apply_clearml_task_overrides(controller, controller_overrides)
-        pipeline_require_clearml_agent(queue_name)
+            counts["failed"] += 1
+    return counts
 
-        template_task_ids: dict[str, str] = {}
 
-        def _base_task_kwargs(task_name: str) -> dict[str, Any]:
-            if not use_templates:
-                return {
-                    "base_task_project": _clearml_project(cfg, _STAGE_BY_TASK[task_name]),
-                    "base_task_name": task_name,
-                }
-            task_id = template_task_ids.get(task_name)
-            if not task_id:
-                task_id = resolve_template_task_id(cfg, task_name)
-                template_task_ids[task_name] = task_id
-            return {"base_task_id": task_id}
+def _build_run_summary(
+    pipeline_run: Mapping[str, Any],
+    *,
+    cfg: Any,
+    report_bundle: Any | None,
+    pipeline_run_dir: Path,
+    pipeline_task_id: str | None,
+) -> dict[str, Any]:
+    fail_policy = _resolve_fail_policy(cfg)
 
-        if plan["run_dataset_register"]:
-            step = steps["dataset_register"]
-            if step is None:
-                raise ValueError("dataset_register step is missing.")
-            dataset_step_name = step["step_name"]
-            overrides = _merge_overrides(run_overrides, data_overrides, step["overrides"])
-            _add_pipeline_step(
-                controller,
-                name=step["step_name"],
-                parents=step["parents"],
-                parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
-                clone_base_task=True,
-                cache_executed_step=False,
-                execution_queue=step["queue"],
-                **_base_task_kwargs(step["task_name"]),
-            )
+    preprocess_entries: list[dict[str, Any]] = []
+    for ref in pipeline_run.get("preprocess_ref") or []:
+        if not isinstance(ref, Mapping):
+            continue
+        out = _safe_load_json_optional(_resolve_artifact_path(cfg, ref, "out.json"))
+        status = _resolve_entry_status(out, ref)
+        preprocess_entries.append(
+            {
+                "preprocess_variant": _normalize_str(ref.get("preprocess_variant")),
+                "status": status,
+                "processed_dataset_id": _normalize_str(
+                    (out or {}).get("processed_dataset_id") or ref.get("processed_dataset_id")
+                ),
+                "split_hash": _normalize_str((out or {}).get("split_hash") or ref.get("split_hash")),
+                "recipe_hash": _normalize_str((out or {}).get("recipe_hash") or ref.get("recipe_hash")),
+                "task_id": _normalize_str(ref.get("task_id")),
+                "run_dir": _normalize_str(ref.get("run_dir")),
+                "reason": (out or {}).get("reason") or ref.get("reason"),
+                "error": (out or {}).get("error") or ref.get("error"),
+            }
+        )
 
-        if plan["run_preprocess"]:
-            for step in steps["preprocess"]:
-                overrides = _merge_overrides(run_overrides, downstream_data_overrides, step["overrides"])
-                _add_pipeline_step(
-                    controller,
-                    name=step["step_name"],
-                    parents=step["parents"],
-                    parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
-                    clone_base_task=True,
-                    cache_executed_step=False,
-                    execution_queue=step["queue"],
-                    **_base_task_kwargs(step["task_name"]),
-                )
+    train_entries: list[dict[str, Any]] = []
+    for ref in pipeline_run.get("train_refs") or []:
+        if not isinstance(ref, Mapping):
+            continue
+        out = _safe_load_json_optional(_resolve_artifact_path(cfg, ref, "out.json"))
+        status = _resolve_entry_status(out, ref)
+        train_task_id = _normalize_str(
+            (out or {}).get("train_task_id") or ref.get("train_task_id") or ref.get("task_id")
+        )
+        train_entries.append(
+            {
+                "preprocess_variant": _normalize_str(ref.get("preprocess_variant")),
+                "model_variant": _normalize_str(ref.get("model_variant")),
+                "status": status,
+                "train_task_id": train_task_id,
+                "task_id": _normalize_str(ref.get("task_id")),
+                "run_dir": _normalize_str(ref.get("run_dir")),
+                "model_id": _normalize_str((out or {}).get("model_id") or ref.get("model_id")),
+                "primary_metric": _normalize_str(
+                    (out or {}).get("primary_metric") or ref.get("primary_metric")
+                ),
+                "best_score": (out or {}).get("best_score") or ref.get("best_score"),
+                "metrics_ref": _artifact_ref(cfg, ref, "metrics.json"),
+                "reason": (out or {}).get("reason") or ref.get("reason"),
+                "error": (out or {}).get("error") or ref.get("error"),
+                "hpo_run_id": ref.get("hpo_run_id"),
+                "hpo_params": ref.get("hpo_params"),
+            }
+        )
 
-        if plan["run_train"]:
-            if not steps["train"]:
-                raise ValueError("preprocess outputs are required before train.")
-            for step in steps["train"]:
-                overrides = _merge_overrides(
-                    run_overrides,
-                    downstream_data_overrides,
-                    eval_overrides,
-                    step["overrides"],
-                )
-                _add_pipeline_step(
-                    controller,
-                    name=step["step_name"],
-                    parents=step["parents"],
-                    parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
-                    clone_base_task=True,
-                    cache_executed_step=False,
-                    execution_queue=step["queue"],
-                    **_base_task_kwargs(step["task_name"]),
-                )
+    ensemble_entries: list[dict[str, Any]] = []
+    for ref in pipeline_run.get("ensemble_refs") or []:
+        if not isinstance(ref, Mapping):
+            continue
+        out = _safe_load_json_optional(_resolve_artifact_path(cfg, ref, "out.json"))
+        status = _resolve_entry_status(out, ref)
+        ensemble_entries.append(
+            {
+                "preprocess_variant": _normalize_str(
+                    (out or {}).get("preprocess_variant") or ref.get("preprocess_variant")
+                ),
+                "method": _normalize_str((out or {}).get("ensemble_method") or ref.get("model_variant")),
+                "status": status,
+                "train_task_id": _normalize_str(
+                    (out or {}).get("train_task_id") or ref.get("train_task_id") or ref.get("task_id")
+                ),
+                "task_id": _normalize_str(ref.get("task_id")),
+                "run_dir": _normalize_str(ref.get("run_dir")),
+                "model_id": _normalize_str((out or {}).get("model_id") or ref.get("model_id")),
+                "primary_metric": _normalize_str(
+                    (out or {}).get("primary_metric") or ref.get("primary_metric")
+                ),
+                "best_score": (out or {}).get("best_score") or ref.get("best_score"),
+                "reason": (out or {}).get("reason") or ref.get("reason"),
+                "error": (out or {}).get("error") or ref.get("error"),
+            }
+        )
 
-        if plan["run_leaderboard"]:
-            if not steps["train"]:
-                raise ValueError("train outputs are required before leaderboard.")
-            step = steps["leaderboard"]
-            if step is None:
-                raise ValueError("leaderboard step is missing.")
-            train_task_refs = [
-                pipeline_step_task_id_ref(train_step["step_name"]) for train_step in steps["train"]
-            ]
-            overrides = _merge_overrides(
-                run_overrides,
-                eval_overrides,
-                step["overrides"],
-                {"leaderboard.train_task_ids": train_task_refs},
-            )
-            _add_pipeline_step(
-                controller,
-                name=step["step_name"],
-                parents=step["parents"],
-                parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
-                clone_base_task=True,
-                cache_executed_step=False,
-                execution_queue=step["queue"],
-                **_base_task_kwargs(step["task_name"]),
-            )
+    leaderboard_ref = pipeline_run.get("leaderboard_ref") if isinstance(pipeline_run, Mapping) else None
+    leaderboard_entry: dict[str, Any] | None = None
+    if isinstance(leaderboard_ref, Mapping):
+        out = _safe_load_json_optional(_resolve_artifact_path(cfg, leaderboard_ref, "out.json")) or {}
+        status = _resolve_entry_status(out, leaderboard_ref)
+        leaderboard_entry = {
+            "status": status,
+            "task_id": _normalize_str(leaderboard_ref.get("task_id")),
+            "run_dir": _normalize_str(leaderboard_ref.get("run_dir")),
+            "leaderboard_ref": _artifact_ref(cfg, leaderboard_ref, "leaderboard.csv"),
+            "recommendation_ref": _artifact_ref(cfg, leaderboard_ref, "recommendation.json"),
+            "recommended_model_id": _normalize_str(out.get("recommended_model_id")),
+            "recommended_primary_metric": _normalize_str(out.get("recommended_primary_metric")),
+            "recommended_best_score": out.get("recommended_best_score"),
+            "reason": out.get("reason") or leaderboard_ref.get("reason"),
+            "error": out.get("error") or leaderboard_ref.get("error"),
+        }
 
-        if plan["run_infer"]:
-            step = steps["infer"]
-            if step is None:
-                raise ValueError("infer step is missing.")
-            infer_cfg = getattr(cfg, "infer", None)
-            overrides = _merge_overrides(run_overrides, step["overrides"])
-            infer_model_id = _normalize_str(getattr(infer_cfg, "model_id", None))
-            infer_train_task_id = _normalize_str(getattr(infer_cfg, "train_task_id", None))
-            if infer_train_task_id:
-                overrides["infer.train_task_id"] = infer_train_task_id
-            elif infer_model_id:
-                overrides["infer.model_id"] = infer_model_id
-            else:
-                raise ValueError("infer requires model_id or train_task_id for remote execution.")
-            _add_pipeline_step(
-                controller,
-                name=step["step_name"],
-                parents=step["parents"],
-                parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
-                clone_base_task=True,
-                cache_executed_step=False,
-                execution_queue=step["queue"],
-                **_base_task_kwargs(step["task_name"]),
-            )
+    infer_ref = pipeline_run.get("infer_ref") if isinstance(pipeline_run, Mapping) else None
+    infer_entry: dict[str, Any] | None = None
+    if isinstance(infer_ref, Mapping):
+        out = _safe_load_json_optional(_resolve_artifact_path(cfg, infer_ref, "out.json"))
+        status = _resolve_entry_status(out, infer_ref)
+        infer_entry = {
+            "status": status,
+            "task_id": _normalize_str(infer_ref.get("task_id")),
+            "run_dir": _normalize_str(infer_ref.get("run_dir")),
+            "predictions_ref": _artifact_ref(cfg, infer_ref, "predictions.csv"),
+            "reason": (out or {}).get("reason") or infer_ref.get("reason"),
+            "error": (out or {}).get("error") or infer_ref.get("error"),
+        }
 
-        if run_controller_locally:
-            starter = getattr(controller, "start_locally", None)
-            if not callable(starter):
-                raise AttributeError("Pipeline controller does not support start_locally.")
-            starter(run_pipeline_steps_locally=False)
-        else:
-            starter = getattr(controller, "start", None)
-            if not callable(starter):
-                raise AttributeError("Pipeline controller does not support start.")
-            if queue_name:
-                starter(queue=queue_name)
-            else:
-                starter()
-        step_task_ids = _collect_step_task_ids(controller)
-        executed_jobs = len(steps["train"])
+    train_counts = _count_statuses(train_entries)
+    preprocess_counts = _count_statuses(preprocess_entries)
+    ensemble_counts = _count_statuses(ensemble_entries)
 
-    dataset_register_ref = None
-    preprocess_refs: list[dict[str, Any]] = []
-    train_refs: list[dict[str, Any]] = []
-    leaderboard_ref = None
-    infer_ref = None
-    if not plan["plan_only"]:
-        if steps["dataset_register"] is not None:
-            dataset_step = steps["dataset_register"]
-            dataset_register_ref = _build_ref(
-                run_dir=dataset_step["run_dir"],
-                task_id=step_task_ids.get(dataset_step["step_name"]),
-            )
+    planned_jobs = _to_int(pipeline_run.get("planned_jobs"), 0)
+    effective_failures = train_counts["failed"]
+    if not fail_policy.get("allow_skipped"):
+        effective_failures += train_counts["skipped"]
+    meets_min_success = train_counts["success"] >= int(fail_policy.get("min_successful_train_tasks", 0))
+    if planned_jobs == 0:
+        meets_min_success = True
+    within_allowed = effective_failures <= int(fail_policy.get("allowed_failures", 0))
+    limit_exceeded = bool(pipeline_run.get("limit_exceeded"))
+    status = "success" if meets_min_success and within_allowed else "failed"
+    if pipeline_run.get("plan_only"):
+        status = "success"
+    if limit_exceeded:
+        status = "failed"
 
-        for step in steps["preprocess"]:
-            preprocess_refs.append(
-                _build_ref(
-                    run_dir=step["run_dir"],
-                    task_id=step_task_ids.get(step["step_name"]),
-                    preprocess_variant=step.get("preprocess_variant"),
-                )
-            )
+    degraded = False
+    for counts in (preprocess_counts, train_counts, ensemble_counts):
+        if counts["failed"] or counts["skipped"]:
+            degraded = True
+            break
+    if limit_exceeded:
+        degraded = True
+    if leaderboard_entry and _normalize_str(leaderboard_entry.get("status")) in ("failed", "skipped"):
+        degraded = True
+    if infer_entry and _normalize_str(infer_entry.get("status")) in ("failed", "skipped"):
+        degraded = True
 
-        for step in steps["train"]:
-            train_refs.append(
-                _build_ref(
-                    run_dir=step["run_dir"],
-                    task_id=step_task_ids.get(step["step_name"]),
-                    preprocess_variant=step.get("preprocess_variant"),
-                    model_variant=step.get("model_variant"),
-                    hpo_run_id=step.get("hpo_run_id"),
-                    hpo_params=step.get("hpo_params"),
-                )
-            )
+    links = dict(getattr(report_bundle, "links", {}) or {}) if report_bundle is not None else {}
+    ensemble_links: list[dict[str, Any]] = []
+    for ref in pipeline_run.get("ensemble_refs") or []:
+        if not isinstance(ref, Mapping):
+            continue
+        entry = _build_link_entry(
+            cfg,
+            _normalize_str(ref.get("run_dir")),
+            _normalize_str(ref.get("task_id")),
+            extra={"preprocess_variant": _normalize_str(ref.get("preprocess_variant"))},
+        )
+        if entry:
+            ensemble_links.append(entry)
+    if ensemble_links:
+        links["ensemble"] = ensemble_links
 
-        if steps["leaderboard"] is not None:
-            leaderboard_step = steps["leaderboard"]
-            leaderboard_ref = _build_ref(
-                run_dir=leaderboard_step["run_dir"],
-                task_id=step_task_ids.get(leaderboard_step["step_name"]),
-            )
+    recommendation: dict[str, Any] = {}
+    if report_bundle is not None and getattr(report_bundle, "payload", None):
+        rec = report_bundle.payload.get("recommendation") or {}
+        summary = report_bundle.payload.get("summary") or {}
+        recommendation = {
+            "best_model_id": _normalize_str(rec.get("model_id") or summary.get("recommended_model_id")),
+            "train_task_ref": _normalize_str(rec.get("train_task_ref") or summary.get("train_task_ref")),
+            "primary_metric": _normalize_str(rec.get("primary_metric") or summary.get("primary_metric")),
+            "best_score": rec.get("best_score") or summary.get("best_score"),
+            "reason": summary.get("recommendation_rationale"),
+        }
 
-        if steps["infer"] is not None:
-            infer_step = steps["infer"]
-            infer_ref = _build_ref(
-                run_dir=infer_step["run_dir"],
-                task_id=step_task_ids.get(infer_step["step_name"]),
-            )
+    plan_ref = {"run_dir": str(pipeline_run_dir), "artifact": "plan.json"}
+    pipeline_task_entry = _build_link_entry(
+        cfg, str(pipeline_run_dir) if pipeline_run_dir else None, pipeline_task_id
+    )
 
-    pipeline_run = {
-        "grid_run_id": grid_run_id,
-        "plan_only": plan["plan_only"],
-        "planned_jobs": int(plan["plan_info"].get("planned_jobs", 0)),
-        "executed_jobs": int(executed_jobs),
-        "skipped_due_to_policy": int(plan["plan_info"].get("skipped_due_to_policy", 0)),
-        "dataset_register_ref": dataset_register_ref,
-        "preprocess_ref": preprocess_refs,
-        "train_refs": train_refs,
-        "leaderboard_ref": leaderboard_ref,
-        "infer_ref": infer_ref,
-        "grid": {
-            "preprocess_variants": plan["preprocess_variants"],
-            "model_variants": plan["model_variants"],
-            "max_jobs": plan["max_jobs"],
-            "max_hpo_trials": plan["max_hpo_trials"],
-            "hpo": {
-                "enabled": plan["hpo_enabled"],
-                "params": plan["hpo_params_cfg"],
+    execution = {
+        "plan_only": bool(pipeline_run.get("plan_only")),
+        "planned_jobs": pipeline_run.get("planned_jobs"),
+        "executed_jobs": pipeline_run.get("executed_jobs"),
+        "skipped_due_to_policy": pipeline_run.get("skipped_due_to_policy"),
+        "limit_exceeded": limit_exceeded,
+    }
+
+    return {
+        "schema_version": 1,
+        "status": status,
+        "degraded": degraded,
+        "policy": {
+            "fail_policy": dict(fail_policy),
+            "result": {
+                "successful_train_tasks": train_counts["success"],
+                "failed_train_tasks": train_counts["failed"],
+                "skipped_train_tasks": train_counts["skipped"],
+                "effective_failures": effective_failures,
+                "meets_min_successful_train_tasks": meets_min_success,
+                "within_allowed_failures": within_allowed,
             },
         },
-        "policy": {
-            "limits": dict(plan["limits"]),
-            "selection": _resolve_exec_policy_selection(cfg),
+        "context": {
+            "usecase_id": _normalize_str(_cfg_value(cfg, "run.usecase_id")),
+            "project_root": _normalize_str(_cfg_value(cfg, "run.clearml.project_root")),
+            "code_identity": _resolve_code_identity(cfg),
+            "grid_run_id": pipeline_run.get("grid_run_id"),
+            "pipeline_task": pipeline_task_entry,
         },
+        "execution": execution,
+        "plan_ref": plan_ref,
+        "preprocess_variants": preprocess_entries,
+        "train_tasks": train_entries,
+        "ensemble_tasks": ensemble_entries,
+        "leaderboard": leaderboard_entry,
+        "infer": infer_entry,
+        "recommendation": recommendation,
+        "links": links,
     }
-    return pipeline_run
 
 
 def run(cfg: Any) -> None:
@@ -1640,8 +2186,34 @@ def run(cfg: Any) -> None:
     identity = apply_clearml_identity(cfg, stage=cfg.task.stage)
     execution = _normalize_str(_cfg_value(cfg, "run.clearml.execution")) or "local"
     controller_execution = execution in ("pipeline_controller", "pipeline_controller_local")
+    clearml_enabled = is_clearml_enabled(cfg)
+    child_clearml_enabled = bool(_cfg_value(cfg, "run.clearml.enabled"))
+    child_execution = "logging" if child_clearml_enabled else None
+    plan = _build_pipeline_plan(cfg, grid_run_id, child_execution=child_execution)
+    limit_violations = _collect_limit_violations(cfg, plan)
+    limit_exceeded = bool(limit_violations and not plan.get("plan_only"))
+    controller = None
+    if controller_execution and clearml_enabled and not plan.get("plan_only") and not limit_exceeded:
+        from ..clearml.templates import resolve_template_task_id
+
+        pipeline_template_id = resolve_template_task_id(cfg, "pipeline")
+        pipeline_name = _normalize_str(_cfg_value(cfg, "run.clearml.task_name")) or "pipeline"
+        pipeline_project = _resolve_step_project_name(
+            cfg, process_name="pipeline", train_project_per_preprocess=True
+        )
+        pipeline_queue = _select_queue(plan.get("queues") or {}, "pipeline")
+        controller = create_pipeline_controller_from_template(
+            cfg,
+            base_task_id=pipeline_template_id,
+            name=pipeline_name,
+            project=pipeline_project,
+            default_queue=pipeline_queue,
+        )
     task_type = clearml_task_type_controller() if controller_execution else None
     system_tags = ["pipeline"] if controller_execution else None
+    code_ref_override = None
+    if controller_execution and resolve_clearml_code_ref_mode(cfg) == "commit":
+        code_ref_override = "branch"
     ctx = init_task_context(
         cfg,
         stage=cfg.task.stage,
@@ -1650,40 +2222,67 @@ def run(cfg: Any) -> None:
         properties=identity.user_properties,
         task_type=task_type,
         system_tags=system_tags,
+        task_override=getattr(controller, "task", None) if controller is not None else None,
+        code_ref_mode_override=code_ref_override,
     )
     save_config_resolved(ctx, cfg)
+    parent_task_id = None
+    if ctx.task is not None:
+        task_id_value = getattr(ctx.task, "id", None)
+        if task_id_value:
+            parent_task_id = str(task_id_value)
 
-    clearml_enabled = is_clearml_enabled(cfg)
-
-    if clearml_enabled and execution in ("pipeline_controller", "pipeline_controller_local"):
+    if execution in ("pipeline_controller", "pipeline_controller_local"):
+        if not clearml_enabled:
+            raise ValueError("pipeline_controller requires run.clearml.enabled=true.")
         pipeline_run = _run_clearml_pipeline(
             cfg,
             grid_run_id,
-            use_templates=True,
             controller_execution=execution,
+            plan=plan,
+            controller=controller,
+            parent_task_id=parent_task_id,
         )
-    elif clearml_enabled and execution in ("agent", "clone"):
-        pipeline_run = _run_clearml_pipeline(
-            cfg,
-            grid_run_id,
-            use_templates=False,
-            controller_execution=execution,
-        )
+    elif execution in ("agent", "clone"):
+        raise ValueError("pipeline does not support run.clearml.execution=agent/clone; use pipeline_controller.")
     else:
-        pipeline_run = _run_local_pipeline(cfg, grid_run_id, clearml_enabled=clearml_enabled)
+        pipeline_run = _run_local_pipeline(
+            cfg,
+            grid_run_id,
+            clearml_enabled=child_clearml_enabled,
+            plan=plan,
+            parent_task_id=parent_task_id,
+        )
 
     pipeline_run_path = ctx.output_dir / "pipeline_run.json"
     pipeline_run_path.write_text(
         json.dumps(pipeline_run, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+    plan_path = None
+    plan_payload = pipeline_run.get("plan") if isinstance(pipeline_run, Mapping) else None
+    if isinstance(plan_payload, Mapping):
+        plan_path = ctx.output_dir / "plan.json"
+        plan_path.write_text(
+            json.dumps(plan_payload, ensure_ascii=False, indent=2), encoding="utf-8"
+        )
     if clearml_enabled:
         upload_artifact(ctx, "pipeline_run.json", pipeline_run_path)
+        if plan_path is not None:
+            upload_artifact(ctx, "plan.json", plan_path)
         num_models = int(pipeline_run.get("planned_jobs") or 0)
         num_succeeded = int(pipeline_run.get("executed_jobs") or 0)
         num_failed = max(0, num_models - num_succeeded)
-        log_scalar(ctx.task, "pipeline", "num_models", num_models, step=0)
-        log_scalar(ctx.task, "pipeline", "num_succeeded", num_succeeded, step=0)
-        log_scalar(ctx.task, "pipeline", "num_failed", num_failed, step=0)
+        if scalars_enabled(cfg):
+            report_scalar(ctx.task, "pipeline", "num_models", num_models, iteration=0, cfg=cfg)
+            report_scalar(
+                ctx.task,
+                "pipeline",
+                "num_succeeded",
+                num_succeeded,
+                iteration=0,
+                cfg=cfg,
+            )
+            report_scalar(ctx.task, "pipeline", "num_failed", num_failed, iteration=0, cfg=cfg)
 
     report_path = ctx.output_dir / "report.md"
     limits = _resolve_exec_policy_limits(cfg)
@@ -1715,6 +2314,20 @@ def run(cfg: Any) -> None:
         upload_artifact(ctx, "report_links.json", report_links_path)
         report_markdown(ctx, title="Pipeline Report", markdown=report_bundle.markdown)
 
+    run_summary = _build_run_summary(
+        pipeline_run,
+        cfg=cfg,
+        report_bundle=report_bundle,
+        pipeline_run_dir=ctx.output_dir,
+        pipeline_task_id=pipeline_task_id,
+    )
+    run_summary_path = ctx.output_dir / "run_summary.json"
+    run_summary_path.write_text(
+        json.dumps(run_summary, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+    if clearml_enabled:
+        upload_artifact(ctx, "run_summary.json", run_summary_path)
+
     out = {"pipeline_run": pipeline_run}
     write_out_json(ctx, out)
 
@@ -1729,11 +2342,17 @@ def run(cfg: Any) -> None:
             "run_dataset_register": bool(getattr(getattr(cfg, "pipeline", None), "run_dataset_register", False)),
             "run_preprocess": bool(getattr(getattr(cfg, "pipeline", None), "run_preprocess", True)),
             "run_train": bool(getattr(getattr(cfg, "pipeline", None), "run_train", True)),
+            "run_ensemble": bool(getattr(getattr(cfg, "ensemble", None), "enabled", False)),
             "run_leaderboard": bool(getattr(getattr(cfg, "pipeline", None), "run_leaderboard", True)),
             "run_infer": bool(getattr(getattr(cfg, "pipeline", None), "run_infer", False)),
             "plan_only": _resolve_plan_only(cfg),
         },
-        "outputs": {"grid_run_id": grid_run_id, "pipeline_run_path": str(pipeline_run_path)},
+        "outputs": {
+            "grid_run_id": grid_run_id,
+            "pipeline_run_path": str(pipeline_run_path),
+            "plan_path": str(plan_path) if plan_path is not None else None,
+            "run_summary_path": str(run_summary_path),
+        },
         "hashes": {
             "config_hash": hash_config(cfg),
             "split_hash": hash_split({}),
@@ -1741,3 +2360,6 @@ def run(cfg: Any) -> None:
         },
     }
     write_manifest(ctx, manifest)
+
+    if run_summary.get("status") == "failed":
+        raise RuntimeError("pipeline failed under fail_policy")

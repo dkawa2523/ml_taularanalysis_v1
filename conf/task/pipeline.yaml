@@ -2,16 +2,24 @@
 task:
   name: pipeline
   stage: "99_pipeline"
-  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/99_pipeline"
+  project_name: "${run.clearml.project_root}${run.clearml.project_layout.separator}${run.clearml.project_layout.solution_root}${run.clearml.project_layout.separator}${run.usecase_id}${run.clearml.project_layout.separator}${run.clearml.project_layout.group_map.pipeline}"
 
 pipeline:
+  # deprecated: pipeline does not run dataset_register (data.raw_dataset_id is required)
   run_dataset_register: false
   run_preprocess: true
   run_train: true
   run_leaderboard: true
   run_infer: false
   plan_only: false
+  # dry-run is an alias of plan_only (print plan and exit).
   dry_run: false
+  # Optional direct overrides (runner uses these); fallback to pipeline.grid.* when null.
+  preprocess_variants: null
+  model_variants: null
+
+  builder:
+    train_project_per_preprocess: true
 
   grid:
     preprocess_variants: [stdscaler_ohe]
@@ -23,3 +31,49 @@ pipeline:
     params:
       ridge:
         alpha: [0.1, 1.0, 10.0]
+
+  # pipeline v2 schema (profile/groups/policy). Not used by current runtime yet.
+  # Grid-based execution remains the default; v2 parsing will be enabled for pipeline.profile=custom.
+  profile: default
+  groups:
+    preprocess:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_inapplicable: skip
+    train:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_missing_dependency: skip
+    ensemble:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+        on_insufficient_candidates: skip
+    leaderboard:
+      mode: default
+      custom:
+        base: default
+        include: []
+        exclude: []
+  fail_policy:
+    allow_skipped: true
+    allowed_failures: 0
+    fail_fast: false
+    min_successful_train_tasks: 1
+  limits:
+    # 0 means unlimited (use small values for trial runs).
+    max_preprocess_variants: 3
+    max_train_tasks: 30
+    max_ensemble_tasks: 10
+  parallelism:
+    # 0 means unlimited (PipelineController only; local is sequential).
+    max_concurrent_steps: 4
+    max_concurrent_train: 4

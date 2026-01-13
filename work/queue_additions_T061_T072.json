@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "tasks": [
+    {
+      "id": "T061",
+      "title": "pipeline（学習回帰）を「dataset_id入力前提」に修正し、dataset_registerを独立運用にする",
+      "md": "work/tasks/T061_pipeline_dataset_id_dataset_register.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T062",
+      "title": "回帰モデル「ほぼ全て」をmodel_setで実行できるようにし、pipelineのgridを整理",
+      "md": "work/tasks/T062_model_set_pipeline_grid.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T063",
+      "title": "ClearML PipelineController を「PIPELINESタブに表示される」実装に寄せる",
+      "md": "work/tasks/T063_ClearML_PipelineController_PIPELINES.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T064",
+      "title": "ClearML HyperParameters をセクション分割して見やすくする（GENERAL一択を解消）",
+      "md": "work/tasks/T064_ClearML_HyperParameters_GENERAL.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T065",
+      "title": "dataset_register / preprocess にデータ品質・範囲把握のPlotly可視化を追加（PLOTS）",
+      "md": "work/tasks/T065_dataset_register_preprocess_Plotly_PLOTS.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T066",
+      "title": "train_model（回帰）の指標テーブル・散布図などPlotly可視化とScalars出力を追加",
+      "md": "work/tasks/T066_train_model_Plotly_Scalars.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T067",
+      "title": "leaderboard：複数指標でスコアリングし、推奨モデルを明確に表示（PLOTS/SCALARS）",
+      "md": "work/tasks/T067_leaderboard_PLOTS_SCALARS.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T068",
+      "title": "infer：Configuration/HyperParametersに入力条件・モデル来歴を表示し、PLOTSに入力→出力テーブルを出す",
+      "md": "work/tasks/T068_infer_Configuration_HyperParameters_PLOTS.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T069",
+      "title": "infer.mode=batch：サマリータスク + 条件ごとのchild推論タスクを生成し、集約可視化をPLOTSに表示",
+      "md": "work/tasks/T069_infer_mode_batch_child_PLOTS.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T070",
+      "title": "infer.mode=optimize：Optuna最適化 + child推論タスク生成 + Optuna可視化をPLOTSに表示",
+      "md": "work/tasks/T070_infer_mode_optimize_Optuna_child_Optuna_PLOTS.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T071",
+      "title": "ローカル一括実行（agent不要）: local_orchestrator を追加し、ClearMLタスクは個別に生成する",
+      "md": "work/tasks/T071_agent_local_orchestrator_ClearML.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    },
+    {
+      "id": "T072",
+      "title": "docs整備：開発者が迷わない構成・運用（ディレクトリマップ/命名/リハーサル手順）を確定",
+      "md": "work/tasks/T072_docs.md",
+      "priority": "P1",
+      "status": "todo",
+      "must_change_globs": [
+        "conf/**",
+        "src/**",
+        "docs/**"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_all_no_tabpfn_20260111_123519/grid/90675e6473af49ceb3dec4404d6b285b/train__stdscaler_ohe__svr/03_train_model/model_bundle.joblib",
+  "train_task_id": "e9a431f423f94e9290dd8d76a9a79d9c",
+  "best_score": 0.9,
+  "primary_metric": "accuracy",
+  "processed_dataset_id": "00546bfb148a4b44bfd7cd2ce45a3e38",
+  "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
+  "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779",
+  "task_type": "classification",
+  "n_classes": 2,
+  "class_labels": [
+    "0",
+    "1"
+  ],
+  "imbalance": {
+    "enabled": false,
+    "strategy": "class_weight",
+    "applied": false
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

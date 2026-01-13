@@ -1,0 +1,62 @@
+# Pipeline Summary
+
+## Conclusion
+- grid_run_id: 3c853cafb6f04dc8b6fc95ae22755ea8
+- recommended_model_id: n/a
+- primary_metric: n/a
+- best_score: n/a
+- status: incomplete
+- models_tried: 1
+- planned_jobs: 1
+- executed_jobs: 1
+- skipped_due_to_policy: 0
+
+## Data Overview
+- raw_dataset_id: n/a
+- processed_dataset_id: n/a
+- rows: n/a
+- feature_columns: n/a
+- target_column: n/a
+
+## Data Quality
+- data_quality: n/a
+
+## Comparability
+- require_comparable: n/a
+- processed_dataset_id: n/a
+- split_hash: n/a
+- recipe_hash: n/a
+- primary_metric: n/a
+- direction: n/a
+- task_type: n/a
+- seed: n/a
+
+## Split / Recipe / Hashes
+- preprocess_variant: stdscaler_ohe
+- split.strategy: n/a
+- split.test_size: n/a
+- split.seed: n/a
+- split_hash: n/a
+- recipe_hash: n/a
+
+## Models Tried (Top 10)
+
+| Rank | Model | Preprocess | Metric | Score | Model ID |
+| --- | --- | --- | --- | --- | --- |
+| 1 | ridge | stdscaler_ohe | n/a | n/a | n/a |
+
+## Recommendation
+- model_id: n/a
+- primary_metric: n/a
+- best_score: n/a
+
+## Notes
+- thresholding: disabled
+- calibration: disabled
+- uncertainty: disabled
+- imbalance_handling: disabled
+
+## Next Actions
+- Wait for training/leaderboard to finish, then regenerate the report.
+- Run leaderboard to select the best model explicitly.
+- Try additional model variants for a stronger baseline.

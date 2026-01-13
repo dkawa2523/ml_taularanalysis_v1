@@ -1,0 +1,11 @@
+{
+  "grid_run_id": "48a36a6d9eb84ea8adb4977e29870b31",
+  "pipeline": {
+    "run_dir": "outputs/t094_dryrun/99_pipeline"
+  },
+  "dataset_register": null,
+  "preprocess": [],
+  "train": [],
+  "leaderboard": null,
+  "infer": null
+}

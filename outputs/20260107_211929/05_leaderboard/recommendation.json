@@ -1,0 +1,25 @@
+{
+  "recommended_train_task_ref": null,
+  "recommended_model_id": null,
+  "recommended_best_score": null,
+  "recommended_primary_metric": "rmse",
+  "recommended_composite_score": null,
+  "recommended_metrics": {},
+  "ranking_score_key": "composite_score",
+  "ranking_direction": "maximize",
+  "scoring": {
+    "metrics": [
+      "r2",
+      "rmse",
+      "mae",
+      "mse"
+    ],
+    "weights": {
+      "r2": 1.0,
+      "rmse": -1.0,
+      "mae": -0.5,
+      "mse": -0.2
+    },
+    "normalization": "minmax"
+  }
+}

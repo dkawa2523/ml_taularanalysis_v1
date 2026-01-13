@@ -1,0 +1,9 @@
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+ClearML Task: created new task id=b1deadb89be84ebba22cf26513b92064
+ClearML results page: http://localhost:8080/projects/0aced4d672a342dd9e9c9a689abc23b2/experiments/b1deadb89be84ebba22cf26513b92064/output/log
+ClearML results page: http://localhost:8080/projects/eedc4a49ae45412b96e13ea4a3cfe2b8/experiments/454fc2b58a5f4aa1a332997d6458770d/output/log
+ClearML dataset page: http://localhost:8080/datasets/simple/eedc4a49ae45412b96e13ea4a3cfe2b8/experiments/454fc2b58a5f4aa1a332997d6458770d
+Uploading dataset changes (1 files compressed to 7.21 KiB) to http://localhost:8081
+File compression and upload completed: total size 7.21 KiB, 1 chunk(s) stored (average size 7.21 KiB)
+ClearML Monitor: GPU monitoring failed getting GPU reading, switching off GPU monitoring

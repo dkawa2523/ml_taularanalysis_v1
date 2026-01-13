@@ -1,0 +1,18 @@
+{
+  "processed_dataset_hash": "0acbc973840ed147ad0f9df5c6242c238d7ec814c7c6d90f56acd9ce24d5a9ed",
+  "raw_dataset_hash": "11a8719acc0919346ae68fb2cf2563dd3d618eab9eec7a7413e0e31e19c8fd63",
+  "raw_dataset_id": "046ba5be351444259cc1b0c653980a3d",
+  "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+  "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+  "schema_hash": "db994b06eb32179556256bbc096fa58870f8a98fce7f14b17bf1290f06d05088",
+  "bundle_hash": "abd4e3fe046f4e4182e15c496421fb9aa11d9fc7be5289867cd6e03639efdb00",
+  "preprocess_variant": "stdscaler_ohe",
+  "task_type": "regression",
+  "target_column": "target",
+  "n_rows": 240,
+  "n_features": 5,
+  "store_features": true,
+  "created_at": "2026-01-13T00:02:05Z",
+  "schema_version": "v1",
+  "usecase_id": "rehearsal_regression_20260113_000124"
+}

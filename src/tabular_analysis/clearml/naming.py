@@ -174,3 +174,47 @@ def apply_train_model_naming(cfg: Any) -> dict[str, Any]:
     _set_cfg_value(cfg, "run.clearml.task_name", task_name)
     _merge_extra_tags(cfg, tags)
     return {"task_name": task_name, "tags": tags}
+
+
+def apply_preprocess_naming(cfg: Any) -> dict[str, Any]:
+    """Apply preprocess naming/tagging policy to config."""
+    preprocess_variant = _resolve_preprocess_variant(cfg)
+    task_name = f"preprocess__pp={preprocess_variant}"
+    tags = [f"preprocess:{preprocess_variant}"]
+    _set_cfg_value(cfg, "run.clearml.task_name", task_name)
+    _merge_extra_tags(cfg, tags)
+    return {"task_name": task_name, "tags": tags}
+
+
+def apply_train_ensemble_naming(cfg: Any) -> dict[str, Any]:
+    """Apply train_ensemble naming/tagging policy to config."""
+    preprocess_variant = _resolve_preprocess_variant(cfg)
+    method = _normalize_str(_cfg_value(cfg, "ensemble.method")) or "mean_topk"
+    top_k = _cfg_value(cfg, "ensemble.top_k")
+    try:
+        top_k = int(top_k) if top_k is not None else None
+    except Exception:
+        top_k = None
+    if method == "weighted":
+        top_k_max = _cfg_value(cfg, "ensemble.weighted.top_k_max")
+        try:
+            top_k_max = int(top_k_max) if top_k_max is not None else None
+        except Exception:
+            top_k_max = None
+        if top_k_max is not None and top_k_max > 0:
+            if top_k is None or top_k <= 0:
+                top_k = top_k_max
+            else:
+                top_k = min(top_k, top_k_max)
+    top_k_label = f"{top_k}" if top_k is not None else "na"
+    task_name = f"train_ensemble/{method}(k={top_k_label})"
+    model_tag = f"ensemble_{method}"
+    tags = [
+        f"model:{model_tag}",
+        f"ensemble:{method}",
+        f"topk:{top_k_label}",
+        f"preprocess:{preprocess_variant}",
+    ]
+    _set_cfg_value(cfg, "run.clearml.task_name", task_name)
+    _merge_extra_tags(cfg, tags)
+    return {"task_name": task_name, "tags": tags}

@@ -28,6 +28,8 @@ import re
 import subprocess
 from typing import Any, Iterable, Mapping, Optional
 
+from .clearml.project_layout import build_project_path, resolve_process_name
+
 
 @dataclass
 class TaskContext:
@@ -134,6 +136,13 @@ def _set_cfg_value(cfg: Any, dotted_path: str, value: Any) -> bool:
         return True
     except Exception:
         return False
+
+
+def _normalize_str(value: Any) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
 
 
 def _dedupe_tags(tags: Iterable[Any]) -> list[str]:
@@ -259,6 +268,93 @@ def normalize_clearml_entry_point(value: Any) -> str | None:
 
 def normalize_clearml_version_num(value: Any) -> str | None:
     return _normalize_code_ref(value)
+
+
+def _parse_clearml_code_ref_mode(value: Any) -> str | None:
+    text = _normalize_code_ref(value)
+    if not text:
+        return None
+    lowered = text.lower()
+    if lowered in {"branch", "branch_head", "head"}:
+        return "branch"
+    if lowered in {"commit", "pin_commit", "pinned"}:
+        return "commit"
+    if lowered in {"none", "off", "disable"}:
+        return "none"
+    return None
+
+
+def _resolve_clearml_code_ref_mode(cfg: Any, *, override: str | None = None) -> str:
+    override_mode = _parse_clearml_code_ref_mode(override)
+    if override_mode:
+        return override_mode
+    raw_mode = _parse_clearml_code_ref_mode(_cfg_value(cfg, "run.clearml.code_ref.mode"))
+    legacy_mode = _parse_clearml_code_ref_mode(_cfg_value(cfg, "run.clearml.code_version_mode"))
+    if raw_mode in {"commit", "none"}:
+        return raw_mode
+    if raw_mode == "branch":
+        if legacy_mode == "commit":
+            return "commit"
+        if legacy_mode == "none":
+            return "none"
+        return "branch"
+    if legacy_mode:
+        return legacy_mode
+    return "branch"
+
+
+def resolve_clearml_code_ref_mode(cfg: Any, *, override: str | None = None) -> str:
+    return _resolve_clearml_code_ref_mode(cfg, override=override)
+
+
+def _resolve_clearml_code_ref_value(
+    cfg: Any,
+    new_key: str,
+    old_key: str | None = None,
+) -> str | None:
+    new_value = _normalize_code_ref(_cfg_value(cfg, new_key)) if new_key else None
+    old_value = _normalize_code_ref(_cfg_value(cfg, old_key)) if old_key else None
+    if new_value and new_value.lower() != "auto":
+        return new_value
+    if old_value and old_value.lower() != "auto":
+        return old_value
+    if new_value:
+        return new_value
+    return old_value
+
+
+def build_clearml_code_ref(
+    cfg: Any,
+    repo_root: Path,
+    *,
+    mode_override: str | None = None,
+) -> dict[str, Any]:
+    mode = _resolve_clearml_code_ref_mode(cfg, override=mode_override)
+    if mode == "none":
+        return {}
+    repo_value = _resolve_clearml_code_ref_value(
+        cfg, "run.clearml.code_ref.repository", "run.clearml.code_repository"
+    )
+    branch_value = _resolve_clearml_code_ref_value(
+        cfg, "run.clearml.code_ref.branch", "run.clearml.code_branch"
+    )
+    commit_value = _resolve_clearml_code_ref_value(cfg, "run.clearml.code_ref.commit")
+    if repo_value and repo_value.lower() == "auto":
+        repo_value = detect_git_repository_url(repo_root)
+    if branch_value and branch_value.lower() == "auto":
+        branch_value = detect_git_branch(repo_root)
+    version_num: str | None = None
+    if mode == "commit":
+        if commit_value and commit_value.lower() == "auto":
+            commit_value = None
+        if not commit_value:
+            commit_value = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
+        if not commit_value:
+            raise PlatformAdapterError("Failed to resolve git commit for commit mode.")
+        version_num = commit_value
+    elif mode == "branch":
+        version_num = ""
+    return {"repository": repo_value, "branch": branch_value, "version_num": version_num}
 
 
 def hydra_list(values: list[str]) -> str:
@@ -398,14 +494,9 @@ def _resolve_clearml_entrypoint(
 
 
 def resolve_clearml_code_reference(cfg: Any) -> tuple[str | None, str | None]:
-    repo_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_repository"))
-    branch_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_branch"))
     repo_root = _resolve_repo_root()
-    if repo_value and repo_value.lower() == "auto":
-        repo_value = detect_git_repository_url(repo_root)
-    if branch_value and branch_value.lower() == "auto":
-        branch_value = detect_git_branch(repo_root)
-    return repo_value, branch_value
+    code_ref = build_clearml_code_ref(cfg, repo_root)
+    return code_ref.get("repository"), code_ref.get("branch")
 
 
 def _resolve_clearml_entrypoint_override(cfg: Any) -> str | None:
@@ -419,15 +510,7 @@ def _resolve_clearml_entrypoint_override(cfg: Any) -> str | None:
 
 
 def _resolve_clearml_code_version_mode(cfg: Any, *, override: str | None = None) -> str:
-    text = _normalize_code_ref(override) or _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_version_mode"))
-    if not text:
-        return "branch_head"
-    lowered = text.lower()
-    if lowered in {"branch_head", "branch", "head"}:
-        return "branch_head"
-    if lowered in {"pin_commit", "commit", "pinned"}:
-        return "pin_commit"
-    return "branch_head"
+    return _resolve_clearml_code_ref_mode(cfg, override=override)
 
 
 def _resolve_clearml_version_num(
@@ -436,12 +519,18 @@ def _resolve_clearml_version_num(
     version_mode_override: str | None = None,
 ) -> tuple[str, str | None]:
     mode = _resolve_clearml_code_version_mode(cfg, override=version_mode_override)
-    if mode == "pin_commit":
+    if mode == "commit":
+        commit_value = _resolve_clearml_code_ref_value(cfg, "run.clearml.code_ref.commit")
         repo_root = _resolve_repo_root()
-        commit = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
-        if not commit:
-            raise PlatformAdapterError("Failed to resolve git commit for pin_commit.")
-        return mode, commit
+        if commit_value and commit_value.lower() == "auto":
+            commit_value = None
+        if not commit_value:
+            commit_value = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
+        if not commit_value:
+            raise PlatformAdapterError("Failed to resolve git commit for commit mode.")
+        return mode, commit_value
+    if mode == "none":
+        return mode, None
     return mode, ""
 
 
@@ -457,7 +546,11 @@ def resolve_clearml_script_spec(
     task_name_override: str | None = None,
     canonicalize_pipeline: bool = True,
 ) -> ClearMLScriptSpec:
-    repo_value, branch_value = resolve_clearml_code_reference(cfg)
+    repo_root = _resolve_repo_root()
+    code_ref = build_clearml_code_ref(cfg, repo_root, mode_override=version_mode_override)
+    repo_value = code_ref.get("repository")
+    branch_value = code_ref.get("branch")
+    version_num = code_ref.get("version_num")
     if repo_override is not None:
         repo_value = repo_override
     if branch_override is not None:
@@ -477,9 +570,7 @@ def resolve_clearml_script_spec(
     working_dir = _normalize_code_ref(working_dir_override) or _normalize_code_ref(
         _cfg_value(cfg, "run.clearml.working_dir")
     )
-    version_policy, version_num = _resolve_clearml_version_num(
-        cfg, version_mode_override=version_mode_override
-    )
+    version_policy = _resolve_clearml_code_version_mode(cfg, override=version_mode_override)
     return ClearMLScriptSpec(
         repository=repo_value,
         branch=branch_value,
@@ -527,10 +618,10 @@ def clearml_script_mismatches(spec: ClearMLScriptSpec, script: Mapping[str, Any]
         if actual_working != expected_working:
             errors.append(f"working_dir mismatch: {actual_working or 'none'}")
     actual_version = normalize_clearml_version_num(script.get("version_num"))
-    if spec.version_policy == "branch_head":
+    if spec.version_policy == "branch":
         if actual_version:
             errors.append(f"version_num mismatch: {actual_version}")
-    elif spec.version_policy == "pin_commit":
+    elif spec.version_policy == "commit":
         expected_version = normalize_clearml_version_num(spec.version_num)
         if not _commit_matches(expected_version, actual_version):
             errors.append(f"version_num mismatch: {actual_version or 'none'}")
@@ -574,14 +665,23 @@ def _set_clearml_task_script(task: Any, payload: Mapping[str, Any]) -> None:
         setter(**trimmed)
 
 
-def _apply_clearml_task_script_override(target: Any, cfg: Any) -> bool:
+def _apply_clearml_task_script_override(
+    target: Any,
+    cfg: Any,
+    *,
+    version_mode_override: str | None = None,
+) -> bool:
     task = _resolve_clearml_task(target)
     current = _task_script(task)
     current_repo = current.get("repository")
     current_branch = current.get("branch")
     current_entry_point = current.get("entry_point")
     current_version = current.get("version_num")
-    spec = resolve_clearml_script_spec(cfg, current_entry_point=current_entry_point)
+    spec = resolve_clearml_script_spec(
+        cfg,
+        current_entry_point=current_entry_point,
+        version_mode_override=version_mode_override,
+    )
     changed = False
     if spec.repository is not None and str(current_repo or "") != str(spec.repository):
         changed = True
@@ -937,6 +1037,83 @@ def _capture_env_snapshot(ctx: TaskContext) -> None:
         raise PlatformAdapterError(f"Failed to capture env snapshot: {exc}") from exc
 
 
+def _connect_clearml_hyperparams(ctx: TaskContext, cfg: Any) -> None:
+    if ctx.task is None:
+        return
+    try:
+        from .clearml.hparams import build_hyperparams_sections
+    except Exception as exc:
+        raise PlatformAdapterError("tabular_analysis.clearml.hparams is not available.") from exc
+    sections = build_hyperparams_sections(cfg)
+    if not sections:
+        return
+    for name, payload in sections.items():
+        connect_hyperparameters(ctx, payload, name=name)
+
+
+def _apply_clearml_task_type(task: Any, task_type: str | None) -> None:
+    if not task_type:
+        return
+    setter = getattr(task, "set_task_type", None)
+    if not callable(setter):
+        return
+    try:
+        setter(task_type)
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to set ClearML task_type: {exc}") from exc
+
+
+def _apply_clearml_tags(task: Any, tags: Iterable[str] | None) -> None:
+    if not tags:
+        return
+    adder = getattr(task, "add_tags", None)
+    if not callable(adder):
+        return
+    try:
+        adder(list(_dedupe_tags(tags)))
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to add ClearML task tags: {exc}") from exc
+
+
+def _ensure_clearml_parent(task: Any, parent_task_id: str | None) -> None:
+    if not parent_task_id:
+        return
+    setter = getattr(task, "set_parent", None)
+    if not callable(setter):
+        return
+    task_id = getattr(task, "id", None) or getattr(task, "task_id", None)
+    if task_id is not None and str(task_id) == str(parent_task_id):
+        return
+    try:
+        setter(str(parent_task_id))
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to set ClearML parent task: {exc}") from exc
+
+
+def _ensure_clearml_project(task: Any, project_name: str | None) -> None:
+    if not project_name:
+        return
+    getter = getattr(task, "get_project_name", None)
+    mover = getattr(task, "move_to_project", None)
+    if not callable(getter) or not callable(mover):
+        return
+    try:
+        current = getter()
+    except Exception:
+        current = None
+    if current == project_name:
+        return
+    try:
+        mover(new_project_name=str(project_name))
+    except TypeError:
+        try:
+            mover(new_project=str(project_name))
+        except Exception as exc:
+            raise PlatformAdapterError(f"Failed to move ClearML task project: {exc}") from exc
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to move ClearML task project: {exc}") from exc
+
+
 def init_task_context(
     cfg,
     *,
@@ -946,6 +1123,8 @@ def init_task_context(
     properties: Optional[dict] = None,
     task_type: str | None = None,
     system_tags: Optional[Iterable[str]] = None,
+    task_override: Any | None = None,
+    code_ref_mode_override: str | None = None,
 ) -> TaskContext:
     """platform の task_factory を呼び出して Task を作る。
 
@@ -955,13 +1134,11 @@ def init_task_context(
     NOTE: platform 側 API パスが変わってもこの関数の中だけを直せばよい。
     """
 
-    project_root = _cfg_value(cfg, "run.clearml.project_root") or "MFG"
-    usecase_id = _cfg_value(cfg, "run.usecase_id") or "unknown"
-    project_name = (
-        _cfg_value(cfg, "run.clearml.project_name")
-        or _cfg_value(cfg, "task.project_name")
-        or f"{project_root}/TabularAnalysis/{usecase_id}/{stage}"
-    )
+    project_name = _cfg_value(cfg, "run.clearml.project_name") or _cfg_value(cfg, "task.project_name")
+    if not project_name:
+        usecase_id = _cfg_value(cfg, "run.usecase_id") or "unknown"
+        process_name = resolve_process_name(cfg, process_name=task_name, stage=stage)
+        project_name = build_project_path(cfg, process_name=process_name, usecase_id=str(usecase_id))
     task_name_value = _cfg_value(cfg, "run.clearml.task_name") or task_name
     output_dir = resolve_output_dir(cfg, stage)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -983,10 +1160,6 @@ def init_task_context(
             task_name=str(task_name_value),
             clearml_enabled=True,
         )
-        platform_clearml = _load_clearml_module(clearml_enabled=True)
-        task_factory = getattr(platform_clearml, "task_factory", None)
-        if task_factory is None:
-            raise PlatformAdapterError("ml_platform.integrations.clearml.task_factory not found.")
         merged_props = _build_properties(
             cfg,
             stage=stage,
@@ -1004,18 +1177,40 @@ def init_task_context(
             extra_tags=_cfg_value(cfg, "run.clearml.extra_tags") or [],
             tags=tags,
         )
-        try:
-            task = task_factory(cfg, tags=merged_tags, task_type=task_type)
-        except TypeError:
-            task = task_factory(cfg, tags=merged_tags)
-        _apply_clearml_task_script_override(task, cfg)
-        _apply_clearml_system_tags(task, system_tags)
+        platform_clearml = _load_clearml_module(clearml_enabled=True)
+        if task_override is not None:
+            task = task_override
+            _apply_clearml_task_type(task, task_type)
+            _apply_clearml_task_script_override(
+                task,
+                cfg,
+                version_mode_override=code_ref_mode_override,
+            )
+            _apply_clearml_system_tags(task, system_tags)
+            _apply_clearml_tags(task, merged_tags)
+        else:
+            task_factory = getattr(platform_clearml, "task_factory", None)
+            if task_factory is None:
+                raise PlatformAdapterError("ml_platform.integrations.clearml.task_factory not found.")
+            try:
+                task = task_factory(cfg, tags=merged_tags, task_type=task_type)
+            except TypeError:
+                task = task_factory(cfg, tags=merged_tags)
+            _apply_clearml_task_script_override(
+                task,
+                cfg,
+                version_mode_override=code_ref_mode_override,
+            )
+            _apply_clearml_system_tags(task, system_tags)
         setter = getattr(platform_clearml, "set_user_properties", None)
         if setter is None:
             raise PlatformAdapterError("ml_platform.integrations.clearml.set_user_properties not found.")
         existing = _existing_user_properties(task)
         merged_props = {**existing, **merged_props}
         setter(task, merged_props)
+        _ensure_clearml_project(task, str(project_name))
+        parent_task_id = _cfg_value(cfg, "run.clearml.parent_task_id")
+        _ensure_clearml_parent(task, _normalize_str(parent_task_id))
         ctx = TaskContext(
             task=task,
             project_name=str(project_name),
@@ -1024,6 +1219,7 @@ def init_task_context(
         )
     except Exception as e:
         raise PlatformAdapterError(f"Failed to init ClearML task via ml-platform: {e}") from e
+    _connect_clearml_hyperparams(ctx, cfg)
     _capture_env_snapshot(ctx)
     return ctx
 
@@ -1069,6 +1265,32 @@ def write_out_json(ctx: TaskContext, out: dict[str, Any]) -> Path:
         except Exception as exc:
             raise PlatformAdapterError(f"Failed to upload out.json via ml_platform: {exc}") from exc
     return path
+
+
+def emit_skip(
+    ctx: TaskContext,
+    *,
+    reason: str,
+    detail: Any | None = None,
+    out: Mapping[str, Any] | None = None,
+) -> Path:
+    """Emit a standardized skip payload (out.json + tags + skip_reason artifact)."""
+    ctx.output_dir.mkdir(parents=True, exist_ok=True)
+    payload = dict(out or {})
+    payload["status"] = "skipped"
+    payload["reason"] = str(reason)
+    if detail is not None:
+        payload["detail"] = detail
+    out_path = write_out_json(ctx, payload)
+
+    skip_payload = {"reason": str(reason), "detail": detail}
+    skip_path = ctx.output_dir / "skip_reason.json"
+    skip_path.write_text(json.dumps(skip_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    if ctx.task is not None:
+        add_task_tags(ctx, ["skipped:true", f"skip_reason:{reason}"])
+        upload_artifact(ctx, skip_path.name, skip_path)
+    return out_path
 
 
 def upload_artifact(ctx: TaskContext, name: str, path: Path) -> None:
@@ -1551,6 +1773,52 @@ def clearml_task_status_from_obj(task: Any) -> str | None:
     return None
 
 
+def clearml_task_project(task: Any) -> str | None:
+    project = None
+    getter = getattr(task, "get_project_name", None)
+    if callable(getter):
+        try:
+            project = getter()
+        except Exception:
+            project = None
+    if not project:
+        project = getattr(task, "project", None) or getattr(task, "project_name", None)
+    if not project:
+        data = getattr(task, "data", None)
+        if isinstance(data, Mapping):
+            project = data.get("project") or data.get("project_name")
+        elif data is not None:
+            project = getattr(data, "project", None) or getattr(data, "project_name", None)
+    text = str(project).strip() if project is not None else ""
+    return text or None
+
+
+def clearml_task_parameters_sections(task: Any) -> dict[str, dict[str, Any]]:
+    params = _task_parameters_sections(task)
+    return params
+
+
+def clearml_task_has_scalars(task: Any) -> bool:
+    payload = _resolve_task_metrics_payload(
+        task,
+        ("get_reported_scalars", "get_last_scalar_metrics", "get_last_scalars", "get_metrics"),
+    )
+    return _payload_has_values(payload)
+
+
+def clearml_task_has_plots(task: Any) -> bool:
+    payload = _resolve_task_metrics_payload(
+        task, ("get_reported_plots", "get_last_plots", "get_plots")
+    )
+    return _payload_has_values(payload)
+
+
+def clearml_task_has_artifact(task: Any, artifact_name: str) -> bool:
+    if not artifact_name:
+        return False
+    return _resolve_task_artifact(task, str(artifact_name)) is not None
+
+
 def find_clearml_task_id_by_tags(
     tags: Iterable[str],
     *,
@@ -1638,6 +1906,10 @@ def _task_script(task: Any) -> dict[str, Any]:
     return script
 
 
+def _task_project(task: Any) -> str | None:
+    return clearml_task_project(task)
+
+
 def _task_parameters(task: Any) -> dict[str, Any]:
     getter = getattr(task, "get_parameters", None)
     if callable(getter):
@@ -1662,6 +1934,96 @@ def _task_parameters(task: Any) -> dict[str, Any]:
                     flat[f"{section}/{key}"] = value
             return flat
     return {}
+
+
+def _task_parameters_sections(task: Any) -> dict[str, dict[str, Any]]:
+    params: Any = None
+    getter = getattr(task, "get_parameters_as_dict", None)
+    if callable(getter):
+        try:
+            params = getter(cast=False)
+        except TypeError:
+            try:
+                params = getter()
+            except Exception:
+                params = None
+        except Exception:
+            params = None
+    if params is None:
+        getter = getattr(task, "get_parameters", None)
+        if callable(getter):
+            try:
+                params = getter()
+            except Exception:
+                params = None
+    if isinstance(params, Mapping):
+        return _normalize_param_sections(params)
+    params = _task_parameters(task)
+    return _normalize_param_sections(params)
+
+
+def _normalize_param_sections(params: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    sections: dict[str, dict[str, Any]] = {}
+    if not params:
+        return sections
+    has_mapping_values = any(isinstance(value, Mapping) for value in params.values())
+    if has_mapping_values:
+        for key, value in params.items():
+            section = str(key)
+            if isinstance(value, Mapping):
+                sections[section] = dict(value)
+            else:
+                sections.setdefault("General", {})[section] = value
+        return sections
+    for key, value in params.items():
+        if isinstance(key, str) and "/" in key:
+            section, param = key.split("/", 1)
+        else:
+            section, param = "General", str(key)
+        sections.setdefault(section, {})[param] = value
+    return sections
+
+
+def _resolve_task_metrics_payload(task: Any, method_names: Iterable[str]) -> Any:
+    for name in method_names:
+        getter = getattr(task, name, None)
+        if not callable(getter):
+            continue
+        try:
+            payload = getter()
+        except Exception:
+            continue
+        if payload is not None:
+            return payload
+    data = getattr(task, "data", None)
+    if isinstance(data, Mapping):
+        for key in ("scalars", "scalar_metrics", "plots", "plot_metrics", "reported_plots"):
+            if key in data:
+                return data.get(key)
+    if data is not None:
+        for key in ("scalars", "scalar_metrics", "plots", "plot_metrics", "reported_plots"):
+            if hasattr(data, key):
+                return getattr(data, key)
+    return None
+
+
+def _payload_has_values(payload: Any) -> bool:
+    if payload is None:
+        return False
+    if isinstance(payload, Mapping):
+        if not payload:
+            return False
+        for value in payload.values():
+            if _payload_has_values(value):
+                return True
+        return False
+    if isinstance(payload, (list, tuple, set)):
+        if not payload:
+            return False
+        return any(_payload_has_values(item) for item in payload)
+    if isinstance(payload, str):
+        return bool(payload.strip())
+    return True
 
 
 def _property_value(value: Any) -> Any:
@@ -2176,6 +2538,47 @@ def get_dataset_info(cfg: Any, dataset_id: str) -> dict[str, Any]:
     return info
 
 
+def get_clearml_dataset_local_copy(dataset_id: str) -> Path:
+    ClearMLDataset = _load_clearml_dataset(clearml_enabled=True)
+    try:
+        dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
+        local_path = dataset.get_local_copy()
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc}") from exc
+    if not local_path:
+        raise PlatformAdapterError("ClearML Dataset.get_local_copy returned an empty path.")
+    return Path(local_path)
+
+
+def get_clearml_dataset_info(dataset_id: str) -> dict[str, Any]:
+    ClearMLDataset = _load_clearml_dataset(clearml_enabled=True)
+    try:
+        dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to fetch dataset info via ClearML: {exc}") from exc
+    info: dict[str, Any] = {"dataset_id": str(getattr(dataset, "id", dataset_id))}
+    version = getattr(dataset, "version", None)
+    if version is None:
+        version = getattr(dataset, "dataset_version", None)
+    if version is not None:
+        info["dataset_version"] = str(version)
+    name = getattr(dataset, "name", None)
+    if name:
+        info["dataset_name"] = str(name)
+    project = getattr(dataset, "project", None)
+    if project:
+        info["dataset_project"] = str(project)
+    getter = getattr(dataset, "get_tags", None)
+    if callable(getter):
+        try:
+            tags = getter() or []
+        except Exception:
+            tags = []
+        if tags:
+            info["dataset_tags"] = [str(tag) for tag in tags if tag is not None]
+    return info
+
+
 def _load_clearml_pipeline_utils(clearml_enabled: bool):
     try:
         from ml_platform.integrations.clearml import pipeline_utils as platform_pipeline_utils  # type: ignore
@@ -2186,6 +2589,119 @@ def _load_clearml_pipeline_utils(clearml_enabled: bool):
             ) from exc
         return None
     return platform_pipeline_utils
+
+
+def _resolve_pipeline_controller_code_ref_override(cfg: Any) -> str | None:
+    if resolve_clearml_code_ref_mode(cfg) == "commit":
+        return "branch"
+    return None
+
+
+def _ensure_pipeline_controller_state(controller: Any) -> None:
+    """Initialize missing PipelineController attributes for template-based controllers."""
+    if controller is None:
+        return
+    defaults: dict[str, Any] = {
+        "_start_time": None,
+        "_pipeline_time_limit": None,
+        "_default_execution_queue": None,
+        "_always_create_from_code": True,
+        "_pool_frequency": 0.2 * 60.0,
+        "_thread": None,
+        "_pipeline_args": {},
+        "_pipeline_args_desc": {},
+        "_pipeline_args_type": {},
+        "_args_map": {},
+        "_stop_event": None,
+        "_experiment_created_cb": None,
+        "_experiment_completed_cb": None,
+        "_pre_step_callbacks": {},
+        "_post_step_callbacks": {},
+        "_target_project": True,
+        "_add_pipeline_tags": False,
+        "_pipeline_task_status_failed": None,
+        "_mock_execution": False,
+        "_last_progress_update_time": 0,
+        "_artifact_serialization_function": None,
+        "_artifact_deserialization_function": None,
+        "_skip_global_imports": False,
+        "_enable_local_imports": True,
+        "_auto_connect_task": bool(getattr(controller, "_task", None)),
+        "_monitored_nodes": {},
+        "_abort_running_steps_on_failure": False,
+        "_def_max_retry_on_failure": 0,
+    }
+    for key, value in defaults.items():
+        if not hasattr(controller, key):
+            setattr(controller, key, value)
+    if not hasattr(controller, "_output_uri"):
+        controller._output_uri = None
+    if not hasattr(controller, "_retry_on_failure_callback"):
+        controller._retry_on_failure_callback = getattr(
+            controller, "_default_retry_on_failure_callback", None
+        )
+    if not hasattr(controller, "_step_ref_pattern") and hasattr(controller, "_step_pattern"):
+        try:
+            from threading import RLock
+        except Exception:
+            RLock = None
+        try:
+            controller._step_ref_pattern = re.compile(controller._step_pattern)
+        except Exception:
+            controller._step_ref_pattern = None
+        if not hasattr(controller, "_reporting_lock") and RLock is not None:
+            controller._reporting_lock = RLock()
+
+
+def create_pipeline_controller_from_template(
+    cfg: Any,
+    *,
+    base_task_id: str,
+    name: str | None = None,
+    project: str | None = None,
+    tags: Iterable[str] | None = None,
+    default_queue: str | None = None,
+) -> Any:
+    if not base_task_id:
+        raise PlatformAdapterError("base_task_id is required to clone a pipeline controller.")
+    if not is_clearml_enabled(cfg):
+        raise PlatformAdapterError("ClearML is disabled; cannot clone pipeline controller.")
+    try:
+        from clearml import PipelineController, Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml is required to clone pipeline controller.") from exc
+    try:
+        cloned_task = ClearMLTask.clone(str(base_task_id), name=name)
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to clone pipeline template task: {exc}") from exc
+    parent_setter = getattr(cloned_task, "set_parent", None)
+    if callable(parent_setter):
+        try:
+            parent_setter(None)
+        except Exception as exc:
+            raise PlatformAdapterError(f"Failed to clear pipeline template parent: {exc}") from exc
+    if project:
+        _ensure_clearml_project(cloned_task, str(project))
+    _apply_clearml_task_type(cloned_task, clearml_task_type_controller())
+    _apply_clearml_system_tags(cloned_task, ["pipeline"])
+    _apply_clearml_task_script_override(
+        cloned_task,
+        cfg,
+        version_mode_override=_resolve_pipeline_controller_code_ref_override(cfg),
+    )
+    _apply_clearml_tags(cloned_task, tags)
+    controller = PipelineController._create_pipeline_controller_from_task(cloned_task)
+    _ensure_pipeline_controller_state(controller)
+    _apply_clearml_pipeline_args(controller, cfg)
+    _apply_clearml_task_requirements(
+        _resolve_clearml_task(controller),
+        _resolve_clearml_pipeline_requirements(cfg),
+    )
+    if default_queue:
+        setter = getattr(controller, "set_default_execution_queue", None)
+        if callable(setter):
+            setter(str(default_queue))
+    return controller
 
 
 def create_pipeline_controller(
@@ -2204,13 +2720,58 @@ def create_pipeline_controller(
         tags=tags,
         default_queue=default_queue,
     )
-    _apply_clearml_task_script_override(controller, cfg)
+    _apply_clearml_task_script_override(
+        controller,
+        cfg,
+        version_mode_override=_resolve_pipeline_controller_code_ref_override(cfg),
+    )
     _apply_clearml_pipeline_args(controller, cfg)
     _apply_clearml_task_requirements(
         _resolve_clearml_task(controller),
         _resolve_clearml_pipeline_requirements(cfg),
     )
     return controller
+
+
+def apply_pipeline_parallelism(
+    controller: Any,
+    *,
+    max_concurrent_steps: int | None = None,
+) -> bool:
+    if controller is None:
+        return False
+    if max_concurrent_steps is None:
+        return False
+    try:
+        max_value = int(max_concurrent_steps)
+    except Exception:
+        return False
+    if max_value <= 0:
+        return False
+    candidate_names = (
+        "set_max_concurrent_steps",
+        "set_max_number_of_concurrent_steps",
+        "set_max_concurrent_tasks",
+        "set_max_number_of_concurrent_tasks",
+    )
+    targets = [controller, _resolve_clearml_task(controller)]
+    for target in targets:
+        for name in candidate_names:
+            setter = getattr(target, name, None)
+            if not callable(setter):
+                continue
+            try:
+                setter(max_value)
+                return True
+            except TypeError:
+                try:
+                    setter(max_concurrent_steps=max_value)
+                    return True
+                except Exception:
+                    continue
+            except Exception:
+                continue
+    return False
 
 
 def pipeline_require_clearml_agent(queue_name: str | None = None) -> None:

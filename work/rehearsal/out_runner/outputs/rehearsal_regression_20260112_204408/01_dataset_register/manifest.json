@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-12T20:44:11Z",
+  "inputs": {
+    "dataset_path": "work/rehearsal/out_runner/data/rehearsal_regression_20260112_204408/toy_regression.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "877e84a2980b4c538031c5976d1389ae",
+    "raw_dataset_hash": "11a8719acc0919346ae68fb2cf2563dd3d618eab9eec7a7413e0e31e19c8fd63"
+  },
+  "hashes": {
+    "config_hash": "e56b9b6d5316c171d2f83aa77071f4d7ab6b9c061393940e36e313fb08647261",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

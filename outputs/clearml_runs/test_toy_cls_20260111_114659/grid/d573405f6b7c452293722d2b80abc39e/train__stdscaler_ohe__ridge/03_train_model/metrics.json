@@ -1,0 +1,32 @@
+{
+  "primary_metric": "rmse",
+  "direction": "minimize",
+  "task_type": "regression",
+  "holdout": {
+    "r2": 0.5624081079068347,
+    "mse": 0.10912447809073307,
+    "rmse": 0.33033994322626664,
+    "mae": 0.2773745066106252,
+    "train_rows": 160,
+    "val_rows": 40
+  },
+  "cv": {
+    "folds": 5,
+    "seed": 42,
+    "scores": [
+      0.31775768462065085,
+      0.3708478481060399,
+      0.41750085883103055,
+      0.4276991348609316,
+      0.3818907114988205
+    ],
+    "mean": 0.38313924758349466,
+    "std": 0.038970989211561176
+  },
+  "uncertainty": {
+    "enabled": false,
+    "method": "conformal_split",
+    "alpha": 0.1,
+    "q": null
+  }
+}

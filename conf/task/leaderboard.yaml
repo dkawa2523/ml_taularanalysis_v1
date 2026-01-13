@@ -5,7 +5,7 @@ defaults:
 task:
   name: leaderboard
   stage: "05_leaderboard"
-  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/05_leaderboard"
+  project_name: "${run.clearml.project_root}${run.clearml.project_layout.separator}${run.clearml.project_layout.solution_root}${run.clearml.project_layout.separator}${run.usecase_id}${run.clearml.project_layout.separator}${run.clearml.project_layout.group_map.leaderboard}"
 
 leaderboard:
   train_task_ids: []

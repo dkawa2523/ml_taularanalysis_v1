@@ -123,6 +123,7 @@ def main() -> int:
     ds_out = _load_json(ds_dir / "out.json")
     if "raw_dataset_id" not in ds_out:
         raise AssertionError("dataset_register out.json must contain raw_dataset_id")
+    raw_dataset_id = ds_out["raw_dataset_id"]
 
     if args.until == "dataset_register":
         print("OK: dataset_register")
@@ -243,6 +244,7 @@ def main() -> int:
             "task=pipeline",
             "run.clearml.enabled=false",
             f"run.output_dir={out_root}",
+            f"data.raw_dataset_id={raw_dataset_id}",
             f"data.dataset_path={csv_path}",
             "data.target_column=target",
         ],

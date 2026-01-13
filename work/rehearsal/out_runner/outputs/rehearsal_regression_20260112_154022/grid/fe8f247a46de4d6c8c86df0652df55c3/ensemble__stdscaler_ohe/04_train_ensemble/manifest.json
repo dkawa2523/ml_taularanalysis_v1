@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "train_ensemble",
+  "created_at": "2026-01-12T15:40:42Z",
+  "inputs": {
+    "preprocess_variant": "stdscaler_ohe",
+    "method": "mean_topk"
+  },
+  "outputs": {
+    "model_id": null,
+    "best_score": null,
+    "primary_metric": "rmse",
+    "task_type": "regression",
+    "status": "skipped",
+    "reason": "insufficient_candidates"
+  },
+  "hashes": {
+    "config_hash": "5c2541c37f99a8c0db7568e9ad39fd167e81ceb47f34383576b95887bed946fa",
+    "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+  }
+}

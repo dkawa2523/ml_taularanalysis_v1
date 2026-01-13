@@ -152,6 +152,59 @@ def plot_regression_residuals(
     return path
 
 
+def plot_true_pred_scatter(
+    y_true: Sequence[float],
+    y_pred: Sequence[float],
+    output_path: str | Path,
+    *,
+    max_points: int = 1000,
+    title: str | None = None,
+) -> Path:
+    import numpy as np  # type: ignore
+
+    y_true_arr = np.asarray(y_true, dtype=float).reshape(-1)
+    y_pred_arr = np.asarray(y_pred, dtype=float).reshape(-1)
+    if y_true_arr.shape[0] != y_pred_arr.shape[0]:
+        raise ValueError("y_true and y_pred must have the same length.")
+
+    n = y_true_arr.shape[0]
+    if max_points > 0 and n > max_points:
+        rng = np.random.default_rng(0)
+        idx = rng.choice(n, size=max_points, replace=False)
+        y_true_arr = y_true_arr[idx]
+        y_pred_arr = y_pred_arr[idx]
+
+    finite = np.isfinite(y_true_arr) & np.isfinite(y_pred_arr)
+    y_true_arr = y_true_arr[finite]
+    y_pred_arr = y_pred_arr[finite]
+
+    path = _as_path(output_path)
+    if y_true_arr.size == 0 or y_pred_arr.size == 0:
+        _render_placeholder(path, title or "True vs Predicted")
+        return path
+
+    min_val = float(np.nanmin([np.nanmin(y_true_arr), np.nanmin(y_pred_arr)]))
+    max_val = float(np.nanmax([np.nanmax(y_true_arr), np.nanmax(y_pred_arr)]))
+
+    plt = _import_matplotlib()
+    if plt is None:
+        _render_placeholder(path, title or "True vs Predicted")
+        return path
+
+    fig, ax = plt.subplots(figsize=(6.5, 4.5))
+    ax.scatter(y_true_arr, y_pred_arr, alpha=0.6, s=16, color="#4C78A8")
+    ax.plot([min_val, max_val], [min_val, max_val], linestyle="--", color="#333333")
+    ax.set_xlabel("true")
+    ax.set_ylabel("predicted")
+    ax.set_title(title or "True vs Predicted")
+    fig.tight_layout()
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fig.savefig(path, dpi=150)
+    plt.close(fig)
+    return path
+
+
 def plot_interval_width_histogram(
     widths: Sequence[float],
     output_path: str | Path,

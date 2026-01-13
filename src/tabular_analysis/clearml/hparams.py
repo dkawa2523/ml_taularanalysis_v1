@@ -2,348 +2,162 @@
 
 from __future__ import annotations
 
-from typing import Any, Mapping
+from collections.abc import Mapping, Sequence
+from typing import Any
 
-from ..platform_adapter import connect_hyperparameters, resolve_version_props
-
-_SECTION_ORDER = (
-    "Inputs",
-    "Dataset",
-    "Preprocess",
-    "Model",
-    "Eval",
-    "Optimize",
-    "Execution",
-    "Links",
-)
+_SECTION_ORDER = ("inputs", "dataset", "preprocess", "model", "eval", "pipeline", "clearml")
 
 
-def _cfg_value(cfg: Any, dotted_path: str, default: Any | None = None) -> Any:
+def _select_cfg(cfg: Any, dotted_path: str) -> Any:
     if cfg is None:
-        return default
+        return None
     try:
         from omegaconf import OmegaConf  # type: ignore
     except Exception:
         OmegaConf = None
     if OmegaConf is not None:
         try:
-            value = OmegaConf.select(cfg, dotted_path)
+            return OmegaConf.select(cfg, dotted_path)
         except Exception:
-            value = None
-        if value is not None:
-            return value
+            return None
     current = cfg
     for key in dotted_path.split("."):
         if isinstance(current, Mapping):
             if key not in current:
-                return default
+                return None
             current = current[key]
-        else:
-            if not hasattr(current, key):
-                return default
-            current = getattr(current, key)
-    return default if current is None else current
+            continue
+        if not hasattr(current, key):
+            return None
+        current = getattr(current, key)
+    return current
 
 
-def _normalize_str(value: Any) -> str | None:
+def _to_container(value: Any) -> Any:
     if value is None:
         return None
-    text = str(value).strip()
-    return text or None
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception:
+        OmegaConf = None
+    if OmegaConf is not None and OmegaConf.is_config(value):
+        try:
+            return OmegaConf.to_container(value, resolve=True)
+        except Exception:
+            return value
+    return value
 
 
-def _drop_none(payload: Mapping[str, Any]) -> dict[str, Any]:
-    return {key: value for key, value in payload.items() if value is not None}
+def _strip_none(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, Mapping):
+        cleaned: dict[str, Any] = {}
+        for key, item in value.items():
+            cleaned_item = _strip_none(item)
+            if cleaned_item is None:
+                continue
+            cleaned[str(key)] = cleaned_item
+        return cleaned or None
+    if isinstance(value, (list, tuple)):
+        cleaned_list = []
+        for item in value:
+            cleaned_item = _strip_none(item)
+            if cleaned_item is None:
+                continue
+            cleaned_list.append(cleaned_item)
+        return cleaned_list or None
+    return value
 
 
-def _flatten(prefix: str, params: Mapping[str, Any]) -> dict[str, Any]:
-    flattened: dict[str, Any] = {}
-    for key, value in params.items():
+def _normalize_dotpaths(value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        text = value.strip()
+        return [text] if text else []
+    if isinstance(value, Sequence):
+        normalized: list[str] = []
+        for item in value:
+            if item is None:
+                continue
+            text = str(item).strip()
+            if not text:
+                continue
+            normalized.append(text)
+        return normalized
+    return []
+
+
+def extract_by_dotpaths(cfg: Any, dotpaths: Sequence[str]) -> dict[str, Any]:
+    extracted: dict[str, Any] = {}
+    if not dotpaths:
+        return extracted
+    for raw_path in dotpaths:
+        if not raw_path:
+            continue
+        if not isinstance(raw_path, str):
+            continue
+        path = raw_path.strip()
+        if not path:
+            continue
+        if path.endswith(".*"):
+            base = path[:-2]
+            if not base:
+                continue
+            value = _to_container(_select_cfg(cfg, base))
+            if not isinstance(value, Mapping):
+                continue
+            cleaned = _strip_none(value)
+            if cleaned is None:
+                continue
+            extracted[base] = cleaned
+            continue
+        value = _to_container(_select_cfg(cfg, path))
         if value is None:
             continue
-        flattened[f"{prefix}.{key}"] = value
-    return flattened
-
-
-def _execution_hparams(cfg: Any) -> dict[str, Any]:
-    usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or _normalize_str(
-        _cfg_value(cfg, "usecase_id")
-    )
-    execution = _normalize_str(_cfg_value(cfg, "run.clearml.execution"))
-    try:
-        versions = resolve_version_props(cfg, clearml_enabled=True)
-    except Exception:
-        versions = {"schema_version": "unknown", "code_version": "unknown"}
-    return _drop_none(
-        {
-            "usecase_id": usecase_id,
-            "schema_version": versions.get("schema_version"),
-            "code_version": versions.get("code_version"),
-            "clearml.execution": execution,
-        }
-    )
-
-
-def _connect_section(ctx: Any, name: str, payload: Mapping[str, Any]) -> None:
-    cleaned = _drop_none(payload)
-    if not cleaned:
-        return
-    connect_hyperparameters(ctx, cleaned, name=name)
-
-
-def _connect_sections(ctx: Any, sections: Mapping[str, Mapping[str, Any]]) -> None:
-    for name in _SECTION_ORDER:
-        payload = sections.get(name)
-        if not payload:
+        cleaned = _strip_none(value)
+        if cleaned is None:
             continue
-        _connect_section(ctx, name, payload)
+        extracted[path] = cleaned
+    return extracted
 
 
-def connect_dataset_register(
-    ctx: Any,
-    cfg: Any,
-    *,
-    dataset_path: str | None,
-    target_column: str | None,
-    raw_dataset_id: str | None = None,
-) -> None:
-    sections = {
-        "Inputs": {
-            "data.dataset_path": dataset_path,
-            "data.target_column": target_column,
-        },
-        "Dataset": {"raw_dataset_id": raw_dataset_id},
-        "Execution": _execution_hparams(cfg),
-    }
-    _connect_sections(ctx, sections)
+def resolve_hyperparams_sections(cfg: Any) -> dict[str, list[str]]:
+    raw_sections = _to_container(_select_cfg(cfg, "run.clearml.hyperparams.sections"))
+    if not isinstance(raw_sections, Mapping):
+        return {}
+    resolved: dict[str, list[str]] = {}
+    for name, dotpaths in raw_sections.items():
+        section_name = str(name).strip()
+        if not section_name:
+            continue
+        resolved[section_name] = _normalize_dotpaths(dotpaths)
+    return resolved
 
 
-def connect_preprocess(
-    ctx: Any,
-    cfg: Any,
-    *,
-    raw_dataset_id: str | None,
-    dataset_path: str | None,
-    preprocess_variant: str | None,
-    split_strategy: str | None,
-    split_seed: int | None,
-    store_features: bool | None,
-) -> None:
-    sections = {
-        "Inputs": {"data.dataset_path": dataset_path},
-        "Dataset": {"raw_dataset_id": raw_dataset_id},
-        "Preprocess": {
-            "preprocess.variant": preprocess_variant,
-            "split.strategy": split_strategy,
-            "split.seed": split_seed,
-            "processed_dataset.store_features": store_features,
-        },
-        "Execution": _execution_hparams(cfg),
-    }
-    _connect_sections(ctx, sections)
-
-
-def connect_train_model(
-    ctx: Any,
-    cfg: Any,
-    *,
-    processed_dataset_id: str | None,
-    task_type: str | None,
-    primary_metric: str | None,
-    model_variant: str | None,
-    model_params: Mapping[str, Any] | None,
-) -> None:
-    model_payload: dict[str, Any] = {"model.variant": model_variant}
-    if model_params:
-        model_payload.update(_flatten("model.params", model_params))
-    sections = {
-        "Dataset": {"processed_dataset_id": processed_dataset_id},
-        "Model": model_payload,
-        "Eval": {
-            "task_type": task_type,
-            "primary_metric": primary_metric,
-        },
-        "Execution": _execution_hparams(cfg),
-    }
-    _connect_sections(ctx, sections)
-
-
-def connect_infer(
-    ctx: Any,
-    cfg: Any,
-    *,
-    model_id: str | None,
-    model_abbr: str | None = None,
-    infer_mode: str | None,
-    schema_policy: str | None,
-    input_source: str | None = None,
-    input_path: str | None = None,
-    input_json: str | None = None,
-    provenance: Mapping[str, Any] | None = None,
-    optimize_payload: Mapping[str, Any] | None = None,
-    include_dataset: bool = True,
-    include_execution: bool = True,
-) -> None:
-    dataset_payload: dict[str, Any] = {}
-    if provenance:
-        dataset_payload = {
-            "train_task_id": provenance.get("train_task_id"),
-            "raw_dataset_id": provenance.get("raw_dataset_id"),
-            "processed_dataset_id": provenance.get("processed_dataset_id"),
-            "preprocess_variant": provenance.get("preprocess_variant"),
-            "split_hash": provenance.get("split_hash"),
-            "recipe_hash": provenance.get("recipe_hash"),
-        }
-    sections = {
-        "Inputs": {
-            "infer.mode": infer_mode,
-            "schema_policy": schema_policy,
-            "input.source": input_source,
-            "input.path": input_path,
-            "input.json": input_json,
-        },
-        "Model": {
-            "model_id": model_id,
-            "model_abbr": model_abbr,
-        },
-    }
-    if optimize_payload:
-        sections["Optimize"] = dict(optimize_payload)
-    if include_dataset:
-        sections["Dataset"] = dataset_payload
-    if include_execution:
-        sections["Execution"] = _execution_hparams(cfg)
-    _connect_sections(ctx, sections)
-
-
-def connect_leaderboard(
-    ctx: Any,
-    cfg: Any,
-    *,
-    primary_metric: str | None,
-    direction: str | None,
-    require_comparable: bool | None,
-    top_k: int | None,
-) -> None:
-    sections = {
-        "Eval": {
-            "primary_metric": primary_metric,
-            "direction": direction,
-            "compare.require_comparable": require_comparable,
-            "selection.top_k": top_k,
-        },
-        "Execution": _execution_hparams(cfg),
-    }
-    _connect_sections(ctx, sections)
-
-
-def connect_dataset_register_hparams(
-    ctx: Any,
-    cfg: Any,
-    *,
-    dataset_path: str | None,
-    target_column: str | None,
-) -> None:
-    connect_dataset_register(
-        ctx,
-        cfg,
-        dataset_path=dataset_path,
-        target_column=target_column,
-        raw_dataset_id=None,
-    )
-
-
-def connect_preprocess_hparams(
-    ctx: Any,
-    cfg: Any,
-    *,
-    raw_dataset_id: str | None,
-    dataset_path: str | None,
-    preprocess_variant: str | None,
-    split_strategy: str | None,
-    split_seed: int | None,
-    store_features: bool | None,
-) -> None:
-    connect_preprocess(
-        ctx,
-        cfg,
-        raw_dataset_id=raw_dataset_id,
-        dataset_path=dataset_path,
-        preprocess_variant=preprocess_variant,
-        split_strategy=split_strategy,
-        split_seed=split_seed,
-        store_features=store_features,
-    )
-
-
-def connect_train_hparams(
-    ctx: Any,
-    cfg: Any,
-    *,
-    processed_dataset_id: str | None,
-    task_type: str | None,
-    primary_metric: str | None,
-    model_variant: str | None,
-    model_params: Mapping[str, Any] | None,
-) -> None:
-    connect_train_model(
-        ctx,
-        cfg,
-        processed_dataset_id=processed_dataset_id,
-        task_type=task_type,
-        primary_metric=primary_metric,
-        model_variant=model_variant,
-        model_params=model_params,
-    )
-
-
-def connect_infer_hparams(
-    ctx: Any,
-    cfg: Any,
-    *,
-    model_id: str | None,
-    model_abbr: str | None = None,
-    infer_mode: str | None,
-    schema_policy: str | None,
-    input_source: str | None = None,
-    input_path: str | None = None,
-    input_json: str | None = None,
-    provenance: Mapping[str, Any] | None = None,
-    optimize_payload: Mapping[str, Any] | None = None,
-    include_dataset: bool = True,
-    include_execution: bool = True,
-) -> None:
-    connect_infer(
-        ctx,
-        cfg,
-        model_id=model_id,
-        model_abbr=model_abbr,
-        infer_mode=infer_mode,
-        schema_policy=schema_policy,
-        input_source=input_source,
-        input_path=input_path,
-        input_json=input_json,
-        provenance=provenance,
-        optimize_payload=optimize_payload,
-        include_dataset=include_dataset,
-        include_execution=include_execution,
-    )
-
-
-def connect_leaderboard_hparams(
-    ctx: Any,
-    cfg: Any,
-    *,
-    primary_metric: str | None,
-    direction: str | None,
-    require_comparable: bool | None,
-    top_k: int | None,
-) -> None:
-    connect_leaderboard(
-        ctx,
-        cfg,
-        primary_metric=primary_metric,
-        direction=direction,
-        require_comparable=require_comparable,
-        top_k=top_k,
-    )
+def build_hyperparams_sections(cfg: Any) -> dict[str, dict[str, Any]]:
+    sections = resolve_hyperparams_sections(cfg)
+    if not sections:
+        return {}
+    payloads: dict[str, dict[str, Any]] = {}
+    for name in _SECTION_ORDER:
+        dotpaths = sections.get(name)
+        if not dotpaths:
+            continue
+        payload = extract_by_dotpaths(cfg, dotpaths)
+        cleaned = _strip_none(payload)
+        if not cleaned:
+            continue
+        payloads[name] = cleaned
+    for name, dotpaths in sections.items():
+        if name in _SECTION_ORDER:
+            continue
+        if not dotpaths:
+            continue
+        payload = extract_by_dotpaths(cfg, dotpaths)
+        cleaned = _strip_none(payload)
+        if not cleaned:
+            continue
+        payloads[name] = cleaned
+    return payloads

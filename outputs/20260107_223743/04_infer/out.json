@@ -1,0 +1,14 @@
+{
+  "predictions_path": "outputs/20260107_223743/04_infer/prediction.json",
+  "input_preview_path": "outputs/20260107_223743/04_infer/input_preview.json",
+  "mode": "single",
+  "model_id": "dry_run",
+  "train_task_id": null,
+  "schema_validation": {
+    "mode": "warn",
+    "ok": true,
+    "warnings_count": 0,
+    "errors_count": 0
+  },
+  "dry_run": true
+}

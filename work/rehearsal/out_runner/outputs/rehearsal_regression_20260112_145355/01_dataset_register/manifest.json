@@ -1,0 +1,19 @@
+{
+  "schema_version": "v1",
+  "code_version": "50fd396e885908e85eb8469691bbe83c25c9110a",
+  "platform_version": "0.1.0",
+  "process": "dataset_register",
+  "created_at": "2026-01-12T14:53:59Z",
+  "inputs": {
+    "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_145355/toy_regression.csv"
+  },
+  "outputs": {
+    "raw_dataset_id": "b68db6d2d1974ba28c0db5ba25691a96",
+    "raw_dataset_hash": "11a8719acc0919346ae68fb2cf2563dd3d618eab9eec7a7413e0e31e19c8fd63"
+  },
+  "hashes": {
+    "config_hash": "7842d6ba88d9d22c89391ef70276af19201a44ef40d347d263e55cfb3cb08763",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

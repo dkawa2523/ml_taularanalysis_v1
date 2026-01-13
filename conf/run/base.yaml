@@ -20,7 +20,7 @@ clearml:
   enabled: false
 
   # 実行モード：local | logging | agent | clone | pipeline_controller | pipeline_controller_local
-  # local: ClearMLなし
+  # local: ClearMLなし（pipeline は enabled=true の場合 child tasks を logging で記録）
   # logging: ローカル実行しつつ ClearML に記録
   # agent: Task.execute_remotely で投入
   # clone: テンプレTaskから clone して投入
@@ -28,21 +28,33 @@ clearml:
   # pipeline_controller_local: controller はローカル、子タスクは queue に投入
   execution: local
 
-  # ClearML Task Script の repository/branch を指定する
+  # ClearML Task Script の code reference
+  # mode: branch | commit | none
+  # - branch: repository/branch を設定し version_num を空にする（既定）
+  # - commit: repository/branch + commit pin（厳密再現用）
+  # - none: repository/branch/version_num を設定しない（Local用途のみ）
   # "auto" は conf/ を含むリポジトリルートから git を検出する
+  code_ref:
+    mode: "branch"
+    repository: "auto"
+    branch: "auto"
+    commit: "auto"
+
+  # legacy alias (backward compatibility)
   code_repository: "auto"
   code_branch: "auto"
-
-  # ClearML Task Script の version_num ポリシー
-  # branch_head: commit pin せず branch を追従
-  # pin_commit: git rev-parse HEAD を pin する
+  # branch_head | pin_commit (legacy; prefer run.clearml.code_ref.mode)
   code_version_mode: "branch_head"
 
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
+  project_name: null
 
   # テンプレートタスクを置く usecase_id（templates.yaml の {usecase_id} に対応）
   template_usecase_id: "TabularAnalysis"
+
+  # テンプレート運用の世代識別子（templates.yaml の {template_set_id} に対応）
+  template_set_id: "ta_v1"
 
   # tags/properties のポリシーは run.clearml.policy で切り替える
 
@@ -54,4 +66,13 @@ clearml:
 
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []
+
+  # pipeline が子タスクの親を紐づける際に使用（Hydra override 用）
+  parent_task_id: null
+
+  # ClearML UI reporting toggles
+  reporting:
+    enable_scalars: true
+    enable_plots: true
+    enable_tables: true
 # Monitoring defaults are defined in conf/monitor/base.yaml.

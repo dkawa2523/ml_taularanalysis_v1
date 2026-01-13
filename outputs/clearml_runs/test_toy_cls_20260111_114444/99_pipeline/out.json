@@ -1,0 +1,63 @@
+{
+  "pipeline_run": {
+    "grid_run_id": "c3f49bf56e5b4204b6b7f960f77d6b84",
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "dataset_register_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114444/grid/c3f49bf56e5b4204b6b7f960f77d6b84/dataset_register/01_dataset_register"
+    },
+    "preprocess_ref": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114444/grid/c3f49bf56e5b4204b6b7f960f77d6b84/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe"
+      }
+    ],
+    "train_refs": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114444/grid/c3f49bf56e5b4204b6b7f960f77d6b84/train__stdscaler_ohe__ridge/03_train_model",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge"
+      }
+    ],
+    "leaderboard_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/clearml_runs/test_toy_cls_20260111_114444/grid/c3f49bf56e5b4204b6b7f960f77d6b84/leaderboard/05_leaderboard"
+    },
+    "infer_ref": null,
+    "grid": {
+      "preprocess_variants": [
+        "stdscaler_ohe"
+      ],
+      "model_variants": [
+        "ridge"
+      ],
+      "max_jobs": 50,
+      "max_hpo_trials": 0,
+      "hpo": {
+        "enabled": false,
+        "params": {
+          "ridge": {
+            "alpha": [
+              0.1,
+              1.0,
+              10.0
+            ]
+          }
+        }
+      }
+    },
+    "policy": {
+      "limits": {
+        "max_jobs": 50,
+        "max_models": 10,
+        "max_hpo_trials": 0
+      },
+      "selection": {
+        "calibration": false,
+        "uncertainty": false,
+        "ci": false
+      }
+    }
+  }
+}

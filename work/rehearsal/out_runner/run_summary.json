@@ -1,0 +1,111 @@
+{
+  "status": "success",
+  "error": null,
+  "timestamp_utc": "2026-01-12T23:44:53Z",
+  "usecase_id": "rehearsal_regression_20260112_234453",
+  "execution": "logging",
+  "task_type": "regression",
+  "models": "small",
+  "model_variants": [
+    "ridge",
+    "lasso",
+    "elasticnet"
+  ],
+  "preprocess_variants": [
+    "stdscaler_ohe"
+  ],
+  "repo_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis",
+  "out_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner",
+  "output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_234453",
+  "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_234453/toy_regression.csv",
+  "raw_dataset_id": "3baed8d6a9924142b0b51d2b34209345",
+  "processed_dataset_id": "34db221fad064dea995be8f86ac09a6b",
+  "pipeline_task_id": "5baee706b6334f479dfc24ec71b8a214",
+  "train_task_ids": [
+    "9c3c460ada7f4c318a1036bea216e2f3",
+    "e81344d743004d31beab477b245b70cb",
+    "07b1f33b89ec405d8861e1e278920d7b"
+  ],
+  "preprocess_task_ids": [],
+  "leaderboard_task_id": null,
+  "clearml": {
+    "enabled": true,
+    "execution": "logging",
+    "queue_name": null,
+    "project_root": "LOCAL",
+    "warning": null
+  },
+  "clearml_tasks": {
+    "pipeline": [
+      {
+        "task_id": "5baee706b6334f479dfc24ec71b8a214",
+        "status": "completed",
+        "name": "pipeline"
+      }
+    ],
+    "leaderboard": [
+      {
+        "task_id": "a9098ae05a444cc2b62b822b38e93ff3",
+        "status": "completed",
+        "name": "leaderboard"
+      }
+    ],
+    "train_ensemble": [
+      {
+        "task_id": "7da82184e84a4577ad0bc9b0d3195a16",
+        "status": "completed",
+        "name": "train_ensemble/mean_topk(k=1)"
+      }
+    ],
+    "train_model": [
+      {
+        "task_id": "07b1f33b89ec405d8861e1e278920d7b",
+        "status": "completed",
+        "name": "train__elasticnet__pp=unknown__ds=3baed8d6~345"
+      },
+      {
+        "task_id": "e81344d743004d31beab477b245b70cb",
+        "status": "completed",
+        "name": "train__lasso__pp=unknown__ds=3baed8d6~345"
+      },
+      {
+        "task_id": "9c3c460ada7f4c318a1036bea216e2f3",
+        "status": "completed",
+        "name": "train__ridge__pp=unknown__ds=3baed8d6~345"
+      }
+    ],
+    "preprocess": [
+      {
+        "task_id": "10872d6f260747528c697adaabfd76c9",
+        "status": "completed",
+        "name": "preprocess__pp=stdscaler_ohe"
+      },
+      {
+        "task_id": "34db221fad064dea995be8f86ac09a6b",
+        "status": "completed",
+        "name": "processed__rehearsal_regression_20260112_234453__stdscaler_ohe__533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49__v1"
+      }
+    ],
+    "dataset_register": [
+      {
+        "task_id": "722380c53a7e484fa22dbc93eb3acb44",
+        "status": "completed",
+        "name": "dataset_register"
+      },
+      {
+        "task_id": "3baed8d6a9924142b0b51d2b34209345",
+        "status": "completed",
+        "name": "rehearsal_regression_20260112_234453__raw__toy_regression"
+      }
+    ]
+  },
+  "verification": {
+    "status": "success",
+    "errors": [],
+    "warnings": [],
+    "processed_dataset_id": "34db221fad064dea995be8f86ac09a6b",
+    "project_prefix": "LOCAL/TabularAnalysis/rehearsal_regression_20260112_234453",
+    "pipeline_task_id": "5baee706b6334f479dfc24ec71b8a214",
+    "clearml_checked": true
+  }
+}

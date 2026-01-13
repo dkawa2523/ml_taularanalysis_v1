@@ -1,0 +1,24 @@
+{
+  "schema_version": "v1",
+  "code_version": "3f59b993ee95f41646f3885dc0a2a9c922b19103",
+  "platform_version": "0.1.0",
+  "process": "pipeline",
+  "created_at": "2026-01-11T02:51:39Z",
+  "inputs": {
+    "run_dataset_register": true,
+    "run_preprocess": true,
+    "run_train": true,
+    "run_leaderboard": true,
+    "run_infer": false,
+    "plan_only": false
+  },
+  "outputs": {
+    "grid_run_id": "d573405f6b7c452293722d2b80abc39e",
+    "pipeline_run_path": "outputs/clearml_runs/test_toy_cls_20260111_114659/99_pipeline/pipeline_run.json"
+  },
+  "hashes": {
+    "config_hash": "7aaa94f715cc00b137f913673390ced9fdc8613e96a47b40d927c58b7a29b649",
+    "split_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+    "recipe_hash": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+  }
+}

@@ -14,13 +14,13 @@ from typing import Any, Mapping, Sequence
 import warnings
 
 from ..clearml.datasets import get_processed_dataset_local_copy
-from ..clearml.hparams import connect_infer
-from ..clearml.ui_logger import (
-    log_debug_table,
-    log_debug_text,
-    log_plotly,
+from ..clearml.reporting import (
+    plots_enabled,
     report_input_output_table,
+    report_plotly,
+    tables_enabled,
 )
+from ..clearml.ui_logger import log_debug_table, log_debug_text
 from ..io.bundle_io import load_bundle
 from ..io.schema import extract_schema_dtypes
 from ..monitoring.drift import build_drift_report, build_train_profile, render_drift_markdown
@@ -599,26 +599,6 @@ def _resolve_objective_value(payload: Mapping[str, Any], keys: Sequence[str]) ->
             if numeric is not None:
                 return numeric
     return None
-
-
-def _build_optimize_hparams(optimize_settings: Mapping[str, Any] | None) -> dict[str, Any] | None:
-    if not optimize_settings:
-        return None
-    objective_keys = optimize_settings.get("objective_keys") or []
-    if isinstance(objective_keys, Sequence) and not isinstance(objective_keys, (str, bytes)):
-        objective_label = ",".join([str(item) for item in objective_keys if str(item).strip()])
-    else:
-        objective_label = str(objective_keys) if objective_keys else None
-    search_space = optimize_settings.get("search_space") or []
-    search_space_summary = _format_optimize_search_space(search_space)
-    return {
-        "infer.optimize.n_trials": optimize_settings.get("n_trials"),
-        "infer.optimize.direction": optimize_settings.get("direction"),
-        "infer.optimize.sampler": optimize_settings.get("sampler_name"),
-        "infer.optimize.objective": objective_label,
-        "infer.optimize.search_space": search_space_summary,
-        "infer.optimize.top_k": optimize_settings.get("top_k"),
-    }
 
 
 def _resolve_child_queue(cfg: Any) -> str | None:
@@ -1647,8 +1627,9 @@ def _log_debug_samples(
     output_sample: Any | None,
     input_preview_path: Path | None,
     predictions_path: Path | None,
+    tables_on: bool = True,
 ) -> None:
-    if ctx is None or getattr(ctx, "task", None) is None:
+    if ctx is None or getattr(ctx, "task", None) is None or not tables_on:
         return
     if input_sample is None:
         input_sample = _load_preview_sample(input_preview_path)
@@ -2008,6 +1989,147 @@ def _build_proba_payload(values: Sequence[Any], labels: Sequence[Any] | None) ->
     return [_sanitize_json_value(value) for value in values]
 
 
+class _EnsemblePredictor:
+    def __init__(self, models: Sequence[Any], *, task_type: str, weights: Sequence[float] | None = None) -> None:
+        self._models = list(models)
+        self._task_type = task_type
+        self._weights = None
+        if weights is not None:
+            try:
+                import numpy as np  # type: ignore
+            except Exception as exc:
+                raise RuntimeError("numpy is required for ensemble weights.") from exc
+            arr = np.asarray(weights, dtype=float)
+            if arr.ndim > 1:
+                arr = arr.reshape(-1)
+            if arr.shape[0] != len(self._models):
+                raise ValueError("ensemble weights length does not match base models.")
+            arr = np.where(np.isfinite(arr), arr, 0.0)
+            arr = np.maximum(arr, 0.0)
+            total = float(arr.sum())
+            if total <= 0:
+                raise ValueError("ensemble weights are invalid.")
+            self._weights = arr / total
+
+    def predict(self, X):
+        try:
+            import numpy as np  # type: ignore
+        except Exception as exc:
+            raise RuntimeError("numpy is required for ensemble predictions.") from exc
+        if self._task_type == "classification":
+            proba = self.predict_proba(X)
+            return np.asarray(proba).argmax(axis=1)
+        preds = [model.predict(X) for model in self._models]
+        pred_stack = np.stack(preds, axis=0)
+        if self._weights is None:
+            return np.mean(pred_stack, axis=0)
+        return np.tensordot(self._weights, pred_stack, axes=(0, 0))
+
+    def predict_proba(self, X):
+        if self._task_type != "classification":
+            raise ValueError("predict_proba is only available for classification ensembles.")
+        try:
+            import numpy as np  # type: ignore
+        except Exception as exc:
+            raise RuntimeError("numpy is required for ensemble probabilities.") from exc
+        probas = []
+        for model in self._models:
+            if not hasattr(model, "predict_proba"):
+                raise ValueError("Base model is missing predict_proba for ensemble.")
+            proba = model.predict_proba(X)
+            arr = np.asarray(proba)
+            if arr.ndim == 1:
+                arr = np.stack([1.0 - arr, arr], axis=1)
+            probas.append(arr)
+        proba_stack = np.stack(probas, axis=0)
+        if self._weights is None:
+            return np.mean(proba_stack, axis=0)
+        return np.tensordot(self._weights, proba_stack, axes=(0, 0))
+
+
+class _StackingPredictor:
+    def __init__(self, models: Sequence[Any], meta_model: Any, *, task_type: str) -> None:
+        self._models = list(models)
+        self._meta_model = meta_model
+        self._task_type = task_type
+
+    def _build_meta_features(self, X):
+        try:
+            import numpy as np  # type: ignore
+        except Exception as exc:
+            raise RuntimeError("numpy is required for stacking predictions.") from exc
+        if self._task_type == "classification":
+            probas = []
+            for model in self._models:
+                if not hasattr(model, "predict_proba"):
+                    raise ValueError("Base model is missing predict_proba for stacking.")
+                proba = model.predict_proba(X)
+                arr = np.asarray(proba)
+                if arr.ndim == 1:
+                    arr = np.stack([1.0 - arr, arr], axis=1)
+                probas.append(arr)
+            return np.concatenate(probas, axis=1)
+        preds = [model.predict(X) for model in self._models]
+        return np.column_stack(preds)
+
+    def predict(self, X):
+        try:
+            import numpy as np  # type: ignore
+        except Exception as exc:
+            raise RuntimeError("numpy is required for stacking predictions.") from exc
+        X_meta = self._build_meta_features(X)
+        if self._task_type == "classification":
+            if hasattr(self._meta_model, "predict_proba"):
+                proba = self._meta_model.predict_proba(X_meta)
+                return np.asarray(proba).argmax(axis=1)
+        return self._meta_model.predict(X_meta)
+
+    def predict_proba(self, X):
+        if self._task_type != "classification":
+            raise ValueError("predict_proba is only available for classification ensembles.")
+        if not hasattr(self._meta_model, "predict_proba"):
+            raise ValueError("stacking meta model is missing predict_proba.")
+        X_meta = self._build_meta_features(X)
+        return self._meta_model.predict_proba(X_meta)
+
+
+def _load_ensemble_base_bundles(cfg: Any, base_models: Sequence[Mapping[str, Any]], *, clearml_enabled: bool):
+    bundles: list[dict[str, Any]] = []
+    models: list[Any] = []
+    for base in base_models:
+        model_bundle_path = None
+        train_task_id = _normalize_str(base.get("train_task_id"))
+        model_id = _normalize_str(base.get("model_id"))
+        if clearml_enabled and train_task_id:
+            model_bundle_path = get_task_artifact_local_copy(cfg, train_task_id, "model_bundle.joblib")
+        elif model_id:
+            candidate = Path(model_id).expanduser()
+            if candidate.exists():
+                model_bundle_path = candidate
+        if model_bundle_path is None:
+            raise FileNotFoundError("base model_bundle.joblib not found for ensemble.")
+        bundle = load_bundle(model_bundle_path)
+        if not isinstance(bundle, dict):
+            raise ValueError("base model_bundle is invalid.")
+        model = bundle.get("calibrated_model") or bundle.get("model")
+        if model is None:
+            raise ValueError("base model_bundle missing model.")
+        bundles.append(bundle)
+        models.append(model)
+    return bundles, models
+
+
+def _resolve_ensemble_preprocess_bundle(bundle: Mapping[str, Any], base_bundles: Sequence[Mapping[str, Any]]):
+    preprocess_bundle = bundle.get("preprocess_bundle")
+    if isinstance(preprocess_bundle, dict):
+        return preprocess_bundle
+    for candidate in base_bundles:
+        candidate_bundle = candidate.get("preprocess_bundle")
+        if isinstance(candidate_bundle, dict):
+            return candidate_bundle
+    return {}
+
+
 def _prepare_inputs(cfg: Any, preprocess_bundle: dict[str, Any], mode: str):
     infer_cfg = getattr(cfg, "infer", None)
     dataset_path = _normalize_str(getattr(infer_cfg, "input_path", None))
@@ -2133,31 +2255,7 @@ def run(cfg: Any) -> None:
         and clearml_enabled
         and (batch_inputs_payload is not None or batch_inputs_path_value)
     )
-    use_optimize_children = mode == "optimize" and clearml_enabled
-    is_child_task = _parse_bool(_cfg_value(cfg, "infer.batch.child_task")) or _parse_bool(
-        _cfg_value(cfg, "infer.optimize.child_task")
-    )
-    connect_payload = batch_inputs_payload if mode == "batch" and batch_inputs_payload is not None else input_payload
-    input_source = None
-    input_json_label = None
-    if connect_payload is not None:
-        input_source = "json"
-        input_json_label = "inline"
-    elif input_path_value:
-        input_source = "path"
-    else:
-        input_source = "generated"
-    if mode == "optimize":
-        input_source = "search_space"
     table_settings = _resolve_input_output_table_settings(cfg)
-    include_dataset = not (
-        (mode == "batch" and use_batch_children and not is_child_task)
-        or (mode == "optimize" and use_optimize_children and not is_child_task)
-    )
-    include_execution = not is_child_task
-    optimize_hparams = None
-    if mode == "optimize" and not is_child_task:
-        optimize_hparams = _build_optimize_hparams(optimize_settings)
     dry_run = bool(getattr(infer_cfg, "dry_run", False))
 
     if dry_run:
@@ -2165,24 +2263,6 @@ def run(cfg: Any) -> None:
             getattr(infer_cfg, "model_bundle_path", None)
         )
         train_task_id = _normalize_str(getattr(infer_cfg, "train_task_id", None))
-        connect_infer(
-            ctx,
-            cfg,
-            model_id=model_id or "dry_run",
-            model_abbr=None,
-            infer_mode=mode,
-            schema_policy=validation_mode,
-            input_source=input_source,
-            input_path=input_path_value,
-            input_json=input_json_label,
-            provenance={
-                "train_task_id": train_task_id,
-            },
-            optimize_payload=optimize_hparams,
-            include_dataset=include_dataset,
-            include_execution=include_execution,
-        )
-
         if mode == "optimize":
             trials_path = ctx.output_dir / "optimize_trials.csv"
             trials_path.write_text("", encoding="utf-8")
@@ -2321,6 +2401,7 @@ def run(cfg: Any) -> None:
     model = bundle.get("model")
     calibrated_model = bundle.get("calibrated_model")
     preprocess_bundle = bundle.get("preprocess_bundle") or {}
+    ensemble_payload = bundle.get("ensemble") if isinstance(bundle.get("ensemble"), Mapping) else None
     processed_dataset_id = _normalize_str(bundle.get("processed_dataset_id"))
     split_hash = _normalize_str(bundle.get("split_hash"))
     recipe_hash = _normalize_str(bundle.get("recipe_hash"))
@@ -2330,6 +2411,29 @@ def run(cfg: Any) -> None:
         n_classes = int(n_classes) if n_classes is not None else None
     except Exception:
         n_classes = None
+    if ensemble_payload is not None:
+        base_models = ensemble_payload.get("base_models") or []
+        base_bundles, base_model_objs = _load_ensemble_base_bundles(
+            cfg,
+            base_models,
+            clearml_enabled=clearml_enabled,
+        )
+        if not base_model_objs:
+            raise ValueError("ensemble model_bundle is missing base models.")
+        preprocess_bundle = _resolve_ensemble_preprocess_bundle(bundle, base_bundles)
+        method = _normalize_str(ensemble_payload.get("method")) or "mean_topk"
+        weights = ensemble_payload.get("weights")
+        if not isinstance(weights, (list, tuple)):
+            weights = None
+        if method == "stacking":
+            meta_model = model
+            if meta_model is None:
+                model = _EnsemblePredictor(base_model_objs, task_type=task_type, weights=weights)
+            else:
+                model = _StackingPredictor(base_model_objs, meta_model, task_type=task_type)
+        else:
+            model = _EnsemblePredictor(base_model_objs, task_type=task_type, weights=weights)
+        calibrated_model = None
     if model is None or not isinstance(preprocess_bundle, dict):
         raise ValueError("model_bundle is missing model or preprocess_bundle.")
     if not split_hash or not recipe_hash:
@@ -2359,22 +2463,6 @@ def run(cfg: Any) -> None:
         meta=meta,
         model_bundle_path=model_bundle_path,
     )
-    connect_infer(
-        ctx,
-        cfg,
-        model_id=_normalize_str(meta.get("model_id")) or str(model_bundle_path),
-        model_abbr=model_abbr,
-        infer_mode=mode,
-        schema_policy=validation_mode,
-        input_source=input_source,
-        input_path=input_path_value,
-        input_json=input_json_label,
-        provenance=provenance,
-        optimize_payload=optimize_hparams,
-        include_dataset=include_dataset,
-        include_execution=include_execution,
-    )
-
     columns_info = preprocess_bundle.get("columns") or {}
     quality_target = _normalize_str(
         columns_info.get("target_column") or _cfg_value(cfg, "data.target_column")
@@ -2617,48 +2705,68 @@ def run(cfg: Any) -> None:
             }
 
         if clearml_enabled:
-            history_fig = build_optimization_history(
-                study,
-                log_scale=bool(optimize_settings.get("history_log_scale")),
-                output_path=ctx.output_dir / "optuna_history.png",
-            )
-            log_plotly(ctx.task, "infer", "optuna_history", history_fig, step=0)
-            parallel_fig = build_parallel_coordinate(
-                study,
-                output_path=ctx.output_dir / "optuna_parallel.png",
-            )
-            log_plotly(ctx.task, "infer", "optuna_parallel", parallel_fig, step=0)
-            importance_fig = build_param_importance(
-                study,
-                output_path=ctx.output_dir / "optuna_importance.png",
-            )
-            log_plotly(ctx.task, "infer", "optuna_importance", importance_fig, step=0)
-            contour_params = optimize_settings.get("contour_params")
-            if not contour_params:
-                contour_params = [
-                    entry.get("name") for entry in search_space if entry.get("name")
-                ][:2]
-            if contour_params and len(contour_params) >= 2:
-                contour_fig = build_contour(
+            plots_on = plots_enabled(cfg)
+            tables_on = tables_enabled(cfg)
+            if plots_on:
+                history_fig = build_optimization_history(
                     study,
-                    params=contour_params,
-                    output_path=ctx.output_dir / "optuna_contour.png",
+                    log_scale=bool(optimize_settings.get("history_log_scale")),
+                    output_path=ctx.output_dir / "optuna_history.png",
                 )
-                log_plotly(ctx.task, "infer", "optuna_contour", contour_fig, step=0)
-            report_input_output_table(
-                ctx.task,
-                "infer",
-                "input_output_table",
-                top_inputs,
-                top_outputs,
-                max_rows=table_settings["max_rows"],
-                max_input_columns=table_settings["max_input_columns"],
-                max_output_columns=table_settings["max_output_columns"],
-                output_path=ctx.output_dir / "optimize_input_output_table.png",
-                step=0,
-            )
-            log_debug_table(ctx.task, "infer", "optimize_trials", trial_rows, step=0)
-            log_debug_table(ctx.task, "infer", "optimize_child_tasks", child_rows, step=0)
+                report_plotly(ctx.task, "infer", "optuna_history", history_fig, iteration=0, cfg=cfg)
+                parallel_fig = build_parallel_coordinate(
+                    study,
+                    output_path=ctx.output_dir / "optuna_parallel.png",
+                )
+                report_plotly(ctx.task, "infer", "optuna_parallel", parallel_fig, iteration=0, cfg=cfg)
+                importance_fig = build_param_importance(
+                    study,
+                    output_path=ctx.output_dir / "optuna_importance.png",
+                )
+                report_plotly(
+                    ctx.task,
+                    "infer",
+                    "optuna_importance",
+                    importance_fig,
+                    iteration=0,
+                    cfg=cfg,
+                )
+                contour_params = optimize_settings.get("contour_params")
+                if not contour_params:
+                    contour_params = [
+                        entry.get("name") for entry in search_space if entry.get("name")
+                    ][:2]
+                if contour_params and len(contour_params) >= 2:
+                    contour_fig = build_contour(
+                        study,
+                        params=contour_params,
+                        output_path=ctx.output_dir / "optuna_contour.png",
+                    )
+                    report_plotly(
+                        ctx.task,
+                        "infer",
+                        "optuna_contour",
+                        contour_fig,
+                        iteration=0,
+                        cfg=cfg,
+                    )
+            if plots_on and tables_on:
+                report_input_output_table(
+                    ctx.task,
+                    "infer",
+                    "input_output_table",
+                    top_inputs,
+                    top_outputs,
+                    max_rows=table_settings["max_rows"],
+                    max_input_columns=table_settings["max_input_columns"],
+                    max_output_columns=table_settings["max_output_columns"],
+                    output_path=ctx.output_dir / "optimize_input_output_table.png",
+                    iteration=0,
+                    cfg=cfg,
+                )
+            if tables_on:
+                log_debug_table(ctx.task, "infer", "optimize_trials", trial_rows, step=0)
+                log_debug_table(ctx.task, "infer", "optimize_child_tasks", child_rows, step=0)
 
         out = {
             "optimize_trials_path": str(trials_path),
@@ -2857,35 +2965,61 @@ def run(cfg: Any) -> None:
         output_df.to_csv(predictions_path, index=False)
 
         if clearml_enabled:
+            plots_on = plots_enabled(cfg)
+            tables_on = tables_enabled(cfg)
             upload_artifact(ctx, predictions_path.name, predictions_path)
             upload_artifact(ctx, input_preview_path.name, input_preview_path)
-            table_rows = batch_children_settings["max_children"] or len(input_df)
-            table_fig = build_input_output_table(
-                input_df,
-                output_df,
-                max_rows=table_rows,
-                max_input_columns=table_settings["max_input_columns"],
-                max_output_columns=table_settings["max_output_columns"],
-                title="Batch Inputs -> Predictions",
-                output_path=ctx.output_dir / "batch_input_output_table.png",
-            )
-            log_plotly(ctx.task, "infer", "batch_input_output_table", table_fig, step=0)
-            dist_values, dist_labels = _select_distribution_samples(output_df)
-            if dist_values:
-                dist_fig = build_prediction_histogram(
-                    dist_values,
-                    title="Prediction Distribution",
-                    output_path=ctx.output_dir / "prediction_distribution.png",
+            if plots_on and tables_on:
+                table_rows = batch_children_settings["max_children"] or len(input_df)
+                table_fig = build_input_output_table(
+                    input_df,
+                    output_df,
+                    max_rows=table_rows,
+                    max_input_columns=table_settings["max_input_columns"],
+                    max_output_columns=table_settings["max_output_columns"],
+                    title="Batch Inputs -> Predictions",
+                    output_path=ctx.output_dir / "batch_input_output_table.png",
                 )
-                log_plotly(ctx.task, "infer", "prediction_distribution", dist_fig, step=0)
-            elif dist_labels:
-                label_fig = build_label_distribution(
-                    dist_labels,
-                    title="Prediction Labels",
-                    output_path=ctx.output_dir / "prediction_labels.png",
+                report_plotly(
+                    ctx.task,
+                    "infer",
+                    "batch_input_output_table",
+                    table_fig,
+                    iteration=0,
+                    cfg=cfg,
                 )
-                log_plotly(ctx.task, "infer", "prediction_labels", label_fig, step=0)
-            log_debug_table(ctx.task, "infer", "batch_child_tasks", child_rows, step=0)
+            if plots_on:
+                dist_values, dist_labels = _select_distribution_samples(output_df)
+                if dist_values:
+                    dist_fig = build_prediction_histogram(
+                        dist_values,
+                        title="Prediction Distribution",
+                        output_path=ctx.output_dir / "prediction_distribution.png",
+                    )
+                    report_plotly(
+                        ctx.task,
+                        "infer",
+                        "prediction_distribution",
+                        dist_fig,
+                        iteration=0,
+                        cfg=cfg,
+                    )
+                elif dist_labels:
+                    label_fig = build_label_distribution(
+                        dist_labels,
+                        title="Prediction Labels",
+                        output_path=ctx.output_dir / "prediction_labels.png",
+                    )
+                    report_plotly(
+                        ctx.task,
+                        "infer",
+                        "prediction_labels",
+                        label_fig,
+                        iteration=0,
+                        cfg=cfg,
+                    )
+            if tables_on:
+                log_debug_table(ctx.task, "infer", "batch_child_tasks", child_rows, step=0)
 
         out = {
             "predictions_path": str(predictions_path),
@@ -3426,34 +3560,46 @@ def run(cfg: Any) -> None:
             )
 
         if clearml_enabled:
+            plots_on = plots_enabled(cfg)
+            tables_on = tables_enabled(cfg)
             upload_artifact(ctx, predictions_path.name, predictions_path)
             upload_artifact(ctx, input_preview_path.name, input_preview_path)
-            if interval_plot_path is not None:
-                log_plotly(ctx.task, "infer", "interval_widths", interval_plot_path, step=0)
-            table_input, table_output = _resolve_table_samples(
-                debug_input_sample,
-                debug_output_sample,
-                input_preview_path=input_preview_path,
-                predictions_path=predictions_path,
-            )
-            report_input_output_table(
-                ctx.task,
-                "infer",
-                "input_output_table",
-                table_input,
-                table_output,
-                max_rows=table_settings["max_rows"],
-                max_input_columns=table_settings["max_input_columns"],
-                max_output_columns=table_settings["max_output_columns"],
-                output_path=ctx.output_dir / "input_output_table.png",
-                step=0,
-            )
+            if plots_on and interval_plot_path is not None:
+                report_plotly(
+                    ctx.task,
+                    "infer",
+                    "interval_widths",
+                    interval_plot_path,
+                    iteration=0,
+                    cfg=cfg,
+                )
+            if plots_on and tables_on:
+                table_input, table_output = _resolve_table_samples(
+                    debug_input_sample,
+                    debug_output_sample,
+                    input_preview_path=input_preview_path,
+                    predictions_path=predictions_path,
+                )
+                report_input_output_table(
+                    ctx.task,
+                    "infer",
+                    "input_output_table",
+                    table_input,
+                    table_output,
+                    max_rows=table_settings["max_rows"],
+                    max_input_columns=table_settings["max_input_columns"],
+                    max_output_columns=table_settings["max_output_columns"],
+                    output_path=ctx.output_dir / "input_output_table.png",
+                    iteration=0,
+                    cfg=cfg,
+                )
             _log_debug_samples(
                 ctx,
                 input_sample=debug_input_sample,
                 output_sample=debug_output_sample,
                 input_preview_path=input_preview_path,
                 predictions_path=predictions_path,
+                tables_on=tables_on,
             )
 
         out = {
@@ -3951,34 +4097,46 @@ def run(cfg: Any) -> None:
             )
 
     if clearml_enabled:
+        plots_on = plots_enabled(cfg)
+        tables_on = tables_enabled(cfg)
         upload_artifact(ctx, predictions_path.name, predictions_path)
         upload_artifact(ctx, input_preview_path.name, input_preview_path)
-        if interval_plot_path is not None:
-            log_plotly(ctx.task, "infer", "interval_widths", interval_plot_path, step=0)
-        table_input, table_output = _resolve_table_samples(
-            debug_input_sample,
-            debug_output_sample,
-            input_preview_path=input_preview_path,
-            predictions_path=predictions_path,
-        )
-        report_input_output_table(
-            ctx.task,
-            "infer",
-            "input_output_table",
-            table_input,
-            table_output,
-            max_rows=table_settings["max_rows"],
-            max_input_columns=table_settings["max_input_columns"],
-            max_output_columns=table_settings["max_output_columns"],
-            output_path=ctx.output_dir / "input_output_table.png",
-            step=0,
-        )
+        if plots_on and interval_plot_path is not None:
+            report_plotly(
+                ctx.task,
+                "infer",
+                "interval_widths",
+                interval_plot_path,
+                iteration=0,
+                cfg=cfg,
+            )
+        if plots_on and tables_on:
+            table_input, table_output = _resolve_table_samples(
+                debug_input_sample,
+                debug_output_sample,
+                input_preview_path=input_preview_path,
+                predictions_path=predictions_path,
+            )
+            report_input_output_table(
+                ctx.task,
+                "infer",
+                "input_output_table",
+                table_input,
+                table_output,
+                max_rows=table_settings["max_rows"],
+                max_input_columns=table_settings["max_input_columns"],
+                max_output_columns=table_settings["max_output_columns"],
+                output_path=ctx.output_dir / "input_output_table.png",
+                iteration=0,
+                cfg=cfg,
+            )
         _log_debug_samples(
             ctx,
             input_sample=debug_input_sample,
             output_sample=debug_output_sample,
             input_preview_path=input_preview_path,
             predictions_path=predictions_path,
+            tables_on=tables_on,
         )
 
     out = {

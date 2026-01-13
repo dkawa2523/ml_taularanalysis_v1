@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "status": "success",
+  "degraded": true,
+  "policy": {
+    "fail_policy": {
+      "allow_skipped": true,
+      "allowed_failures": 0,
+      "fail_fast": false,
+      "min_successful_train_tasks": 1
+    },
+    "result": {
+      "successful_train_tasks": 1,
+      "failed_train_tasks": 0,
+      "skipped_train_tasks": 0,
+      "effective_failures": 0,
+      "meets_min_successful_train_tasks": true,
+      "within_allowed_failures": true
+    }
+  },
+  "context": {
+    "usecase_id": "rehearsal_regression_20260112_154022",
+    "project_root": "MFG",
+    "code_identity": {
+      "repository": "https://github.com/dkawa2523/ml_taularanalysis_v1",
+      "branch": "update6-clearml",
+      "commit": "50fd396e885908e85eb8469691bbe83c25c9110a"
+    },
+    "grid_run_id": "fe8f247a46de4d6c8c86df0652df55c3",
+    "pipeline_task": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/99_pipeline",
+      "task_id": "1e5f36183557435e9c86ec4237a78a0c",
+      "clearml_url": "http://localhost:8080/projects/53315be0113746fe8c4909aaff838c1f/experiments/1e5f36183557435e9c86ec4237a78a0c/output/log"
+    }
+  },
+  "execution": {
+    "plan_only": false,
+    "planned_jobs": 1,
+    "executed_jobs": 1,
+    "skipped_due_to_policy": 0,
+    "limit_exceeded": false
+  },
+  "plan_ref": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/99_pipeline",
+    "artifact": "plan.json"
+  },
+  "preprocess_variants": [
+    {
+      "preprocess_variant": "stdscaler_ohe",
+      "status": "success",
+      "processed_dataset_id": "55bb777b2fea4e9e9e2b80bc31d9d7a9",
+      "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+      "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+      "task_id": null,
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/preprocess__stdscaler_ohe/02_preprocess",
+      "reason": null,
+      "error": null
+    }
+  ],
+  "train_tasks": [
+    {
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "ridge",
+      "status": "success",
+      "train_task_id": "f07788060a95420c9dd7dd14e50ec756",
+      "task_id": null,
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model",
+      "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+      "primary_metric": "rmse",
+      "best_score": 0.3133085191754989,
+      "metrics_ref": {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model",
+        "path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/metrics.json"
+      },
+      "reason": null,
+      "error": null,
+      "hpo_run_id": null,
+      "hpo_params": null
+    }
+  ],
+  "ensemble_tasks": [
+    {
+      "preprocess_variant": "stdscaler_ohe",
+      "method": "mean_topk",
+      "status": "skipped",
+      "train_task_id": "d419b4e65aad486db4b00a0a728bad84",
+      "task_id": null,
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/ensemble__stdscaler_ohe/04_train_ensemble",
+      "model_id": null,
+      "primary_metric": "rmse",
+      "best_score": null,
+      "reason": "insufficient_candidates",
+      "error": null
+    }
+  ],
+  "leaderboard": {
+    "status": "success",
+    "task_id": null,
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard",
+    "leaderboard_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard",
+      "path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard/leaderboard.csv"
+    },
+    "recommendation_ref": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard",
+      "path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard/recommendation.json"
+    },
+    "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "recommended_primary_metric": "rmse",
+    "recommended_best_score": 0.3133085191754989,
+    "reason": null,
+    "error": null
+  },
+  "infer": null,
+  "recommendation": {
+    "best_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+    "train_task_ref": "f07788060a95420c9dd7dd14e50ec756",
+    "primary_metric": "rmse",
+    "best_score": 0.3133085191754989,
+    "reason": "Top-ranked by rmse (minimize). require_comparable=True."
+  },
+  "links": {
+    "grid_run_id": "fe8f247a46de4d6c8c86df0652df55c3",
+    "pipeline": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/99_pipeline",
+      "task_id": "1e5f36183557435e9c86ec4237a78a0c",
+      "clearml_url": "http://localhost:8080/projects/53315be0113746fe8c4909aaff838c1f/experiments/1e5f36183557435e9c86ec4237a78a0c/output/log"
+    },
+    "dataset_register": null,
+    "preprocess": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/preprocess__stdscaler_ohe/02_preprocess",
+        "preprocess_variant": "stdscaler_ohe"
+      }
+    ],
+    "train": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/train__stdscaler_ohe__ridge/03_train_model",
+        "task_id": "f07788060a95420c9dd7dd14e50ec756",
+        "clearml_url": "http://localhost:8080/projects/6fecc0f2866e479e9564c764ed3f07cb/experiments/f07788060a95420c9dd7dd14e50ec756/output/log",
+        "preprocess_variant": "stdscaler_ohe",
+        "model_variant": "ridge"
+      }
+    ],
+    "leaderboard": {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/leaderboard/05_leaderboard"
+    },
+    "infer": null,
+    "ensemble": [
+      {
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_154022/grid/fe8f247a46de4d6c8c86df0652df55c3/ensemble__stdscaler_ohe/04_train_ensemble",
+        "preprocess_variant": "stdscaler_ohe"
+      }
+    ]
+  }
+}

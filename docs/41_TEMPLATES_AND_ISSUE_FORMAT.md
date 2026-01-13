@@ -30,12 +30,15 @@
 
 ```bash
 python -m tabular_analysis.ops.manage_clearml_templates --plan --project-root LOCAL
+python -m tabular_analysis.ops.manage_clearml_templates --list --project-root LOCAL
 python -m tabular_analysis.ops.manage_clearml_templates --apply --project-root LOCAL --repo <repo_url> --branch <branch>
+python -m tabular_analysis.ops.manage_clearml_templates --cleanup-obsolete --project-root LOCAL
 python -m tabular_analysis.ops.manage_clearml_templates --validate --project-root LOCAL --repo <repo_url> --branch <branch>
 ```
 
 - `--repo/--branch` は後から変更できる（未指定なら git の origin/HEAD を自動検出）
-- tags は `template:true` / `process:<...>` / `solution:tabular-analysis` を含める
+- template_set の世代は `run.clearml.template_set_id` で切り替える
+- tags は `template:true` / `template_set:<...>` / `process:<...>` / `solution:tabular-analysis` を含める
 - template 探索は tags ベース（task_id 固定はしない）
 
 ## 確認ポイント（チェックリスト）

@@ -1,0 +1,15 @@
+{
+  "strategy": "random",
+  "seed": 42,
+  "test_size": 0.2,
+  "group_column": null,
+  "time_column": null,
+  "train_index": [
+    0,
+    2,
+    3
+  ],
+  "val_index": [
+    1
+  ]
+}

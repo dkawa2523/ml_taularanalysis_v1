@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "degraded": true,
+  "policy": {
+    "fail_policy": {
+      "allow_skipped": true,
+      "allowed_failures": 0,
+      "fail_fast": false,
+      "min_successful_train_tasks": 1
+    },
+    "result": {
+      "successful_train_tasks": 0,
+      "failed_train_tasks": 0,
+      "skipped_train_tasks": 0,
+      "effective_failures": 0,
+      "meets_min_successful_train_tasks": false,
+      "within_allowed_failures": true
+    }
+  },
+  "context": {
+    "usecase_id": "test_dryrun_20260112_091436",
+    "project_root": "MFG",
+    "code_identity": {
+      "repository": "https://github.com/dkawa2523/ml_taularanalysis_v1",
+      "branch": "update6-clearml",
+      "commit": "50fd396e885908e85eb8469691bbe83c25c9110a"
+    },
+    "grid_run_id": "bb407c108616445e8c90be548a8e7a68",
+    "pipeline_task": {
+      "run_dir": "outputs/t094_limit/99_pipeline"
+    }
+  },
+  "execution": {
+    "plan_only": false,
+    "planned_jobs": 2,
+    "executed_jobs": 0,
+    "skipped_due_to_policy": 0,
+    "limit_exceeded": true
+  },
+  "plan_ref": {
+    "run_dir": "outputs/t094_limit/99_pipeline",
+    "artifact": "plan.json"
+  },
+  "preprocess_variants": [],
+  "train_tasks": [],
+  "ensemble_tasks": [],
+  "leaderboard": null,
+  "infer": null,
+  "recommendation": {
+    "best_model_id": null,
+    "train_task_ref": null,
+    "primary_metric": null,
+    "best_score": null,
+    "reason": null
+  },
+  "links": {
+    "grid_run_id": "bb407c108616445e8c90be548a8e7a68",
+    "pipeline": {
+      "run_dir": "outputs/t094_limit/99_pipeline"
+    },
+    "dataset_register": null,
+    "preprocess": [],
+    "train": [],
+    "leaderboard": null,
+    "infer": null
+  }
+}

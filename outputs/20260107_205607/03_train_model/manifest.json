@@ -1,0 +1,29 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "train_model",
+  "created_at": "2026-01-07T11:56:16Z",
+  "inputs": {
+    "processed_dataset_id": "local:0d04abe93431647ef713d37d397e91014a6da5844250b6d4b5979ef608b924a8",
+    "split_hash": "8aa818dc1c1e4aebd0939754d3ecc60c630509aa7f7577f4773a5ea65645cd2e",
+    "recipe_hash": "7887efea9c84c68baea8f1f0f9a255b4f49d119173213d19b1a3ab7afe35670c",
+    "model_variant": "linear_regression",
+    "primary_metric": "rmse",
+    "direction": "minimize",
+    "cv_folds": 5,
+    "seed": 42,
+    "task_type": "regression"
+  },
+  "outputs": {
+    "model_id": "outputs/20260107_205607/03_train_model/model_bundle.joblib",
+    "best_score": 1.099999999999996,
+    "primary_metric": "rmse",
+    "task_type": "regression"
+  },
+  "hashes": {
+    "config_hash": "2f0234028621aa6a49258e4261194e896b33ae116fccf2ce675bd87c5366b2f3",
+    "split_hash": "8aa818dc1c1e4aebd0939754d3ecc60c630509aa7f7577f4773a5ea65645cd2e",
+    "recipe_hash": "7887efea9c84c68baea8f1f0f9a255b4f49d119173213d19b1a3ab7afe35670c"
+  }
+}

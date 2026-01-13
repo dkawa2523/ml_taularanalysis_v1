@@ -1,0 +1,11 @@
+{
+  "processed_dataset_id": "43ab6e3e691e4ac0bdb87e8ac0bf2d77",
+  "processed_dataset_version": "1.0.0",
+  "split_hash": "533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49",
+  "recipe_hash": "4dc5a79344a1fe099c7b2484871c0ee63294a5afa57682652aebd795c2071779",
+  "schema_hash": "71704310929736a64198ea166adbed6310f5c8f7ae900d80661298ae72681160",
+  "processed_dataset_hash": "6b7ae56e1f06389ff6c997b7af937b41665812d5522b950a25d3c5d5334b02c4",
+  "n_rows": 240,
+  "n_features": 5,
+  "preprocess_variant": "stdscaler_ohe"
+}

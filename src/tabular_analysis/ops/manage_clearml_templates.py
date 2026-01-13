@@ -25,6 +25,7 @@ from ..platform_adapter import (
     get_clearml_task_args,
     get_clearml_task_script,
     list_clearml_tasks_by_tags,
+    resolve_clearml_code_ref_mode,
     resolve_clearml_script_spec,
     update_clearml_task_tags,
 )
@@ -33,6 +34,8 @@ try:
     from omegaconf import OmegaConf  # type: ignore
 except Exception:  # pragma: no cover - optional in some environments
     OmegaConf = None
+
+_OBSOLETE_TAGS = {"template:deprecated", "obsolete:true"}
 
 
 def _resolve_repo_root() -> Path:
@@ -76,27 +79,43 @@ def _args_to_map(args: Iterable[str]) -> dict[str, str]:
     return parsed
 
 
-def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
+def _find_tag(tags: Iterable[str], prefix: str) -> str | None:
+    for tag in tags:
+        if str(tag).startswith(prefix):
+            return str(tag)
+    return None
+
+
+def _is_obsolete(tags: Iterable[str]) -> bool:
+    return any(tag in _OBSOLETE_TAGS for tag in tags)
+
+
+def _task_script_summary(script: dict[str, Any]) -> str:
+    repo = str(script.get("repository") or "none")
+    branch = str(script.get("branch") or "none")
+    entry = str(script.get("entry_point") or script.get("entrypoint") or "none")
+    return f"repo={repo} branch={branch} entry_point={entry}"
+
+
+def _load_code_ref_mode(repo_root: Path, override: str | None) -> str:
     if override:
-        return str(override)
+        return resolve_clearml_code_ref_mode(None, override=str(override))
     if OmegaConf is None:
-        return "branch_head"
+        return "branch"
     run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
     if not run_cfg_path.exists():
-        return "branch_head"
+        return "branch"
     try:
         cfg = OmegaConf.load(run_cfg_path)
     except Exception:
-        return "branch_head"
-    clearml_cfg = getattr(cfg, "clearml", None)
-    value = getattr(clearml_cfg, "code_version_mode", None)
-    return str(value) if value else "branch_head"
+        return "branch"
+    return resolve_clearml_code_ref_mode(cfg)
 
 
 def _build_script_cfg(version_mode: str | None) -> dict[str, Any]:
-    cfg: dict[str, Any] = {"run": {"clearml": {}}}
+    cfg: dict[str, Any] = {"run": {"clearml": {"code_ref": {}}}}
     if version_mode:
-        cfg["run"]["clearml"]["code_version_mode"] = version_mode
+        cfg["run"]["clearml"]["code_ref"]["mode"] = version_mode
     return cfg
 
 
@@ -119,12 +138,16 @@ def _resolve_target_script_spec(
     )
 
 
-def _collect_candidate_tasks(target: template_manager.TemplateTarget) -> list[Any]:
+def _collect_candidate_tasks(
+    target: template_manager.TemplateTarget,
+    *,
+    order_by: Iterable[str] | None = None,
+) -> list[Any]:
     candidates = template_manager.build_tag_candidates(target.tags, target.name)
     tasks: list[Any] = []
     seen: set[str] = set()
     for tags in candidates:
-        for task in list_clearml_tasks_by_tags(tags, project_name=target.project_name):
+        for task in list_clearml_tasks_by_tags(tags, project_name=target.project_name, order_by=order_by):
             task_id = clearml_task_id(task)
             if task_id and task_id in seen:
                 continue
@@ -138,7 +161,7 @@ def _deprecate_template_task(task_id: str, *, reason: str) -> None:
     try:
         update_clearml_task_tags(
             task_id,
-            add=["template:deprecated"],
+            add=["template:deprecated", "obsolete:true"],
             remove=["template:true"],
         )
         print(f"[deprecated] {task_id}: {reason}")
@@ -156,6 +179,7 @@ def _print_plan(
     print(f"project_root: {ctx.project_root}")
     print(f"usecase_id: {ctx.usecase_id}")
     print(f"schema_version: {ctx.schema_version}")
+    print(f"template_set_id: {ctx.template_set_id}")
     print("")
     for target in targets:
         print(f"- {target.name}")
@@ -181,18 +205,19 @@ def _apply_templates(
             branch=branch,
             version_mode=version_mode,
         )
-        candidate_tasks = _collect_candidate_tasks(target)
+        candidate_tasks = _collect_candidate_tasks(target, order_by=["-last_update"])
         selected_task_id: str | None = None
+        superseded_task_ids: list[str] = []
         for task in candidate_tasks:
             task_id = clearml_task_id(task)
             if not task_id:
                 continue
             tags = clearml_task_tags(task)
-            status = (clearml_task_status_from_obj(task) or "").lower()
-            if status == "failed":
-                _deprecate_template_task(task_id, reason="status=failed")
+            if _is_obsolete(tags):
                 continue
-            if "template:deprecated" in tags:
+            status = (clearml_task_status_from_obj(task) or "").lower()
+            if status and status != "created":
+                _deprecate_template_task(task_id, reason=f"status={status}")
                 continue
             script = clearml_task_script(task)
             missing_tags = [tag for tag in target.tags if tag not in tags]
@@ -249,6 +274,7 @@ def _apply_templates(
                     print(f"[skip] {target.name}: no changes")
             else:
                 print(f"[info] {target.name}: additional template found {task_id}")
+                superseded_task_ids.append(task_id)
 
         if selected_task_id is None:
             task_id = create_clearml_task(
@@ -273,6 +299,56 @@ def _apply_templates(
                 diff="",
             )
             print(f"[create] {target.name}: {task_id}")
+        else:
+            for task_id in superseded_task_ids:
+                _deprecate_template_task(task_id, reason="superseded by current template_set")
+
+
+def _list_templates(targets: list[template_manager.TemplateTarget]) -> None:
+    print("ClearML template list")
+    for target in targets:
+        print(f"- {target.name}")
+        candidate_tasks = _collect_candidate_tasks(target, order_by=["-last_update"])
+        if not candidate_tasks:
+            print("  [missing] no template tasks found")
+            continue
+        for task in candidate_tasks:
+            task_id = clearml_task_id(task) or "unknown"
+            status = clearml_task_status_from_obj(task) or "unknown"
+            tags = clearml_task_tags(task)
+            template_set = _find_tag(tags, "template_set:") or "template_set:unknown"
+            state = "obsolete" if _is_obsolete(tags) else "candidate"
+            script = clearml_task_script(task)
+            print(
+                f"  [{state}] {task_id} status={status} {template_set} {_task_script_summary(script)}"
+            )
+
+
+def _cleanup_obsolete_templates(targets: list[template_manager.TemplateTarget]) -> None:
+    print("ClearML template cleanup")
+    for target in targets:
+        current_set = _find_tag(target.tags, "template_set:")
+        if not current_set:
+            print(f"- {target.name}: template_set tag is missing; skipped")
+            continue
+        base_tags = ["template:true", f"process:{target.name}"]
+        for prefix in ("usecase:", "schema:", "solution:"):
+            tag = _find_tag(target.tags, prefix)
+            if tag:
+                base_tags.append(tag)
+        tasks = list_clearml_tasks_by_tags(base_tags, project_name=target.project_name)
+        for task in tasks:
+            task_id = clearml_task_id(task)
+            if not task_id:
+                continue
+            tags = clearml_task_tags(task)
+            if _is_obsolete(tags):
+                continue
+            task_set = _find_tag(tags, "template_set:")
+            if task_set == current_set:
+                continue
+            reason = "template_set missing" if not task_set else f"template_set={task_set}"
+            _deprecate_template_task(task_id, reason=reason)
 
 
 def _validate_templates(
@@ -303,7 +379,7 @@ def _validate_templates(
             if not task_id:
                 continue
             tags = clearml_task_tags(task)
-            if "template:deprecated" in tags:
+            if _is_obsolete(tags):
                 continue
             errors: list[str] = []
             missing_tags = [tag for tag in target.tags if tag not in tags]
@@ -340,29 +416,37 @@ def main(argv: Optional[list[str]] = None) -> int:
     )
     parser.add_argument("--spec", default=str(repo_root / "conf" / "clearml" / "templates.yaml"))
     parser.add_argument("--plan", action="store_true", help="Print template list (no ClearML needed).")
+    parser.add_argument("--list", action="store_true", help="List template candidates on ClearML.")
     parser.add_argument("--apply", action="store_true", help="Create/update template tasks on ClearML.")
     parser.add_argument("--validate", action="store_true", help="Validate template tasks on ClearML.")
+    parser.add_argument(
+        "--cleanup-obsolete",
+        action="store_true",
+        help="Tag obsolete templates that are outside the current template_set.",
+    )
     parser.add_argument("--project-root", default=None, help="Override ClearML project root.")
     parser.add_argument("--usecase-id", default=None, help="Override usecase_id placeholder.")
     parser.add_argument("--schema-version", default=None, help="Override schema_version placeholder.")
+    parser.add_argument("--template-set-id", default=None, help="Override template_set_id placeholder.")
     parser.add_argument("--repo", default=None, help="Override ClearML repository URL.")
     parser.add_argument("--branch", default=None, help="Override ClearML repository branch.")
     parser.add_argument(
         "--code-version-mode",
         default=None,
-        help="Override run.clearml.code_version_mode (branch_head|pin_commit).",
+        help="Override run.clearml.code_ref.mode (branch|commit|none; legacy: branch_head|pin_commit).",
     )
 
     args = parser.parse_args(argv)
 
-    if not args.plan and not args.apply and not args.validate:
-        parser.error("Select one of --plan, --apply, --validate")
+    if not args.plan and not args.list and not args.apply and not args.validate and not args.cleanup_obsolete:
+        parser.error("Select one of --plan, --list, --apply, --validate, --cleanup-obsolete")
 
     defaults = template_manager.load_default_context(repo_root)
     ctx = template_manager.TemplateContext(
         project_root=str(args.project_root or defaults.project_root),
         usecase_id=str(args.usecase_id or defaults.usecase_id),
         schema_version=str(args.schema_version or defaults.schema_version),
+        template_set_id=str(args.template_set_id or defaults.template_set_id),
     )
     spec_path = Path(args.spec)
     if not spec_path.is_absolute():
@@ -380,20 +464,21 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     repo = args.repo or detect_git_repository_url(repo_root)
     branch = args.branch or detect_git_branch(repo_root)
-    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
+    version_mode = _load_code_ref_mode(repo_root, args.code_version_mode)
     if not repo:
         print("Warning: repository not detected; pass --repo for agent clone.")
-    print(f"code_version_mode: {version_mode}")
+    print(f"code_ref.mode: {version_mode}")
 
+    ok = True
+    if args.list:
+        _list_templates(targets)
     if args.apply:
         _apply_templates(targets, repo=repo, branch=branch, version_mode=version_mode)
-        return 0
-
+    if args.cleanup_obsolete:
+        _cleanup_obsolete_templates(targets)
     if args.validate:
         ok = _validate_templates(targets, repo=repo, branch=branch, version_mode=version_mode)
-        return 0 if ok else 1
-
-    return 0
+    return 0 if ok else 1
 
 
 if __name__ == "__main__":

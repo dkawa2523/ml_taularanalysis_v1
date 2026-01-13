@@ -42,3 +42,9 @@ templates:
     task_name: promote_model
     entrypoint: python tools/clearml_entrypoint.py task=promote_model
     updated_at: '2026-01-10T17:33:38Z'
+  train_ensemble:
+    task_id: c4c600f354004a99aa1d36f85f800224
+    project_name: MFG/TabularAnalysis/04_train_ensemble
+    task_name: train_ensemble
+    entrypoint: python tools/clearml_entrypoint.py task=train_ensemble
+    updated_at: '2026-01-12T23:06:09Z'

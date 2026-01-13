@@ -1,0 +1,73 @@
+{
+  "status": "failure",
+  "error": null,
+  "timestamp_utc": "2026-01-12T14:54:55Z",
+  "usecase_id": "rehearsal_regression_20260112_145455",
+  "execution": "logging",
+  "task_type": "regression",
+  "models": "ridge",
+  "model_variants": [
+    "ridge"
+  ],
+  "preprocess_variants": [
+    "stdscaler_ohe"
+  ],
+  "repo_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis",
+  "out_root": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner",
+  "output_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/outputs/rehearsal_regression_20260112_145455",
+  "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out_runner/data/rehearsal_regression_20260112_145455/toy_regression.csv",
+  "raw_dataset_id": "b1a09a98b9764fd8a2524432f46e3242",
+  "processed_dataset_id": "ff1c00398cbe4ea09a3ce5eb3a49559a",
+  "pipeline_task_id": "a07566067dca4c0198e02d9c66527879",
+  "train_task_ids": [
+    "a07566067dca4c0198e02d9c66527879"
+  ],
+  "preprocess_task_ids": [],
+  "leaderboard_task_id": null,
+  "clearml": {
+    "enabled": true,
+    "execution": "logging",
+    "queue_name": null,
+    "project_root": "MFG",
+    "warning": null
+  },
+  "clearml_tasks": {
+    "leaderboard": [
+      {
+        "task_id": "a07566067dca4c0198e02d9c66527879",
+        "status": "completed",
+        "name": "pipeline"
+      }
+    ],
+    "preprocess": [
+      {
+        "task_id": "ff1c00398cbe4ea09a3ce5eb3a49559a",
+        "status": "completed",
+        "name": "processed__rehearsal_regression_20260112_145455__stdscaler_ohe__533ee5f18057b68a4f2a25c509059eaac051c9d8523b39a871fba1b698343a49__vv1"
+      }
+    ],
+    "dataset_register": [
+      {
+        "task_id": "a9812135a9c942d1a6c7866ee81efe76",
+        "status": "completed",
+        "name": "dataset_register"
+      },
+      {
+        "task_id": "b1a09a98b9764fd8a2524432f46e3242",
+        "status": "completed",
+        "name": "rehearsal_regression_20260112_145455__raw__toy_regression"
+      }
+    ]
+  },
+  "verification": {
+    "status": "failure",
+    "errors": [
+      "missing ClearML tasks for processes: pipeline, train_model, train_ensemble"
+    ],
+    "warnings": [],
+    "processed_dataset_id": "ff1c00398cbe4ea09a3ce5eb3a49559a",
+    "project_prefix": "MFG/TabularAnalysis/rehearsal_regression_20260112_145455",
+    "pipeline_task_id": "a07566067dca4c0198e02d9c66527879",
+    "clearml_checked": true
+  }
+}

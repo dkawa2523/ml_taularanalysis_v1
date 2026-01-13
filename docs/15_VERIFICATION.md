@@ -94,7 +94,9 @@ python tools/tests/check_optional_models.py --models lgbm,xgboost,catboost,tabpf
 ClearML の設定（`clearml.conf` / 環境変数 / API key 等）が完了している場合、pipeline を ClearML 有効で実行できます。
 
 ```bash
-python -m tabular_analysis.cli task=pipeline run.clearml.enabled=true
+python -m tabular_analysis.cli task=pipeline \
+  run.clearml.enabled=true run.clearml.execution=logging \
+  data.raw_dataset_id=<RAW_DATASET_ID>
 ```
 
 ---

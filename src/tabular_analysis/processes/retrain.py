@@ -188,9 +188,8 @@ def _ensure_run_id(cfg: Any, path: str) -> str:
 
 
 def _project_name(cfg: Any, stage: str) -> str:
-    project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root")) or "MFG"
     usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
-    return build_project_name(project_root, usecase_id, stage)
+    return build_project_name(cfg, stage=stage, usecase_id=usecase_id)
 
 
 def _base_output_dir(cfg: Any) -> Path:

@@ -108,7 +108,7 @@ def _check_platform(cfg: Any | None, report: DoctorReport) -> None:
 def _clearml_project_name(cfg: Any) -> str:
     stage = _cfg_select(cfg, "task.stage", "doctor")
     identity = resolve_clearml_identity(cfg)
-    return build_project_name(identity.project_root, identity.usecase_id, stage)
+    return build_project_name(cfg, stage=stage, usecase_id=identity.usecase_id)
 
 
 def _check_clearml_queue(queue_name: str, report: DoctorReport) -> None:
@@ -174,6 +174,11 @@ def _check_clearml(cfg: Any, report: DoctorReport) -> None:
     execution = str(_cfg_select(cfg, "run.clearml.execution", "local"))
     queue_name = _cfg_select(cfg, "run.clearml.queue_name")
     clone_from_task_id = _cfg_select(cfg, "run.clearml.clone_from_task_id")
+    code_ref_mode = platform_adapter.resolve_clearml_code_ref_mode(cfg)
+
+    if execution in ("agent", "clone", "pipeline_controller", "pipeline_controller_local"):
+        if code_ref_mode == "none":
+            report.error("run.clearml.code_ref.mode=none is not allowed for agent/pipeline execution.")
 
     if execution in ("agent", "clone"):
         if not queue_name:

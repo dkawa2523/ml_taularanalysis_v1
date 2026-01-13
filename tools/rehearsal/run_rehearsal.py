@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import platform as platform_mod
 import re
 import shlex
@@ -125,6 +126,7 @@ def _build_pipeline_command(
     py: str,
     output_dir: Path,
     dataset_path: Path,
+    raw_dataset_id: str,
     usecase_id: str,
 ) -> list[str]:
     cmd = [
@@ -132,6 +134,36 @@ def _build_pipeline_command(
         "-m",
         "tabular_analysis.cli",
         "task=pipeline",
+        f"run.output_dir={output_dir}",
+        f"run.usecase_id={usecase_id}",
+        f"data.raw_dataset_id={raw_dataset_id}",
+        "data.target_column=target",
+    ]
+    if raw_dataset_id.startswith("local:"):
+        cmd.append(f"data.dataset_path={dataset_path}")
+    if mode == "local":
+        cmd.append("run.clearml.enabled=false")
+    elif mode == "logging":
+        cmd.append("run.clearml.enabled=true")
+        cmd.append("run.clearml.execution=logging")
+    else:
+        raise ValueError(f"Unsupported mode: {mode}")
+    return cmd
+
+
+def _build_dataset_register_command(
+    *,
+    mode: str,
+    py: str,
+    output_dir: Path,
+    dataset_path: Path,
+    usecase_id: str,
+) -> list[str]:
+    cmd = [
+        py,
+        "-m",
+        "tabular_analysis.cli",
+        "task=dataset_register",
         f"run.output_dir={output_dir}",
         f"run.usecase_id={usecase_id}",
         f"data.dataset_path={dataset_path}",
@@ -171,22 +203,49 @@ def main() -> int:
     output_dir = out_root / args.mode / usecase_id
 
     py = sys.executable
-    cmd = _build_pipeline_command(
+    dataset_cmd = _build_dataset_register_command(
         mode=args.mode,
         py=py,
         output_dir=output_dir,
         dataset_path=dataset_path,
         usecase_id=usecase_id,
     )
-
-    commands = [cmd]
     result = "dry-run (not executed)" if args.dry_run else "success"
     error: str | None = None
-
-    try:
-        if not args.dry_run:
+    raw_dataset_id = "<RAW_DATASET_ID>"
+    if args.dry_run and args.mode == "local":
+        raw_dataset_id = "local:<RAW_DATASET_ID>"
+    if not args.dry_run:
+        try:
             _make_toy_csv(dataset_path)
             output_dir.mkdir(parents=True, exist_ok=True)
+            _run(dataset_cmd, cwd=repo, dry_run=False)
+            dataset_out = json.loads(
+                (output_dir / "01_dataset_register" / "out.json").read_text(encoding="utf-8")
+            )
+            raw_dataset_id = str(dataset_out.get("raw_dataset_id") or "").strip()
+        except Exception as exc:
+            result = "failure"
+            error = _summarize_error(exc)
+            raw_dataset_id = ""
+    if not raw_dataset_id:
+        result = "failure"
+        error = error or "dataset_register did not return raw_dataset_id."
+
+    cmd = _build_pipeline_command(
+        mode=args.mode,
+        py=py,
+        output_dir=output_dir,
+        dataset_path=dataset_path,
+        raw_dataset_id=raw_dataset_id,
+        usecase_id=usecase_id,
+    )
+
+    commands = [dataset_cmd, cmd]
+    error = error if result == "failure" else None
+
+    try:
+        if not args.dry_run and result != "failure":
             _run(cmd, cwd=repo, dry_run=False)
     except Exception as exc:
         result = "failure"

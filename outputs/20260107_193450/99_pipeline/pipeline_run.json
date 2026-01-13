@@ -1,0 +1,46 @@
+{
+  "grid_run_id": "01ceee58030049b1b1c6c4ae00f61328",
+  "plan_only": true,
+  "planned_jobs": 1,
+  "executed_jobs": 0,
+  "skipped_due_to_policy": 0,
+  "dataset_register_ref": null,
+  "preprocess_ref": [],
+  "train_refs": [],
+  "leaderboard_ref": null,
+  "infer_ref": null,
+  "grid": {
+    "preprocess_variants": [
+      "stdscaler_ohe"
+    ],
+    "model_variants": [
+      "ridge"
+    ],
+    "max_jobs": 50,
+    "max_hpo_trials": 0,
+    "hpo": {
+      "enabled": false,
+      "params": {
+        "ridge": {
+          "alpha": [
+            0.1,
+            1.0,
+            10.0
+          ]
+        }
+      }
+    }
+  },
+  "policy": {
+    "limits": {
+      "max_jobs": 50,
+      "max_models": 10,
+      "max_hpo_trials": 0
+    },
+    "selection": {
+      "calibration": false,
+      "uncertainty": false,
+      "ci": false
+    }
+  }
+}

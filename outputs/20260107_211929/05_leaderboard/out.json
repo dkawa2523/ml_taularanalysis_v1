@@ -1,0 +1,12 @@
+{
+  "leaderboard_csv": "outputs/20260107_211929/05_leaderboard/leaderboard.csv",
+  "recommended_train_task_id": null,
+  "recommended_train_task_ref": null,
+  "recommended_model_id": null,
+  "recommended_best_score": null,
+  "recommended_primary_metric": "rmse",
+  "recommended_composite_score": null,
+  "ranking_score_key": "composite_score",
+  "ranking_direction": "maximize",
+  "excluded_count": 0
+}

@@ -1,0 +1,33 @@
+{
+  "grid_run_id": "20a96f5aff9049a0ab4d7db699c0a2a9",
+  "pipeline": {
+    "run_dir": "outputs/20260107_123642/99_pipeline",
+    "task_id": "f89bc8a88b624308932dfdf6a895ef28",
+    "clearml_url": "http://localhost:8080/projects/27ce19b596d34536a91f14ef5cd4bab5/experiments/f89bc8a88b624308932dfdf6a895ef28/output/log"
+  },
+  "dataset_register": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_123642/grid/20a96f5aff9049a0ab4d7db699c0a2a9/dataset_register/01_dataset_register"
+  },
+  "preprocess": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_123642/grid/20a96f5aff9049a0ab4d7db699c0a2a9/preprocess__stdscaler_ohe/02_preprocess",
+      "preprocess_variant": "stdscaler_ohe"
+    }
+  ],
+  "train": [
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_123642/grid/20a96f5aff9049a0ab4d7db699c0a2a9/train__stdscaler_ohe__logistic_regression/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "logistic_regression"
+    },
+    {
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_123642/grid/20a96f5aff9049a0ab4d7db699c0a2a9/train__stdscaler_ohe__random_forest/03_train_model",
+      "preprocess_variant": "stdscaler_ohe",
+      "model_variant": "random_forest"
+    }
+  ],
+  "leaderboard": {
+    "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/outputs/20260107_123642/grid/20a96f5aff9049a0ab4d7db699c0a2a9/leaderboard/05_leaderboard"
+  },
+  "infer": null
+}

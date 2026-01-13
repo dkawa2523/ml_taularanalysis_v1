@@ -1,0 +1,23 @@
+{
+  "schema_version": "v1",
+  "code_version": "8532731265a64875057930c0ad877fb3264a1eb5",
+  "platform_version": "0.1.0",
+  "process": "infer",
+  "created_at": "2026-01-07T13:37:43Z",
+  "inputs": {
+    "model_id": null,
+    "train_task_id": null,
+    "mode": "single",
+    "input_path": null,
+    "dry_run": true
+  },
+  "outputs": {
+    "predictions_path": "outputs/20260107_223743/04_infer/prediction.json",
+    "input_preview_path": "outputs/20260107_223743/04_infer/input_preview.json"
+  },
+  "hashes": {
+    "config_hash": "013505bdd1a620d09b459335ba613bb8adbfb771a8b9ea170d39e590c8f065d3",
+    "split_hash": "dry_run",
+    "recipe_hash": "dry_run"
+  }
+}
