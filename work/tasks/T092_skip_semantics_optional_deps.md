@@ -60,3 +60,8 @@
 - `python -m compileall -q src`
 - （依存が無い状態を模擬して）任意のモデルを `requires` に入れて SKIP になることを確認
 - toyデータで、カテゴリ列無しのデータに OHE 前処理を指定して SKIP になることを確認
+
+---
+
+## Update (2026-01-13)
+- SKIP 正規化は未統一のため、Phase 2 (T101) で pipeline v2 / fail_policy と合わせて実装する

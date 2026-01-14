@@ -219,10 +219,16 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--repo", type=str, default=None, help="Override expected repository URL.")
     parser.add_argument("--branch", type=str, default=None, help="Override expected branch.")
     parser.add_argument(
+        "--code-ref-mode",
+        type=str,
+        default=None,
+        help="Override run.clearml.code_ref.mode (branch|commit|none).",
+    )
+    parser.add_argument(
         "--code-version-mode",
         type=str,
         default=None,
-        help="Override run.clearml.code_version_mode (branch_head|pin_commit).",
+        help="Override run.clearml.code_version_mode (legacy: branch_head|pin_commit).",
     )
     parser.add_argument("--queue", action="append", default=[], help="Queue name to scan for stale tasks.")
     parser.add_argument("--force", action="store_true", help="Enable destructive actions (not used).")
@@ -238,7 +244,7 @@ def main(argv: Optional[list[str]] = None) -> int:
         cfg,
         repo_override=args.repo,
         branch_override=args.branch,
-        version_mode_override=args.code_version_mode,
+        version_mode_override=args.code_ref_mode or args.code_version_mode,
     )
 
     if args.queue:
@@ -247,7 +253,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                 cfg,
                 repo_override=args.repo,
                 branch_override=args.branch,
-                version_mode_override=args.code_version_mode,
+                version_mode_override=args.code_ref_mode or args.code_version_mode,
             )
         except Exception as exc:
             print(f"[queue] failed to resolve script spec: {exc}")

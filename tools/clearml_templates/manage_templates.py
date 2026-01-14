@@ -75,7 +75,10 @@ def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
         return "branch_head"
     cfg = OmegaConf.load(run_cfg_path)
     clearml_cfg = getattr(cfg, "clearml", None)
-    value = getattr(clearml_cfg, "code_version_mode", None)
+    code_ref = getattr(clearml_cfg, "code_ref", None)
+    value = getattr(code_ref, "mode", None) if code_ref is not None else None
+    if not value:
+        value = getattr(clearml_cfg, "code_version_mode", None)
     return str(value) if value else "branch_head"
 
 
@@ -302,7 +305,7 @@ def _apply_templates(
     for spec in templates:
         module, script, entry_args = _parse_entrypoint(spec.entrypoint)
         entry_point = f"-m {module}" if module else script
-        spec_cfg = {"run": {"clearml": {"code_version_mode": version_mode}}}
+        spec_cfg = {"run": {"clearml": {"code_ref": {"mode": version_mode}}}}
         script_spec = platform_adapter.resolve_clearml_script_spec(
             spec_cfg,
             entry_point_override=entry_point,
@@ -413,6 +416,7 @@ def main() -> int:
     parser.add_argument("--schema-version", default=None)
     parser.add_argument("--repo", default=None)
     parser.add_argument("--branch", default=None)
+    parser.add_argument("--code-ref-mode", default=None)
     parser.add_argument("--code-version-mode", default=None)
 
     args = parser.parse_args()
@@ -440,7 +444,7 @@ def main() -> int:
         return 0
 
     repo_url = args.repo or _detect_repo_url(repo_root)
-    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
+    version_mode = _load_code_version_mode(repo_root, args.code_ref_mode or args.code_version_mode)
     print(f"code_version_mode: {version_mode}")
     if args.apply:
         _apply_templates(

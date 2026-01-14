@@ -50,3 +50,8 @@
 
 ## Verification（runner 側で実行）
 - `python tools/tests/verify_all.py --quick`
+
+---
+
+## Update (2026-01-13)
+- `smoke_local.py` の pipeline 実行で `data.raw_dataset_id` を明示し、契約に沿った入力に調整した

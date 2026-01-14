@@ -77,3 +77,8 @@
 - `python -m compileall -q src`
 - `python -m tabular_analysis.doctor`（存在するなら）
 - 既存の最小 pipeline dry-run/起動コマンドを1つ（プロジェクト既定の手順に合わせる）
+
+---
+
+## Update (2026-01-13)
+- pipeline v2 スキーマは未導入のため、Phase 2 (T101) で conf 追加から着手

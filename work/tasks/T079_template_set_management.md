@@ -60,3 +60,9 @@
 ## 実装メモ（重要）
 - ClearML の制約で failed task の script は更新できない。置換（create new）が基本戦略。
 - 既存の `conf/clearml/templates.yaml` に既に `template:true` があるので、そこに `template_set:` を追加するだけで効果が出る。
+
+---
+
+## Update (2026-01-13)
+- project_layout 導入により template project 名が UI 契約の group 名とズレるため再点検が必要
+- refactor plan では Phase 1 で template の project 名/タグ整合を実施（T101）

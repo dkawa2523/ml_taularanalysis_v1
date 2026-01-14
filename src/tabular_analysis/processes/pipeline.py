@@ -677,7 +677,7 @@ def _stage_dir(run_root: Path, task_name: str) -> Path:
 def _clearml_project(cfg: Any, stage: str) -> str:
     project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root")) or "MFG"
     usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
-    return build_project_name(project_root, usecase_id, stage)
+    return build_project_name(project_root, usecase_id, stage, cfg=cfg)
 
 
 def _load_json(path: Path) -> dict[str, Any]:

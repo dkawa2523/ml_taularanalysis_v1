@@ -55,3 +55,9 @@
 
 ## テスト
 - `python -m compileall -q tools`（最低限）
+
+---
+
+## Update (2026-01-13)
+- UI audit runner 未実装。T087/T096 と合わせて Phase 1 (T101) で追加予定
+- `tools/tests/rehearsal_verify_clearml_ui.py` を追加（usecase tag で構造/section/version_num を検査）

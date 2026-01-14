@@ -398,8 +398,12 @@ def _resolve_clearml_entrypoint(
 
 
 def resolve_clearml_code_reference(cfg: Any) -> tuple[str | None, str | None]:
-    repo_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_repository"))
-    branch_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_branch"))
+    repo_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_ref.repository"))
+    branch_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_ref.branch"))
+    if repo_value is None:
+        repo_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_repository"))
+    if branch_value is None:
+        branch_value = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_branch"))
     repo_root = _resolve_repo_root()
     if repo_value and repo_value.lower() == "auto":
         repo_value = detect_git_repository_url(repo_root)
@@ -419,7 +423,11 @@ def _resolve_clearml_entrypoint_override(cfg: Any) -> str | None:
 
 
 def _resolve_clearml_code_version_mode(cfg: Any, *, override: str | None = None) -> str:
-    text = _normalize_code_ref(override) or _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_version_mode"))
+    text = _normalize_code_ref(override) or _normalize_code_ref(
+        _cfg_value(cfg, "run.clearml.code_ref.mode")
+    )
+    if text is None:
+        text = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_version_mode"))
     if not text:
         return "branch_head"
     lowered = text.lower()
@@ -427,6 +435,8 @@ def _resolve_clearml_code_version_mode(cfg: Any, *, override: str | None = None)
         return "branch_head"
     if lowered in {"pin_commit", "commit", "pinned"}:
         return "pin_commit"
+    if lowered in {"none", "off", "disabled"}:
+        return "none"
     return "branch_head"
 
 
@@ -437,11 +447,16 @@ def _resolve_clearml_version_num(
 ) -> tuple[str, str | None]:
     mode = _resolve_clearml_code_version_mode(cfg, override=version_mode_override)
     if mode == "pin_commit":
+        commit_override = _normalize_code_ref(_cfg_value(cfg, "run.clearml.code_ref.commit"))
+        if commit_override and commit_override.lower() != "auto":
+            return mode, commit_override
         repo_root = _resolve_repo_root()
         commit = _run_git_command(["git", "-C", str(repo_root), "rev-parse", "HEAD"])
         if not commit:
             raise PlatformAdapterError("Failed to resolve git commit for pin_commit.")
         return mode, commit
+    if mode == "none":
+        return mode, None
     return mode, ""
 
 
@@ -530,6 +545,8 @@ def clearml_script_mismatches(spec: ClearMLScriptSpec, script: Mapping[str, Any]
     if spec.version_policy == "branch_head":
         if actual_version:
             errors.append(f"version_num mismatch: {actual_version}")
+    elif spec.version_policy == "none":
+        return errors
     elif spec.version_policy == "pin_commit":
         expected_version = normalize_clearml_version_num(spec.version_num)
         if not _commit_matches(expected_version, actual_version):
@@ -965,6 +982,12 @@ def init_task_context(
     task_name_value = _cfg_value(cfg, "run.clearml.task_name") or task_name
     output_dir = resolve_output_dir(cfg, stage)
     output_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        from .clearml.ui_logger import configure_reporting
+
+        configure_reporting(cfg)
+    except Exception:
+        pass
 
     if not is_clearml_enabled(cfg):
         ctx = TaskContext(

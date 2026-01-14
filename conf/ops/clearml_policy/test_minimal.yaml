@@ -1,4 +1,5 @@
 # @package run.clearml.policy
 name: test_minimal
-tags: []
+tags:
+  - "solution:tabular-analysis"
 properties: {}

@@ -80,3 +80,10 @@
 - 既に `platform_adapter.py` に `set_script` 周りの処理がある（grep で確認済み）
 - `manage_clearml_templates.py` も repository/branch を扱っているので、テンプレ側も必ず同じ規約に統一する
 - `docs/70_CHATGPT_HANDOFF.md` に追加改良がある前提なので、既存の fix を壊さない（最小差分）
+
+---
+
+## Update (2026-01-13)
+- HyperParameters 側は `run.clearml.code_ref.*` の alias を追加済み（実装は未統一）
+- refactor plan では Phase 1 の最優先（T101）
+- conf/run/base.yaml に `run.clearml.code_ref` を追加し、adapter/診断/テンプレ操作で code_ref を参照するように統一

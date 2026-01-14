@@ -63,6 +63,11 @@ python -m tabular_analysis.ops.print_clearml_identity --help
 python tools/tests/smoke_local.py --until pipeline
 ```
 
+---
+
+## Update (2026-01-13)
+- `test_minimal` / `test_richer` に `solution:tabular-analysis` を追加し、UI チェックリストの前提に合わせた
+
 ## Notes for Codex
 
 - DONE条件：verificationが全て成功し、`RESULT: DONE (nonce: <nonce>)` を末尾に記載すること。

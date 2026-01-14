@@ -65,6 +65,19 @@ def _format_value(value: str) -> str:
     return _quote(text) if _needs_quote(text) else text
 
 
+def _normalize_version_mode(value: str | None) -> str:
+    if not value:
+        return "branch_head"
+    lowered = str(value).strip().lower()
+    if lowered in {"branch_head", "branch", "head"}:
+        return "branch_head"
+    if lowered in {"pin_commit", "commit", "pinned"}:
+        return "pin_commit"
+    if lowered in {"none", "off", "disabled"}:
+        return "none"
+    return "branch_head"
+
+
 def _load_yaml(path: Path) -> Any:
     if not path.exists():
         raise FileNotFoundError(f"Missing config: {path}")
@@ -83,7 +96,11 @@ def _print_script_check(script: dict[str, Any], cfg: Any) -> int:
     expected_branch = platform_adapter.detect_git_branch(_repo_root()) or ""
     expected_entry = "tools/clearml_entrypoint.py"
     clearml_cfg = getattr(getattr(cfg, "run", None), "clearml", None)
-    version_mode = str(getattr(clearml_cfg, "code_version_mode", None) or "branch_head")
+    code_ref = getattr(clearml_cfg, "code_ref", None)
+    version_mode_raw = getattr(code_ref, "mode", None) if code_ref is not None else None
+    if not version_mode_raw:
+        version_mode_raw = getattr(clearml_cfg, "code_version_mode", None)
+    version_mode = _normalize_version_mode(version_mode_raw)
 
     print("pipeline script:")
     print(f"  repository: {repo or 'none'}")
@@ -93,7 +110,7 @@ def _print_script_check(script: dict[str, Any], cfg: Any) -> int:
     print(f"  expected repo: {expected_repo or 'none'}")
     print(f"  expected branch: {expected_branch or 'none'}")
     print(f"  expected entry_point: {expected_entry}")
-    print(f"  code_version_mode: {version_mode}")
+    print(f"  code_version_mode: {version_mode_raw or 'branch_head'}")
 
     exit_code = 0
     if expected_repo and repo != expected_repo:

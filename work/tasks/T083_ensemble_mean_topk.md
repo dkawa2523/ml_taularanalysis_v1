@@ -138,3 +138,9 @@ ClearML enabled の場合は `ensemble_spec.json` を artifact として upload�
   - preprocess 1種 + train 複数モデル（うち1つは意図的に落としても良い）
   - ensemble_mean_topk → leaderboard
   - ensemble が落ちずに `skipped` を記録していること
+
+---
+
+## Update (2026-01-13)
+- `train_ensemble` が未実装のため未着手
+- refactor plan の Phase 3 (T101) で対応、先に `preds_valid` / `classes.json` の契約確認が必要

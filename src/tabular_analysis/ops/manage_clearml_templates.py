@@ -89,14 +89,17 @@ def _load_code_version_mode(repo_root: Path, override: str | None) -> str:
     except Exception:
         return "branch_head"
     clearml_cfg = getattr(cfg, "clearml", None)
-    value = getattr(clearml_cfg, "code_version_mode", None)
+    code_ref = getattr(clearml_cfg, "code_ref", None)
+    value = getattr(code_ref, "mode", None) if code_ref is not None else None
+    if not value:
+        value = getattr(clearml_cfg, "code_version_mode", None)
     return str(value) if value else "branch_head"
 
 
 def _build_script_cfg(version_mode: str | None) -> dict[str, Any]:
     cfg: dict[str, Any] = {"run": {"clearml": {}}}
     if version_mode:
-        cfg["run"]["clearml"]["code_version_mode"] = version_mode
+        cfg["run"]["clearml"]["code_ref"] = {"mode": version_mode}
     return cfg
 
 
@@ -348,9 +351,14 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--repo", default=None, help="Override ClearML repository URL.")
     parser.add_argument("--branch", default=None, help="Override ClearML repository branch.")
     parser.add_argument(
+        "--code-ref-mode",
+        default=None,
+        help="Override run.clearml.code_ref.mode (branch|commit|none).",
+    )
+    parser.add_argument(
         "--code-version-mode",
         default=None,
-        help="Override run.clearml.code_version_mode (branch_head|pin_commit).",
+        help="Override run.clearml.code_version_mode (legacy: branch_head|pin_commit).",
     )
 
     args = parser.parse_args(argv)
@@ -380,7 +388,7 @@ def main(argv: Optional[list[str]] = None) -> int:
 
     repo = args.repo or detect_git_repository_url(repo_root)
     branch = args.branch or detect_git_branch(repo_root)
-    version_mode = _load_code_version_mode(repo_root, args.code_version_mode)
+    version_mode = _load_code_version_mode(repo_root, args.code_ref_mode or args.code_version_mode)
     if not repo:
         print("Warning: repository not detected; pass --repo for agent clone.")
     print(f"code_version_mode: {version_mode}")

@@ -102,3 +102,9 @@
 - toy データで:
   - train複数モデル → ensemble_weighted → leaderboard
   - weights が出る / degraded_to の場合も spec に残る
+
+---
+
+## Update (2026-01-13)
+- mean_topk (T083) の実装が前提のため後段対応
+- refactor plan の Phase 3 (T101) に統合

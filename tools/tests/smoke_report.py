@@ -75,10 +75,29 @@ def main() -> int:
             py,
             "-m",
             "tabular_analysis.cli",
+            "task=dataset_register",
+            "run.clearml.enabled=false",
+            f"run.output_dir={out_root}",
+            f"data.dataset_path={csv_path}",
+            "data.target_column=target",
+        ],
+        cwd=repo,
+    )
+    ds_dir = out_root / "01_dataset_register"
+    raw_dataset_id = _load_json(ds_dir / "out.json").get("raw_dataset_id")
+    if not raw_dataset_id:
+        raise AssertionError("dataset_register out.json must contain raw_dataset_id")
+
+    _run(
+        [
+            py,
+            "-m",
+            "tabular_analysis.cli",
             "task=pipeline",
             "run.clearml.enabled=false",
             f"run.output_dir={out_root}",
             f"data.dataset_path={csv_path}",
+            f"data.raw_dataset_id={raw_dataset_id}",
             "data.target_column=target",
         ],
         cwd=repo,

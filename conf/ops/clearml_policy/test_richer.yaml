@@ -1,6 +1,7 @@
 # @package run.clearml.policy
 name: test_richer
 tags:
+  - "solution:tabular-analysis"
   - "task_type:${eval.task_type}"
   - "preprocess:${preprocess_variant.name}"
   - "model:${model_variant.name}"

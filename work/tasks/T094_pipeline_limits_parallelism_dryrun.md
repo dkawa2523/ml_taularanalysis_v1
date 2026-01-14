@@ -63,3 +63,8 @@
 - `python -m compileall -q src`
 - dry-run で plan 出力が得られる
 - limits を小さくして実行し、止まることを確認
+
+---
+
+## Update (2026-01-13)
+- limits / parallelism / dry-run は未実装で、Phase 2 (T101) で plan 生成後に導入する

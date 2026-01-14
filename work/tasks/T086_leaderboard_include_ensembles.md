@@ -108,3 +108,9 @@ ClearML disabled:
   - train_model 複数 + ensemble 複数 → leaderboard
   - `leaderboard.csv` に single/ensemble 両方が載る
   - `leaderboard_skipped.json` が生成される（意図的に1つ欠損させても良い）
+
+---
+
+## Update (2026-01-13)
+- `train_ensemble` / `primary_metric_source` が未実装のため後段対応
+- refactor plan の Phase 3 (T101) で実装予定

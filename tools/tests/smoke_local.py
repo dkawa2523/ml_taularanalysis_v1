@@ -244,6 +244,7 @@ def main() -> int:
             "run.clearml.enabled=false",
             f"run.output_dir={out_root}",
             f"data.dataset_path={csv_path}",
+            f"data.raw_dataset_id={ds_out['raw_dataset_id']}",
             "data.target_column=target",
         ],
         cwd=repo,

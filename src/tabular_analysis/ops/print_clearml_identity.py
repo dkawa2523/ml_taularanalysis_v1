@@ -100,6 +100,12 @@ def main(argv: Optional[list[str]] = None) -> int:
     code_repo, code_branch = platform_adapter.resolve_clearml_code_reference(cfg)
     metadata["code_repository"] = code_repo
     metadata["code_branch"] = code_branch
+    clearml_cfg = getattr(getattr(cfg, "run", None), "clearml", None)
+    code_ref = getattr(clearml_cfg, "code_ref", None)
+    code_ref_mode = getattr(code_ref, "mode", None) if code_ref is not None else None
+    if not code_ref_mode:
+        code_ref_mode = getattr(clearml_cfg, "code_version_mode", None)
+    metadata["code_ref_mode"] = code_ref_mode
     usecase_policy = getattr(getattr(cfg, "run", None), "usecase_id_policy", None)
     clearml_policy = getattr(getattr(getattr(cfg, "run", None), "clearml", None), "policy", None)
     metadata["policies"] = {
@@ -115,6 +121,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     print(f"project_name: {metadata['project_name']}")
     print(f"code_repository: {metadata.get('code_repository')}")
     print(f"code_branch: {metadata.get('code_branch')}")
+    print(f"code_ref_mode: {metadata.get('code_ref_mode')}")
     print(f"usecase_id: {metadata['usecase_id']}")
     print("tags:")
     for tag in metadata["tags"]:

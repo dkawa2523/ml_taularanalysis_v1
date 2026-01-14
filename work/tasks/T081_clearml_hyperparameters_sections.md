@@ -84,6 +84,13 @@ platform_adapter の ClearML init の流れで:
 
 ---
 
+## Update (2026-01-13)
+- `conf/clearml/hyperparams_sections.yaml` を追加し、sections を外部定義に移した
+- `clearml/hparams.py` が sections をロードして dotpath 抽出 + 明示値の上書きで connect するように変更
+- `run.clearml.code_ref.*` は legacy の `run.clearml.code_*` へフォールバックする実装を追加
+
+---
+
 ## テスト
 - `python -m compileall -q src`
 - （ClearML接続あり）preprocess/train など任意タスクを1つ実行し UI を確認

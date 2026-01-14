@@ -68,3 +68,8 @@
 
 ## テスト
 - なし（T100の runner で検証可能にする）
+
+---
+
+## Update (2026-01-13)
+- pipeline v2 / ensemble / reporting / runner の反映後に更新する（Phase 4, T101）

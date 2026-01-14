@@ -64,3 +64,8 @@
 - `python -m compileall -q src`
 - toy 実行で、意図的に 1モデルを SKIP（missing deps）にしても pipeline が成功扱いになる（min_successful_train_tasks を満たす）
 - 意図的に多く失敗させて allowed_failures を超えた場合に FAILED になる
+
+---
+
+## Update (2026-01-13)
+- `plan.json` / `run_summary.json` の生成は未実装で、Phase 2 (T101) の中核対応

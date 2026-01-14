@@ -30,13 +30,22 @@ clearml:
 
   # ClearML Task Script の repository/branch を指定する
   # "auto" は conf/ を含むリポジトリルートから git を検出する
-  code_repository: "auto"
-  code_branch: "auto"
+  code_ref:
+    # branch | commit | none
+    mode: "branch"
+    # "auto" は conf/ を含むリポジトリルートから git を検出する
+    repository: "auto"
+    branch: "auto"
+    # mode=commit の時に使う（"auto" は git HEAD を使う）
+    commit: "auto"
+
+  # legacy keys (backward compatible)
+  code_repository: ${run.clearml.code_ref.repository}
+  code_branch: ${run.clearml.code_ref.branch}
 
   # ClearML Task Script の version_num ポリシー
-  # branch_head: commit pin せず branch を追従
-  # pin_commit: git rev-parse HEAD を pin する
-  code_version_mode: "branch_head"
+  # branch_head | pin_commit | none (legacy). use code_ref.mode instead.
+  code_version_mode: ${run.clearml.code_ref.mode}
 
   # project のルート（例: MFG/<UseCase>/<Stage>）
   project_root: "MFG"
@@ -54,4 +63,10 @@ clearml:
 
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []
+
+  # ClearML UI 出力のON/OFF
+  reporting:
+    enable_scalars: true
+    enable_plots: true
+    enable_tables: true
 # Monitoring defaults are defined in conf/monitor/base.yaml.

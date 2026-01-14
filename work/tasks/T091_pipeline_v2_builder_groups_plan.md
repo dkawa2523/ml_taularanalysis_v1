@@ -79,3 +79,8 @@
 - `python -m compileall -q src`
 - 既存の pipeline 起動コマンドで、少なくとも plan 生成まで到達すること（実行はT095で安定化）。
 - （あれば）`python -m tabular_analysis.ops.print_clearml_identity ...` などで pipeline identity が取れること
+
+---
+
+## Update (2026-01-13)
+- plan builder 未実装のため、Phase 2 (T101) で project_layout と plan.json 出力を含めて実装する

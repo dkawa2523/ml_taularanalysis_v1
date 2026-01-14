@@ -69,3 +69,9 @@
 - `python -m compileall -q src tools`
 - runner の `--help` が表示できる
 - local 実行で最小ケース（1 preprocess + 2 models）を完走できる（ClearML on/off どちらでも）
+
+---
+
+## Update (2026-01-13)
+- Python runner / 自動検証は未実装。T087/T100 と合わせて Phase 1 (T101) で着手する
+- run_pipeline_v2 実行後に UI audit を呼べるようにし、最小の自動検証を追加

@@ -108,6 +108,64 @@ def _sanitize_identifier(value: str) -> str:
     return sanitized.strip("-_") or "unknown"
 
 
+def _resolve_repo_root() -> Path:
+    candidates = [Path.cwd(), Path(__file__).resolve()]
+    for base in candidates:
+        for parent in [base, *base.parents]:
+            if (parent / "conf").exists():
+                return parent
+    return Path(__file__).resolve().parents[3]
+
+
+def _load_project_layout_from_file() -> dict[str, Any]:
+    repo_root = _resolve_repo_root()
+    path = repo_root / "conf" / "clearml" / "project_layout.yaml"
+    if not path.exists():
+        return {}
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception:
+        return {}
+    try:
+        payload = OmegaConf.to_container(OmegaConf.load(path), resolve=True)
+    except Exception:
+        return {}
+    if isinstance(payload, Mapping):
+        return dict(payload)
+    return {}
+
+
+def _resolve_project_layout(cfg: Any | None) -> dict[str, Any]:
+    if cfg is not None:
+        layout = _cfg_value(cfg, "run.clearml.project_layout")
+        try:
+            from omegaconf import OmegaConf  # type: ignore
+        except Exception:
+            OmegaConf = None
+        if OmegaConf is not None and OmegaConf.is_config(layout):
+            layout = OmegaConf.to_container(layout, resolve=True)
+        if isinstance(layout, Mapping):
+            return dict(layout)
+    return _load_project_layout_from_file()
+
+
+def _ensure_project_layout(cfg: Any | None) -> dict[str, Any]:
+    layout = _resolve_project_layout(cfg)
+    if cfg is not None and layout:
+        _set_cfg_value(cfg, "run.clearml.project_layout", layout)
+    return layout
+
+
+def _infer_process_from_stage(stage: str | None) -> str | None:
+    text = _normalize_str(stage)
+    if not text:
+        return None
+    match = re.match(r"^\d+_(.+)$", text)
+    if match:
+        return match.group(1)
+    return text
+
+
 def _resolve_project_root(cfg: Any) -> str:
     env_value = _normalize_str(os.getenv("TABULAR_ANALYSIS_CLEARML_PROJECT_ROOT"))
     if env_value:
@@ -191,12 +249,33 @@ def _filter_properties(values: Mapping[str, Any]) -> dict[str, Any]:
     return filtered
 
 
-def build_project_name(project_root: str, usecase_id: str, stage: str) -> str:
+def build_project_name(
+    project_root: str,
+    usecase_id: str,
+    stage: str,
+    *,
+    process: str | None = None,
+    layout: Mapping[str, Any] | None = None,
+    cfg: Any | None = None,
+) -> str:
+    layout_cfg = dict(layout or _resolve_project_layout(cfg))
+    solution_root = _normalize_str(layout_cfg.get("solution_root")) or "TabularAnalysis"
+    separator = _normalize_str(layout_cfg.get("separator")) or "/"
+    group_map = layout_cfg.get("group_map") if isinstance(layout_cfg.get("group_map"), Mapping) else {}
+    misc_group = _normalize_str(layout_cfg.get("misc_group")) or "99_Misc"
+
+    process_name = _normalize_str(process) or _infer_process_from_stage(stage)
+    group = None
+    if process_name and isinstance(group_map, Mapping):
+        group = _normalize_str(group_map.get(process_name))
+    if not group and isinstance(group_map, Mapping):
+        group = _normalize_str(group_map.get(stage))
+    group = group or misc_group or _normalize_str(stage) or "unknown"
+
     root = _normalize_str(project_root) or "MFG"
-    stage_value = _normalize_str(stage) or "unknown"
     usecase_value = _normalize_str(usecase_id) or "unknown"
-    root = root.rstrip("/")
-    return f"{root}/TabularAnalysis/{usecase_value}/{stage_value}"
+    root = root.rstrip(separator)
+    return separator.join([root, solution_root, usecase_value, group])
 
 
 def resolve_clearml_identity(cfg: Any, *, now: datetime | None = None) -> ClearMLIdentity:
@@ -228,8 +307,17 @@ def apply_clearml_identity(cfg: Any, *, stage: str, now: datetime | None = None)
     identity = resolve_clearml_identity(cfg, now=now)
     _set_cfg_value(cfg, "run.usecase_id", identity.usecase_id)
     _set_cfg_value(cfg, "run.clearml.project_root", identity.project_root)
-    project_name = build_project_name(identity.project_root, identity.usecase_id, stage)
+    layout = _ensure_project_layout(cfg)
+    process_name = _normalize_str(_cfg_value(cfg, "task.name")) or _infer_process_from_stage(stage)
+    project_name = build_project_name(
+        identity.project_root,
+        identity.usecase_id,
+        stage,
+        process=process_name,
+        layout=layout,
+    )
     _set_cfg_value(cfg, "run.clearml.project_name", project_name)
+    _set_cfg_value(cfg, "task.project_name", project_name)
     return identity
 
 
@@ -266,7 +354,14 @@ def resolve_clearml_metadata(
         extra_tags=platform_adapter._cfg_value(cfg, "run.clearml.extra_tags") or [],
         tags=identity.tags,
     )
-    project_name = build_project_name(identity.project_root, identity.usecase_id, stage)
+    layout = _ensure_project_layout(cfg)
+    project_name = build_project_name(
+        identity.project_root,
+        identity.usecase_id,
+        stage,
+        process=process,
+        layout=layout,
+    )
     return {
         "project_root": identity.project_root,
         "project_name": project_name,

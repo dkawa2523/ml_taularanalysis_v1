@@ -31,3 +31,8 @@
 
 ## Verification（runner 側で実行）
 - `python tools/tests/smoke_report.py`
+
+---
+
+## Update (2026-01-13)
+- `smoke_report.py` で dataset_register を先に実行し、`data.raw_dataset_id` を pipeline に渡すように変更

@@ -27,8 +27,8 @@
   - `infer: "05_Infer"`
   - `leaderboard: "06_Leaderboards"`
   - `pipeline: "00_Pipelines"`
-  - `promote_model: "07_Promote"`
 - `run.clearml.project_layout.separator`: `"/"`（通常固定）
+- `run.clearml.project_layout.misc_group`: `"99_Misc"`（未定義 process の受け皿）
 
 ### 2) “project path builder” を追加して全箇所で利用
 例: `src/tabular_analysis/clearml/project_layout.py` のような小モジュールを追加:
@@ -52,6 +52,13 @@
 - 主要 process の Task が `<root>/TabularAnalysis/<usecase_id>/<process_group>` に配置される
 - config の group 名を変えると Project の作られ方が変わる（コード修正不要）
 - `python -m compileall -q src` が通る
+
+---
+
+## Update (2026-01-13)
+- `conf/clearml/project_layout.yaml` を追加し、layout をコード側でロードする方式にした
+- `build_project_name` が `solution_root` / `group_map` / `misc_group` に基づいて project を生成する
+- `apply_clearml_identity` が `run.clearml.project_layout` と `task.project_name` を更新して一貫性を担保する
 
 ---
 

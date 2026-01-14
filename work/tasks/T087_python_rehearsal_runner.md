@@ -61,3 +61,11 @@
 - （ClearML接続あり）:
   - `python tools/rehearsal/run_train_pipeline.py --mode local --task-type regression --models small`
   - `python tools/rehearsal/run_train_pipeline.py --mode agent  --task-type regression --models small --queue-name default`
+
+---
+
+## Update (2026-01-13)
+- `run_rehearsal.py` は `raw_dataset_id` 必須の pipeline 入力と不整合のため見直しが必要
+- refactor plan の Phase 1 (T101) で runner を再設計する
+- `tools/rehearsal/run_pipeline_v2.py` を追加し、dataset_register → pipeline を1コマンド化
+- `tools/rehearsal/run_rehearsal.py` は run_pipeline_v2 のラッパに整理

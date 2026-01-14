@@ -78,3 +78,10 @@
 ## テスト
 - `python -m compileall -q src`
 - （ClearML接続あり）toy データで preprocess/train/leaderboard を実行して UI を確認
+
+---
+
+## Update (2026-01-13)
+- `run.clearml.reporting.*` のトグルが未実装で、Scalars/Plots/Debug Samples の抑制ができない
+- refactor plan の Phase 1 (T101) で実装対象
+- `run.clearml.reporting` を conf/run/base.yaml に追加し、ui_logger で enable_scalars/plots/tables を反映

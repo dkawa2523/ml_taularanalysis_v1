@@ -64,3 +64,8 @@
 - `python -m compileall -q src`
 - Local driver で toy データを 1 preprocess + 2 models で実行し、ClearML タスクが複数作成される
 - Agent driver で同条件を実行し、子タスクが作成される（Pipelinesタブ/Experimentsで確認）
+
+---
+
+## Update (2026-01-13)
+- plan + driver 分離は未実装。template_set / code_ref 方針と合わせて Phase 2 (T101) で対応する

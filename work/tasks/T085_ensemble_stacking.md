@@ -116,3 +116,9 @@ meta-model は artifact（pickle/joblib）として保存。
   - train複数モデル → ensemble_stacking → leaderboard
   - `primary_metric_source` が記録される
   - ベースの一部を除外しても動く
+
+---
+
+## Update (2026-01-13)
+- base 契約 (T083) が未整備のため後段対応
+- test split の有無を確認し、`primary_metric_source` の設計を Phase 3 (T101) で確定する

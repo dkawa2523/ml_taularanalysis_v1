@@ -77,3 +77,8 @@
 
 ## テスト
 - なし（T100で UI 自動検証 runner を追加する）
+
+---
+
+## Update (2026-01-13)
+- docs は先行更新済みのため、pipeline v2 / ensemble / reporting 実装後に最終整合を行う（Phase 4, T101）

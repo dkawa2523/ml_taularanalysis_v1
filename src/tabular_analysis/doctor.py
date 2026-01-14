@@ -108,7 +108,7 @@ def _check_platform(cfg: Any | None, report: DoctorReport) -> None:
 def _clearml_project_name(cfg: Any) -> str:
     stage = _cfg_select(cfg, "task.stage", "doctor")
     identity = resolve_clearml_identity(cfg)
-    return build_project_name(identity.project_root, identity.usecase_id, stage)
+    return build_project_name(identity.project_root, identity.usecase_id, stage, cfg=cfg)
 
 
 def _check_clearml_queue(queue_name: str, report: DoctorReport) -> None:
