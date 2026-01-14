@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Mapping
 
 from ..platform_adapter import (
     get_dataset_info,
@@ -21,6 +21,8 @@ def create_raw_dataset(
     dataset_tags: Iterable[str] | None = None,
     dataset_version: str | None = None,
     description: str | None = None,
+    task_sections: Mapping[str, Mapping[str, object]] | None = None,
+    task_section_order: Iterable[str] | None = None,
 ) -> str:
     return register_dataset(
         cfg,
@@ -30,6 +32,8 @@ def create_raw_dataset(
         dataset_tags=dataset_tags,
         dataset_version=dataset_version,
         description=description,
+        task_sections=task_sections,
+        task_section_order=task_section_order,
     )
 
 
@@ -43,6 +47,8 @@ def create_processed_dataset(
     dataset_version: str | None = None,
     description: str | None = None,
     parent_dataset_ids: Iterable[str] | None = None,
+    task_sections: Mapping[str, Mapping[str, object]] | None = None,
+    task_section_order: Iterable[str] | None = None,
 ) -> str:
     return register_dataset(
         cfg,
@@ -53,6 +59,8 @@ def create_processed_dataset(
         dataset_version=dataset_version,
         description=description,
         parent_dataset_ids=parent_dataset_ids,
+        task_sections=task_sections,
+        task_section_order=task_section_order,
     )
 
 
@@ -68,3 +76,4 @@ def resolve_dataset_version(cfg: object, dataset_id: str) -> str | None:
     info = get_dataset_info(cfg, dataset_id)
     version = info.get("dataset_version")
     return str(version) if version is not None else None
+

@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from ..clearml.datasets import create_raw_dataset, get_raw_dataset_local_copy
-from ..clearml.hparams import connect_dataset_register
+from ..clearml.hparams import build_dataset_register_sections, connect_dataset_register
 from ..clearml.ui_logger import log_scalar, report_plotly
 from ..platform_adapter import (
     hash_config,
@@ -249,6 +249,12 @@ def run(cfg: Any) -> None:
             dataset_name = f"{usecase_id}__raw__{dataset_file.stem}"
             dataset_project = _normalize_str(getattr(getattr(cfg, "task", None), "project_name", None))
             dataset_tags = [f"usecase:{usecase_id}", "process:dataset_register", f"schema:{schema_version}"]
+            dataset_sections, dataset_order = build_dataset_register_sections(
+                cfg,
+                dataset_path=dataset_path_value or str(dataset_file),
+                target_column=target_column,
+                raw_dataset_id=None,
+            )
             raw_dataset_id = create_raw_dataset(
                 cfg,
                 dataset_path=dataset_file,
@@ -256,6 +262,8 @@ def run(cfg: Any) -> None:
                 dataset_project=dataset_project,
                 dataset_tags=dataset_tags,
                 description=f"raw_dataset_hash={raw_dataset_hash}",
+                task_sections=dataset_sections,
+                task_section_order=dataset_order,
             )
         else:
             raw_dataset_id = f"local:{raw_dataset_hash}"

@@ -22,7 +22,7 @@ from ..clearml.datasets import (
     get_raw_dataset_local_copy,
     resolve_dataset_version,
 )
-from ..clearml.hparams import connect_preprocess
+from ..clearml.hparams import build_preprocess_sections, connect_preprocess
 from ..clearml.ui_logger import report_plotly
 from ..io.bundle_io import save_bundle
 from ..io.schema import infer_schema
@@ -724,6 +724,15 @@ def run(cfg: Any) -> None:
         parent_ids = None
         if raw_dataset_id_input and not raw_dataset_id_input.startswith("local:"):
             parent_ids = [raw_dataset_id_input]
+        dataset_sections, dataset_order = build_preprocess_sections(
+            cfg,
+            raw_dataset_id=raw_dataset_id_input,
+            dataset_path=dataset_path_value if not raw_dataset_id_input else None,
+            preprocess_variant=preprocess_variant_name,
+            split_strategy=split_strategy,
+            split_seed=split_seed,
+            store_features=store_features,
+        )
         processed_dataset_id = create_processed_dataset(
             cfg,
             dataset_dir=dataset_dir,
@@ -736,6 +745,8 @@ def run(cfg: Any) -> None:
                 f"schema_hash={schema_hash} store_features={store_features}"
             ),
             parent_dataset_ids=parent_ids,
+            task_sections=dataset_sections,
+            task_section_order=dataset_order,
         )
         processed_dataset_version = resolve_dataset_version(cfg, processed_dataset_id)
     else:

@@ -89,6 +89,9 @@ platform_adapter の ClearML init の流れで:
 - `clearml/hparams.py` が sections をロードして dotpath 抽出 + 明示値の上書きで connect するように変更
 - `run.clearml.code_ref.*` は legacy の `run.clearml.code_*` へフォールバックする実装を追加
 
+## Update (2026-01-14)
+- raw/processed dataset の ClearML Dataset Task にも HyperParameters を接続して UI 警告を解消
+
 ---
 
 ## テスト

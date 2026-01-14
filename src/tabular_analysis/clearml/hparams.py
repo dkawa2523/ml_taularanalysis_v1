@@ -146,6 +146,7 @@ def _section_key(sections_cfg: Mapping[str, Any], canonical: str) -> str:
 def _flatten_mapping(prefix: str, payload: Any, out: dict[str, Any]) -> None:
     if payload is None:
         return
+    payload = _to_builtin(payload)
     if isinstance(payload, Mapping):
         for key, value in payload.items():
             if value is None:
@@ -154,9 +155,9 @@ def _flatten_mapping(prefix: str, payload: Any, out: dict[str, Any]) -> None:
             if isinstance(value, Mapping):
                 _flatten_mapping(next_prefix, value, out)
             else:
-                out[next_prefix] = value
+                out[next_prefix] = _to_builtin(value)
         return
-    out[prefix] = payload
+    out[prefix] = _to_builtin(payload)
 
 
 def _extract_sections(cfg: Any, sections_cfg: Mapping[str, Iterable[str]]) -> dict[str, dict[str, Any]]:
@@ -176,7 +177,7 @@ def _extract_sections(cfg: Any, sections_cfg: Mapping[str, Iterable[str]]) -> di
             else:
                 value = _cfg_value(cfg, text)
                 if value is not None:
-                    payload[text] = value
+                    payload[text] = _to_builtin(value)
         if payload:
             sections[str(name)] = payload
     return sections
@@ -220,6 +221,16 @@ def _execution_hparams(cfg: Any) -> dict[str, Any]:
     )
 
 
+def _to_builtin(value: Any) -> Any:
+    try:
+        from omegaconf import OmegaConf  # type: ignore
+    except Exception:
+        OmegaConf = None
+    if OmegaConf is not None and OmegaConf.is_config(value):
+        return OmegaConf.to_container(value, resolve=True)
+    return value
+
+
 def _connect_section(ctx: Any, name: str, payload: Mapping[str, Any]) -> None:
     cleaned = _drop_none(payload)
     if not cleaned:
@@ -245,14 +256,13 @@ def _connect_sections(
         _connect_section(ctx, name, payload)
 
 
-def connect_dataset_register(
-    ctx: Any,
+def build_dataset_register_sections(
     cfg: Any,
     *,
     dataset_path: str | None,
     target_column: str | None,
     raw_dataset_id: str | None = None,
-) -> None:
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
     sections_cfg = _resolve_sections_cfg(cfg)
     sections = _extract_sections(cfg, sections_cfg)
     inputs_key = _section_key(sections_cfg, "inputs")
@@ -272,11 +282,27 @@ def connect_dataset_register(
         {"data.raw_dataset_id": raw_dataset_id},
     )
     _merge_section(sections, clearml_key, _execution_hparams(cfg))
-    _connect_sections(ctx, sections, _section_order(sections_cfg))
+    return sections, _section_order(sections_cfg)
 
 
-def connect_preprocess(
+def connect_dataset_register(
     ctx: Any,
+    cfg: Any,
+    *,
+    dataset_path: str | None,
+    target_column: str | None,
+    raw_dataset_id: str | None = None,
+) -> None:
+    sections, order = build_dataset_register_sections(
+        cfg,
+        dataset_path=dataset_path,
+        target_column=target_column,
+        raw_dataset_id=raw_dataset_id,
+    )
+    _connect_sections(ctx, sections, order)
+
+
+def build_preprocess_sections(
     cfg: Any,
     *,
     raw_dataset_id: str | None,
@@ -285,7 +311,7 @@ def connect_preprocess(
     split_strategy: str | None,
     split_seed: int | None,
     store_features: bool | None,
-) -> None:
+) -> tuple[dict[str, dict[str, Any]], list[str]]:
     sections_cfg = _resolve_sections_cfg(cfg)
     sections = _extract_sections(cfg, sections_cfg)
     inputs_key = _section_key(sections_cfg, "inputs")
@@ -305,7 +331,30 @@ def connect_preprocess(
         },
     )
     _merge_section(sections, clearml_key, _execution_hparams(cfg))
-    _connect_sections(ctx, sections, _section_order(sections_cfg))
+    return sections, _section_order(sections_cfg)
+
+
+def connect_preprocess(
+    ctx: Any,
+    cfg: Any,
+    *,
+    raw_dataset_id: str | None,
+    dataset_path: str | None,
+    preprocess_variant: str | None,
+    split_strategy: str | None,
+    split_seed: int | None,
+    store_features: bool | None,
+) -> None:
+    sections, order = build_preprocess_sections(
+        cfg,
+        raw_dataset_id=raw_dataset_id,
+        dataset_path=dataset_path,
+        preprocess_variant=preprocess_variant,
+        split_strategy=split_strategy,
+        split_seed=split_seed,
+        store_features=store_features,
+    )
+    _connect_sections(ctx, sections, order)
 
 
 def connect_train_model(
@@ -434,6 +483,8 @@ def connect_leaderboard(
     )
     _merge_section(sections, clearml_key, _execution_hparams(cfg))
     _connect_sections(ctx, sections, _section_order(sections_cfg))
+
+
 
 
 def connect_dataset_register_hparams(

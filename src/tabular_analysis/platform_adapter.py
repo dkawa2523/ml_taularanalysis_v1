@@ -2130,6 +2130,46 @@ def write_manifest(ctx: TaskContext, manifest: dict[str, Any]) -> Path:
     return path
 
 
+def _connect_dataset_task_sections(
+    dataset: Any,
+    sections: Mapping[str, Mapping[str, Any]] | None,
+    order: Iterable[str] | None,
+) -> None:
+    if not sections:
+        return
+    task = getattr(dataset, "_task", None)
+    if task is None:
+        return
+    connector = getattr(task, "connect", None)
+    if not callable(connector):
+        return
+
+    def _connect(name: str, payload: Mapping[str, Any]) -> None:
+        cleaned = {key: value for key, value in payload.items() if value is not None}
+        if not cleaned:
+            return
+        try:
+            connector(dict(cleaned), name=name)
+        except Exception as exc:
+            print(
+                f"[warn] Failed to connect dataset HyperParameters ({name}): {exc}",
+                file=sys.stderr,
+            )
+
+    seen: set[str] = set()
+    if order:
+        for name in order:
+            payload = sections.get(name)
+            if not payload:
+                continue
+            _connect(name, payload)
+            seen.add(name)
+    for name, payload in sections.items():
+        if name in seen:
+            continue
+        _connect(name, payload)
+
+
 def register_dataset(
     cfg: Any,
     *,
@@ -2140,6 +2180,8 @@ def register_dataset(
     dataset_version: str | None = None,
     description: str | None = None,
     parent_dataset_ids: Optional[Iterable[str]] = None,
+    task_sections: Optional[Mapping[str, Mapping[str, Any]]] = None,
+    task_section_order: Optional[Iterable[str]] = None,
 ) -> str:
     if not is_clearml_enabled(cfg):
         raise PlatformAdapterError("ClearML is disabled; cannot register dataset.")
@@ -2154,6 +2196,7 @@ def register_dataset(
             description=description,
             parent_datasets=parents or None,
         )
+        _connect_dataset_task_sections(dataset, task_sections, task_section_order)
         dataset.add_files(path=str(dataset_path))
         dataset.upload()
         dataset.finalize()
