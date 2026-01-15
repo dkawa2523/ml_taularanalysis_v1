@@ -1,10 +1,12 @@
 {
   "schema_version": "v1",
-  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "code_version": "2960e7617dd10e7f20ff528349d15cb5cbb8c668",
   "platform_version": "0.1.0",
   "process": "preprocess",
-  "created_at": "2026-01-01T19:41:07Z",
+  "created_at": "2026-01-13T22:56:42Z",
   "inputs": {
+    "raw_dataset_id": "local:6f1c96d07d429ad0bdeb3db27868e5ebb95893e6d5ed3342f95cede4cc298ffc",
+    "upstream_task_ids": [],
     "preprocess_variant": "stdscaler_ohe",
     "target_column": "target",
     "categorical_encoding": {
@@ -18,16 +20,22 @@
         "smoothing": 10.0
       }
     },
+    "store_features": true,
     "dataset_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/tmp/toy_classification.csv"
   },
   "outputs": {
     "processed_dataset_id": "local:c85ab7f964e06c43fa5db1e6d9fc50f2facb82320be7b232790713c03ccfdee3",
+    "processed_dataset_version": null,
     "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
-    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "schema_hash": "9fddf6a68c1ffbaa06ee142c718c1827a879824fe3eada3c0cb63029cf18f56c",
+    "n_rows": 200,
+    "n_features": 5
   },
   "hashes": {
-    "config_hash": "e021a706029f05fffda56f2a2555bf15870230475d98114e0830908b4c9d6cb9",
+    "config_hash": "5328dd9f98d8697c32108a09a0600ebc5952f92ad15c70d6441ebf6b5e50b7a3",
     "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
-    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
+    "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a",
+    "schema_hash": "9fddf6a68c1ffbaa06ee142c718c1827a879824fe3eada3c0cb63029cf18f56c"
   }
 }

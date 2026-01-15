@@ -1,16 +1,14 @@
 {
   "pipeline_run": {
-    "grid_run_id": "ba100fe6f6f046239a34635479d0d6f7",
+    "grid_run_id": "ebadcc7c025c4a1b8c3d9351971cbd48",
     "plan_only": false,
     "planned_jobs": 1,
     "executed_jobs": 1,
     "skipped_due_to_policy": 0,
-    "dataset_register_ref": {
-      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ba100fe6f6f046239a34635479d0d6f7/dataset_register/01_dataset_register"
-    },
+    "dataset_register_ref": null,
     "preprocess_ref": [
       {
-        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ba100fe6f6f046239a34635479d0d6f7/preprocess__stdscaler_ohe/02_preprocess",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ebadcc7c025c4a1b8c3d9351971cbd48/preprocess__stdscaler_ohe/02_preprocess",
         "preprocess_variant": "stdscaler_ohe",
         "processed_dataset_id": "local:288a3dda65df1da880d1a7ab7977491d0864bd9ffe4a5591a493304d64fc1308",
         "split_hash": "03ab4e4731489ffde249a4a5ecafb978fcdd192ab0d5d240e1ce0c4b72969603",
@@ -19,16 +17,16 @@
     ],
     "train_refs": [
       {
-        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ba100fe6f6f046239a34635479d0d6f7/train__stdscaler_ohe__ridge/03_train_model",
+        "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ebadcc7c025c4a1b8c3d9351971cbd48/train__stdscaler_ohe__ridge/03_train_model",
         "preprocess_variant": "stdscaler_ohe",
         "model_variant": "ridge",
-        "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ba100fe6f6f046239a34635479d0d6f7/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
-        "best_score": 0.01008751014762982,
+        "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ebadcc7c025c4a1b8c3d9351971cbd48/train__stdscaler_ohe__ridge/03_train_model/model_bundle.joblib",
+        "best_score": 0.010087510147629762,
         "primary_metric": "rmse"
       }
     ],
     "leaderboard_ref": {
-      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ba100fe6f6f046239a34635479d0d6f7/leaderboard/05_leaderboard"
+      "run_dir": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out/grid/ebadcc7c025c4a1b8c3d9351971cbd48/leaderboard/05_leaderboard"
     },
     "infer_ref": null,
     "grid": {

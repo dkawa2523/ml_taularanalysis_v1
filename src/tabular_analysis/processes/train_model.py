@@ -1398,6 +1398,66 @@ def _build_prediction_sample(
     return df.head(max_rows)
 
 
+def _write_preds_valid(
+    *,
+    output_dir: Path,
+    y_true: Any,
+    y_pred: Any,
+    y_proba: Any | None,
+    task_type: str,
+    class_labels: list[str] | None,
+) -> tuple[Path | None, Path | None, dict[str, Any] | None]:
+    try:
+        import numpy as np  # type: ignore
+        import pandas as pd  # type: ignore
+    except Exception:
+        return None, None, None
+
+    y_true_arr = np.asarray(y_true).reshape(-1)
+    y_pred_arr = np.asarray(y_pred).reshape(-1)
+    n = min(y_true_arr.shape[0], y_pred_arr.shape[0])
+    if n <= 0:
+        return None, None, None
+
+    payload: dict[str, Any] = {
+        "y_true": y_true_arr[:n],
+        "y_pred": y_pred_arr[:n],
+    }
+    preds_schema: dict[str, Any] = {"task_type": task_type, "columns": ["y_true", "y_pred"]}
+
+    classes_path: Path | None = None
+    if task_type == "classification":
+        labels = class_labels or []
+        if y_proba is not None:
+            proba_arr = np.asarray(y_proba)
+            if proba_arr.ndim == 1:
+                label0 = labels[0] if len(labels) > 0 else "0"
+                label1 = labels[1] if len(labels) > 1 else "1"
+                payload[f"proba__{label0}"] = 1.0 - proba_arr[:n]
+                payload[f"proba__{label1}"] = proba_arr[:n]
+                preds_schema["proba_columns"] = [f"proba__{label0}", f"proba__{label1}"]
+            elif proba_arr.ndim == 2:
+                n_classes = int(proba_arr.shape[1])
+                if not labels:
+                    labels = [str(idx) for idx in range(n_classes)]
+                if len(labels) != n_classes:
+                    labels = labels[:n_classes] + [str(idx) for idx in range(len(labels), n_classes)]
+                proba_columns: list[str] = []
+                for idx, label in enumerate(labels[:n_classes]):
+                    col = f"proba__{label}"
+                    payload[col] = proba_arr[:n, idx]
+                    proba_columns.append(col)
+                preds_schema["proba_columns"] = proba_columns
+            preds_schema["class_labels"] = labels
+        if labels:
+            classes_path = output_dir / "classes.json"
+            classes_path.write_text(json.dumps(labels, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    preds_path = output_dir / "preds_valid.parquet"
+    pd.DataFrame(payload).to_parquet(preds_path, index=False)
+    return preds_path, classes_path, preds_schema
+
+
 def _record_model_failure(
     *,
     ctx: Any,
@@ -1910,6 +1970,21 @@ def run(cfg: Any) -> None:
                 "seed": ci_info["seed"],
             }
 
+        preds_valid_path = None
+        classes_path = None
+        preds_schema = None
+        try:
+            preds_valid_path, classes_path, preds_schema = _write_preds_valid(
+                output_dir=ctx.output_dir,
+                y_true=y_val,
+                y_pred=y_val_pred,
+                y_proba=y_val_proba,
+                task_type=task_type,
+                class_labels=class_labels,
+            )
+        except Exception as exc:
+            warnings.warn(f"Failed to write preds_valid.parquet: {exc}")
+
         cv_summary: dict[str, Any] | None = None
         if cv_folds and cv_folds > 1:
             if len(train_idx) < cv_folds:
@@ -2346,6 +2421,10 @@ def run(cfg: Any) -> None:
         upload_artifact(ctx, "metrics.json", metrics_path)
         if metrics_ci_path is not None:
             upload_artifact(ctx, metrics_ci_path.name, metrics_ci_path)
+        if preds_valid_path is not None:
+            upload_artifact(ctx, preds_valid_path.name, preds_valid_path)
+        if classes_path is not None:
+            upload_artifact(ctx, classes_path.name, classes_path)
         upload_artifact(ctx, "model_bundle.joblib", model_bundle_path)
         upload_artifact(ctx, "model_card.md", model_card_path)
         if postprocess_path is not None:
@@ -2400,6 +2479,12 @@ def run(cfg: Any) -> None:
         out["primary_metric_ci"] = ci_payload.get("primary_metric")
     out["imbalance"] = imbalance_report
     out["uncertainty"] = uncertainty_payload
+    if preds_valid_path is not None:
+        out["preds_valid_path"] = str(preds_valid_path)
+    if classes_path is not None:
+        out["classes_path"] = str(classes_path)
+    if preds_schema is not None:
+        out["preds_schema"] = preds_schema
     write_out_json(ctx, out)
 
     inputs = {

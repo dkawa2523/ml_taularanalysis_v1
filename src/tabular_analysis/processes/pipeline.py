@@ -44,6 +44,7 @@ _STAGE_BY_TASK = {
     "dataset_register": "01_dataset_register",
     "preprocess": "02_preprocess",
     "train_model": "03_train_model",
+    "train_ensemble": "04_train_ensemble",
     "infer": "04_infer",
     "leaderboard": "05_leaderboard",
 }
@@ -258,6 +259,7 @@ def _resolve_exec_policy_queues(cfg: Any) -> dict[str, Any]:
         "dataset_register": _queue("dataset_register"),
         "preprocess": _queue("preprocess"),
         "train_model": _queue("train_model"),
+        "train_ensemble": _queue("train_ensemble"),
         "train_model_heavy": _queue("train_model_heavy"),
         "leaderboard": _queue("leaderboard"),
         "infer": _queue("infer"),
@@ -698,6 +700,11 @@ def _run_cli_task(args: list[str], *, cwd: Path, config_dir: Path | None) -> Non
     env = os.environ.copy()
     if config_dir is not None and "TABULAR_ANALYSIS_CONFIG_DIR" not in env:
         env["TABULAR_ANALYSIS_CONFIG_DIR"] = str(config_dir)
+    # Avoid child tasks inheriting the parent ClearML task in logging mode.
+    env.pop("CLEARML_TASK_ID", None)
+    env.pop("TRAINS_TASK_ID", None)
+    env.pop("CLEARML_PROC_MASTER_ID", None)
+    env.pop("TRAINS_PROC_MASTER_ID", None)
     proc = subprocess.run(
         cmd,
         cwd=str(cwd),
@@ -816,6 +823,7 @@ def _build_plan_steps(
     run_dataset_register: bool,
     run_preprocess: bool,
     run_train: bool,
+    run_train_ensemble: bool,
     run_leaderboard: bool,
     run_infer: bool,
     preprocess_targets: list[str],
@@ -828,6 +836,7 @@ def _build_plan_steps(
     preprocess_steps: list[dict[str, Any]] = []
     preprocess_by_variant: dict[str, dict[str, Any]] = {}
     train_steps: list[dict[str, Any]] = []
+    train_ensemble_steps: list[dict[str, Any]] = []
     leaderboard_step = None
     infer_step = None
 
@@ -927,6 +936,40 @@ def _build_plan_steps(
                 }
             )
 
+    if run_train_ensemble:
+        if not preprocess_by_variant:
+            raise ValueError("preprocess outputs are required before train_ensemble.")
+        by_variant: dict[str, list[dict[str, Any]]] = {}
+        for step in train_steps:
+            variant = str(step.get("preprocess_variant") or "")
+            if not variant:
+                continue
+            by_variant.setdefault(variant, []).append(step)
+        for preprocess_variant, parent_steps in by_variant.items():
+            step_name = f"ensemble__{_sanitize_component(preprocess_variant)}"
+            run_root = _build_run_root(base_output_dir, grid_run_id, f"ensemble__{preprocess_variant}")
+            overrides = {
+                "run.output_dir": str(run_root),
+                "+preprocess.variant": preprocess_variant,
+                "group/preprocess": preprocess_variant,
+                "ensemble.enabled": True,
+            }
+            step_queue = _select_queue(queues, "train_ensemble")
+            if step_queue:
+                overrides["run.clearml.queue_name"] = step_queue
+            train_ensemble_steps.append(
+                {
+                    "step_name": step_name,
+                    "task_name": "train_ensemble",
+                    "run_root": run_root,
+                    "run_dir": _stage_dir(run_root, "train_ensemble"),
+                    "parents": [step["step_name"] for step in parent_steps],
+                    "queue": step_queue,
+                    "overrides": overrides,
+                    "preprocess_variant": preprocess_variant,
+                }
+            )
+
     if run_leaderboard:
         run_root = _build_run_root(base_output_dir, grid_run_id, "leaderboard")
         overrides = {"run.output_dir": str(run_root)}
@@ -940,7 +983,10 @@ def _build_plan_steps(
             "task_name": "leaderboard",
             "run_root": run_root,
             "run_dir": _stage_dir(run_root, "leaderboard"),
-            "parents": [step["step_name"] for step in train_steps],
+            "parents": [
+                *[step["step_name"] for step in train_steps],
+                *[step["step_name"] for step in train_ensemble_steps],
+            ],
             "queue": step_queue,
             "overrides": overrides,
         }
@@ -971,6 +1017,7 @@ def _build_plan_steps(
         "dataset_register": dataset_step,
         "preprocess": preprocess_steps,
         "train": train_steps,
+        "train_ensemble": train_ensemble_steps,
         "leaderboard": leaderboard_step,
         "infer": infer_step,
     }
@@ -987,6 +1034,9 @@ def _build_pipeline_plan(
     run_dataset_register = bool(getattr(pipeline_cfg, "run_dataset_register", False))
     run_preprocess = bool(getattr(pipeline_cfg, "run_preprocess", True))
     run_train = bool(getattr(pipeline_cfg, "run_train", True))
+    run_train_ensemble = bool(
+        getattr(pipeline_cfg, "run_train_ensemble", _cfg_value(cfg, "ensemble.enabled", False))
+    )
     run_leaderboard = bool(getattr(pipeline_cfg, "run_leaderboard", True))
     run_infer = bool(getattr(pipeline_cfg, "run_infer", False))
 
@@ -1029,6 +1079,8 @@ def _build_pipeline_plan(
 
     if run_train and not run_preprocess:
         raise ValueError("pipeline.run_preprocess=false cannot be combined with run_train=true.")
+    if run_train_ensemble and not run_train:
+        raise ValueError("pipeline.run_train_ensemble=true requires run_train=true.")
 
     run_overrides = _collect_run_overrides(cfg, grid_run_id, child_execution=child_execution)
     data_overrides = _collect_data_overrides(cfg)
@@ -1059,6 +1111,7 @@ def _build_pipeline_plan(
         run_dataset_register=run_dataset_register,
         run_preprocess=run_preprocess,
         run_train=run_train,
+        run_train_ensemble=run_train_ensemble,
         run_leaderboard=run_leaderboard,
         run_infer=run_infer,
         preprocess_targets=preprocess_targets,
@@ -1073,6 +1126,7 @@ def _build_pipeline_plan(
         "run_dataset_register": run_dataset_register,
         "run_preprocess": run_preprocess,
         "run_train": run_train,
+        "run_train_ensemble": run_train_ensemble,
         "run_leaderboard": run_leaderboard,
         "run_infer": run_infer,
         "preprocess_variants": preprocess_variants,
@@ -1156,6 +1210,7 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
     dataset_register_ref: dict[str, Any] | None = None
     preprocess_refs: list[dict[str, Any]] = []
     train_refs: list[dict[str, Any]] = []
+    train_ensemble_refs: list[dict[str, Any]] = []
     leaderboard_ref: dict[str, Any] | None = None
     infer_ref: dict[str, Any] | None = None
 
@@ -1234,8 +1289,33 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
                 )
             executed_jobs = len(train_refs)
 
-        if plan["run_leaderboard"]:
+        if plan["run_train_ensemble"]:
             if not train_refs:
+                raise ValueError("train outputs are required before train_ensemble.")
+            for step in steps["train_ensemble"]:
+                overrides = _merge_overrides(
+                    run_overrides,
+                    downstream_data_overrides,
+                    eval_overrides,
+                    step["overrides"],
+                )
+                args = ["task=train_ensemble", *_overrides_to_args(overrides)]
+                _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
+                out = _load_json(step["run_dir"] / "out.json")
+                train_ensemble_refs.append(
+                    _build_ref(
+                        run_dir=step["run_dir"],
+                        preprocess_variant=step.get("preprocess_variant"),
+                        train_task_id=out.get("train_task_id"),
+                        model_id=out.get("model_id"),
+                        best_score=out.get("best_score"),
+                        primary_metric=out.get("primary_metric"),
+                        task_type=out.get("task_type"),
+                    )
+                )
+
+        if plan["run_leaderboard"]:
+            if not train_refs and not train_ensemble_refs:
                 raise ValueError("train outputs are required before leaderboard.")
             step = steps["leaderboard"]
             if step is None:
@@ -1245,11 +1325,17 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
                 train_task_ids = [
                     ref.get("train_task_id") for ref in train_refs if ref.get("train_task_id")
                 ]
+                train_task_ids.extend(
+                    [ref.get("train_task_id") for ref in train_ensemble_refs if ref.get("train_task_id")]
+                )
                 if not train_task_ids:
                     raise ValueError("train_task_id is missing in train outputs (ClearML mode).")
                 overrides["leaderboard.train_task_ids"] = train_task_ids
             else:
                 train_run_dirs = [ref.get("run_dir") for ref in train_refs if ref.get("run_dir")]
+                train_run_dirs.extend(
+                    [ref.get("run_dir") for ref in train_ensemble_refs if ref.get("run_dir")]
+                )
                 overrides["leaderboard.train_run_dirs"] = train_run_dirs
             args = ["task=leaderboard", *_overrides_to_args(overrides)]
             _run_cli_task(args, cwd=repo_root, config_dir=config_dir)
@@ -1306,6 +1392,7 @@ def _run_local_pipeline(cfg: Any, grid_run_id: str, *, clearml_enabled: bool) ->
         "dataset_register_ref": dataset_register_ref,
         "preprocess_ref": preprocess_refs,
         "train_refs": train_refs,
+        "train_ensemble_refs": train_ensemble_refs,
         "leaderboard_ref": leaderboard_ref,
         "infer_ref": infer_ref,
         "grid": {
@@ -1354,6 +1441,7 @@ def _run_clearml_pipeline(
             _select_queue(queues, "dataset_register"),
             _select_queue(queues, "preprocess"),
             _select_queue(queues, "train_model"),
+            _select_queue(queues, "train_ensemble"),
             _normalize_str(queues.get("train_model_heavy")),
             _select_queue(queues, "leaderboard"),
             _select_queue(queues, "infer"),
@@ -1387,6 +1475,11 @@ def _run_clearml_pipeline(
             )
             _ensure_override(controller_overrides, "pipeline.run_preprocess", plan.get("run_preprocess"))
             _ensure_override(controller_overrides, "pipeline.run_train", plan.get("run_train"))
+            _ensure_override(
+                controller_overrides,
+                "pipeline.run_train_ensemble",
+                plan.get("run_train_ensemble"),
+            )
             _ensure_override(controller_overrides, "pipeline.run_leaderboard", plan.get("run_leaderboard"))
             _ensure_override(controller_overrides, "pipeline.run_infer", plan.get("run_infer"))
             _ensure_override(
@@ -1414,6 +1507,7 @@ def _run_clearml_pipeline(
                     "pipeline.run_dataset_register": plan.get("run_dataset_register"),
                     "pipeline.run_preprocess": plan.get("run_preprocess"),
                     "pipeline.run_train": plan.get("run_train"),
+                    "pipeline.run_train_ensemble": plan.get("run_train_ensemble"),
                     "pipeline.run_leaderboard": plan.get("run_leaderboard"),
                     "pipeline.run_infer": plan.get("run_infer"),
                     "pipeline.grid.preprocess_variants": plan.get("preprocess_variants"),
@@ -1491,8 +1585,29 @@ def _run_clearml_pipeline(
                     **_base_task_kwargs(step["task_name"]),
                 )
 
-        if plan["run_leaderboard"]:
+        if plan["run_train_ensemble"]:
             if not steps["train"]:
+                raise ValueError("train outputs are required before train_ensemble.")
+            for step in steps["train_ensemble"]:
+                overrides = _merge_overrides(
+                    run_overrides,
+                    downstream_data_overrides,
+                    eval_overrides,
+                    step["overrides"],
+                )
+                _add_pipeline_step(
+                    controller,
+                    name=step["step_name"],
+                    parents=step["parents"],
+                    parameter_override={f"Args/{k}": v for k, v in _overrides_to_params(overrides).items()},
+                    clone_base_task=True,
+                    cache_executed_step=False,
+                    execution_queue=step["queue"],
+                    **_base_task_kwargs(step["task_name"]),
+                )
+
+        if plan["run_leaderboard"]:
+            if not steps["train"] and not steps["train_ensemble"]:
                 raise ValueError("train outputs are required before leaderboard.")
             step = steps["leaderboard"]
             if step is None:
@@ -1500,6 +1615,9 @@ def _run_clearml_pipeline(
             train_task_refs = [
                 pipeline_step_task_id_ref(train_step["step_name"]) for train_step in steps["train"]
             ]
+            train_task_refs.extend(
+                [pipeline_step_task_id_ref(step["step_name"]) for step in steps["train_ensemble"]]
+            )
             overrides = _merge_overrides(
                 run_overrides,
                 eval_overrides,
@@ -1561,6 +1679,7 @@ def _run_clearml_pipeline(
     dataset_register_ref = None
     preprocess_refs: list[dict[str, Any]] = []
     train_refs: list[dict[str, Any]] = []
+    train_ensemble_refs: list[dict[str, Any]] = []
     leaderboard_ref = None
     infer_ref = None
     if not plan["plan_only"]:
@@ -1592,6 +1711,15 @@ def _run_clearml_pipeline(
                 )
             )
 
+        for step in steps["train_ensemble"]:
+            train_ensemble_refs.append(
+                _build_ref(
+                    run_dir=step["run_dir"],
+                    task_id=step_task_ids.get(step["step_name"]),
+                    preprocess_variant=step.get("preprocess_variant"),
+                )
+            )
+
         if steps["leaderboard"] is not None:
             leaderboard_step = steps["leaderboard"]
             leaderboard_ref = _build_ref(
@@ -1615,6 +1743,7 @@ def _run_clearml_pipeline(
         "dataset_register_ref": dataset_register_ref,
         "preprocess_ref": preprocess_refs,
         "train_refs": train_refs,
+        "train_ensemble_refs": train_ensemble_refs,
         "leaderboard_ref": leaderboard_ref,
         "infer_ref": infer_ref,
         "grid": {

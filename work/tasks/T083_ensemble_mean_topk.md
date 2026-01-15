@@ -144,3 +144,9 @@ ClearML enabled の場合は `ensemble_spec.json` を artifact として upload�
 ## Update (2026-01-13)
 - `train_ensemble` が未実装のため未着手
 - refactor plan の Phase 3 (T101) で対応、先に `preds_valid` / `classes.json` の契約確認が必要
+
+## Update (2026-01-14)
+- `train_ensemble` を実装（mean_topk/weighted/stacking 共通で候補収集/スキップ記録/ensemble_spec 出力）。`src/tabular_analysis/processes/train_ensemble.py`
+- train_model が `preds_valid.parquet` と `classes.json` を生成し、out.json に `preds_valid_path`/`classes_path`/`preds_schema` を記録。`src/tabular_analysis/processes/train_model.py`
+- pipeline で `train_ensemble` ステップ生成と leaderboard 集計対象に追加。`src/tabular_analysis/processes/pipeline.py` / `src/tabular_analysis/processes/leaderboard.py`
+- ClearML テンプレ/ハイパラセクション/UI lint を更新。`conf/clearml/templates.yaml` / `conf/clearml/hyperparams_sections.yaml` / `src/tabular_analysis/ops/ui_contract_lint.py`

@@ -1,8 +1,8 @@
 # Pipeline Summary
 
 ## Conclusion
-- grid_run_id: 4a80cf1d637248a3b3167365ea2b1e6a
-- recommended_model_id: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib
+- grid_run_id: 75fd130d3bba41899374286e69c82d61
+- recommended_model_id: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/75fd130d3bba41899374286e69c82d61/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib
 - primary_metric: rmse
 - best_score: 0.0753718
 - status: ready
@@ -10,20 +10,17 @@
 - planned_jobs: 3
 - executed_jobs: 3
 - skipped_due_to_policy: 0
-- train_task_ref: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model
+- train_task_ref: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/75fd130d3bba41899374286e69c82d61/train__stdscaler_ohe__ridge__alpha_1/03_train_model
 
 ## Data Overview
-- raw_dataset_id: local:47b97e941a790f6f068d82313f79d6059cdae16e7b7466fe9bf2b810b9b93fff
+- raw_dataset_id: n/a
 - processed_dataset_id: local:5812668ff82705adef95cfd3b1e34ee71780f41114508e5aef6daf30f416a82e
 - rows: 200
 - feature_columns: 3
 - target_column: target
 
 ## Data Quality
-- rows_scanned: 200
-- duplicates: 0 (0.0%)
-- missing_top: n/a
-- leak_suspects: n/a
+- data_quality: n/a
 
 ## Comparability
 - require_comparable: True
@@ -54,11 +51,11 @@
 | 3 | ridge | stdscaler_ohe | rmse | 0.0891506 | .../03_train_model/model_bundle.joblib |
 
 ## Recommendation
-- model_id: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib
+- model_id: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/75fd130d3bba41899374286e69c82d61/train__stdscaler_ohe__ridge__alpha_1/03_train_model/model_bundle.joblib
 - primary_metric: rmse
 - best_score: 0.0753718
 - direction: minimize
-- train_task_ref: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/4a80cf1d637248a3b3167365ea2b1e6a/train__stdscaler_ohe__ridge__alpha_1/03_train_model
+- train_task_ref: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_hpo/out/grid/75fd130d3bba41899374286e69c82d61/train__stdscaler_ohe__ridge__alpha_1/03_train_model
 - rationale: Top-ranked by rmse (minimize). require_comparable=True.
 
 ## Notes

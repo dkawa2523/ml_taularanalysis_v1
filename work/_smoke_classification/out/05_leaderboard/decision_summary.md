@@ -5,6 +5,7 @@
 - train_task_ref: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model
 - primary_metric: accuracy (maximize)
 - best_score: 0.95
+- ranking_score_key: best_score (maximize)
 - task_type: classification
 - n_classes: 2
 
@@ -18,13 +19,19 @@
 - task_type: classification
 - seed: 42
 - excluded_count: 0
+- warning_count: 5 (see summary.md)
+
+## Scoring
+- normalization: minmax
+- metrics: r2, rmse, mae, mse
+- weights: r2=1.0, rmse=-1.0, mae=-0.5, mse=-0.2
 
 ## Top Models
 - source: leaderboard.csv
 
-| rank | model_variant | preprocess_variant | best_score | primary_metric | ci |
-| --- | --- | --- | --- | --- | --- |
-| 1 | logistic_regression | stdscaler_ohe | 0.95 | accuracy | n/a |
+| rank | model_variant | preprocess_variant | composite_score | best_score | primary_metric | ci |
+| --- | --- | --- | --- | --- | --- | --- |
+| 1 | logistic_regression | stdscaler_ohe | n/a | 0.95 | accuracy | n/a |
 
 ## Extra Capabilities
 - thresholding: disabled

@@ -22,7 +22,7 @@
 - best_score: 0.0753718
 - train_rows: 160
 - val_rows: 40
-- other_metrics: mae=0.0560438, r2=0.98327
+- other_metrics: mae=0.0560438, mse=0.0056809, r2=0.98327
 
 ## Calibration / Thresholding / Uncertainty
 - thresholding: disabled

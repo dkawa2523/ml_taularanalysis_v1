@@ -1498,6 +1498,16 @@
         "tools/**",
         "docs/**"
       ]
+    },
+    {
+      "id": "T101",
+      "title": "Refactor plan: spec alignment backlog (pipeline v2 / ensemble / rehearsal)",
+      "md": "work/tasks/T101_refactor_plan.md",
+      "priority": "P0",
+      "status": "todo",
+      "must_change_globs": [
+        "work/tasks/**"
+      ]
     }
   ]
 }

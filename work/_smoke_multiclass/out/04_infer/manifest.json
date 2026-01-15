@@ -1,15 +1,15 @@
 {
   "schema_version": "v1",
-  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "code_version": "2960e7617dd10e7f20ff528349d15cb5cbb8c668",
   "platform_version": "0.1.0",
   "process": "infer",
-  "created_at": "2026-01-01T19:41:15Z",
+  "created_at": "2026-01-13T22:57:11Z",
   "inputs": {
     "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/03_train_model/model_bundle.joblib",
     "train_task_id": null,
     "mode": "batch",
     "input_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/tmp/toy_multiclass_infer.csv",
-    "processed_dataset_id": "local:3c67b1e6e13ceb5c9c3c863fc9b7afa85eac6a743d5ea8883417c6eff17b4cda",
+    "processed_dataset_id": "local:ae937b5055ca6f8f43be2d74cfd166cd5963fe6ee7be788a4d8726545cd94fb2",
     "split_hash": "0bdc9a83dcef87e758d84dedcb5a3561f6b3272088ff1a98bf3c381999d789a0",
     "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2"
   },
@@ -18,7 +18,7 @@
     "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_multiclass/out/04_infer/input_preview.csv"
   },
   "hashes": {
-    "config_hash": "628de80ff396e0b6ec60f6abecfb8c20fbf8bf35652d610f9cfee87091c08b35",
+    "config_hash": "7132c8fe95cda47d14ba96497c5e0db70c98ecd21a4a06dd4cd83e6cc8f19eb8",
     "split_hash": "0bdc9a83dcef87e758d84dedcb5a3561f6b3272088ff1a98bf3c381999d789a0",
     "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2"
   }

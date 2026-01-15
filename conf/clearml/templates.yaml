@@ -65,6 +65,28 @@ templates:
       process: "train_model"
       schema_version: "{schema_version}"
 
+  train_ensemble:
+    project_name: "{project_root}/{usecase_id}/04_train_ensemble"
+    task_name_template: "train_ensemble"
+    entrypoint: "python tools/clearml_entrypoint.py task=train_ensemble"
+    default_overrides:
+      - "run.clearml.enabled=true"
+      - "run.clearml.execution=logging"
+    requirements:
+      - "-r requirements/base.txt"
+      - "-r requirements/models.txt"
+      - "-e ."
+    tags:
+      - "template:true"
+      - "usecase:{usecase_id}"
+      - "process:train_ensemble"
+      - "schema:{schema_version}"
+      - "solution:tabular-analysis"
+    properties_minimal:
+      usecase_id: "{usecase_id}"
+      process: "train_ensemble"
+      schema_version: "{schema_version}"
+
   infer:
     project_name: "{project_root}/{usecase_id}/04_infer"
     task_name_template: "infer"

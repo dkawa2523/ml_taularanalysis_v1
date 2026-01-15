@@ -2,5 +2,29 @@
   "recommended_train_task_ref": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model",
   "recommended_model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model/model_bundle.joblib",
   "recommended_best_score": 0.95,
-  "recommended_primary_metric": "accuracy"
+  "recommended_primary_metric": "accuracy",
+  "recommended_composite_score": null,
+  "recommended_metrics": {
+    "r2": null,
+    "rmse": null,
+    "mae": null,
+    "mse": null
+  },
+  "ranking_score_key": "best_score",
+  "ranking_direction": "maximize",
+  "scoring": {
+    "metrics": [
+      "r2",
+      "rmse",
+      "mae",
+      "mse"
+    ],
+    "weights": {
+      "r2": 1.0,
+      "rmse": -1.0,
+      "mae": -0.5,
+      "mse": -0.2
+    },
+    "normalization": "minmax"
+  }
 }

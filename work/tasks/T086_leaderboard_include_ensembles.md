@@ -114,3 +114,8 @@ ClearML disabled:
 ## Update (2026-01-13)
 - `train_ensemble` / `primary_metric_source` が未実装のため後段対応
 - refactor plan の Phase 3 (T101) で実装予定
+
+## Update (2026-01-14)
+- leaderboard が `process:train_model` と `process:train_ensemble` を収集し、`model_family`/`ensemble_method`/`n_base_models`/`primary_metric_source` を列として追加。`src/tabular_analysis/processes/leaderboard.py`
+- `leaderboard_skipped.json` を出力し、欠損/非互換エントリを落としても処理継続。
+- recommend policy を `metric_source_priority`/`allow_cross_metric_source`/`allow_ensemble`/`tie_breaker` で制御。`conf/task/leaderboard.yaml`

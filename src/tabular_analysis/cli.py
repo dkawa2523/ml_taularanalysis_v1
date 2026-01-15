@@ -65,6 +65,10 @@ def _select_runner(task_name: str):
         from .processes.train_model import run
 
         return run
+    if task_name == "train_ensemble":
+        from .processes.train_ensemble import run
+
+        return run
     if task_name == "leaderboard":
         from .processes.leaderboard import run
 

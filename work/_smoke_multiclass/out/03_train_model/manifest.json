@@ -1,11 +1,11 @@
 {
   "schema_version": "v1",
-  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "code_version": "2960e7617dd10e7f20ff528349d15cb5cbb8c668",
   "platform_version": "0.1.0",
   "process": "train_model",
-  "created_at": "2026-01-01T19:41:14Z",
+  "created_at": "2026-01-13T22:57:09Z",
   "inputs": {
-    "processed_dataset_id": "local:3c67b1e6e13ceb5c9c3c863fc9b7afa85eac6a743d5ea8883417c6eff17b4cda",
+    "processed_dataset_id": "local:ae937b5055ca6f8f43be2d74cfd166cd5963fe6ee7be788a4d8726545cd94fb2",
     "split_hash": "0bdc9a83dcef87e758d84dedcb5a3561f6b3272088ff1a98bf3c381999d789a0",
     "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2",
     "model_variant": "logistic_regression",
@@ -23,7 +23,7 @@
     "n_classes": 3
   },
   "hashes": {
-    "config_hash": "ba4220f1f26a8201c36baecbf5e5fe31458229aab2ebda1624524c5e01d97f50",
+    "config_hash": "d54211d8dd0cfeb4877fcbddef432a91cf0f0cfb3d3634e12dc4994ec76d23c2",
     "split_hash": "0bdc9a83dcef87e758d84dedcb5a3561f6b3272088ff1a98bf3c381999d789a0",
     "recipe_hash": "6dd3314922b3cca78f6b299cf3b6f2ce22481d5ca36ffbb531833e81b3928bc2"
   }

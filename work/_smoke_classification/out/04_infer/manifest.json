@@ -1,9 +1,9 @@
 {
   "schema_version": "v1",
-  "code_version": "c98538a143858063a55c792f0d4ff4b94b6c03bf",
+  "code_version": "2960e7617dd10e7f20ff528349d15cb5cbb8c668",
   "platform_version": "0.1.0",
   "process": "infer",
-  "created_at": "2026-01-01T19:41:10Z",
+  "created_at": "2026-01-13T22:56:55Z",
   "inputs": {
     "model_id": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model/model_bundle.joblib",
     "train_task_id": null,
@@ -18,7 +18,7 @@
     "input_preview_path": "/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/04_infer/input_preview.json"
   },
   "hashes": {
-    "config_hash": "3fff14349fdfc502d3b24c3812779ffef5bc3501cdb5d761ddc4baca9d114546",
+    "config_hash": "6c9a95993fb039e89f2ec8f0f855d1fbfcbddb00714cf37fa3e7bcef84d1bb23",
     "split_hash": "d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f",
     "recipe_hash": "d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a"
   }

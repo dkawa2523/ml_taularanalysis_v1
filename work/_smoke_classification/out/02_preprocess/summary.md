@@ -6,5 +6,7 @@
 - features: 3 (numeric=2, categorical=1)
 - split: train=160 val=40 strategy=random
 - processed_dataset_id: local:c85ab7f964e06c43fa5db1e6d9fc50f2facb82320be7b232790713c03ccfdee3
+- store_features: True
 - split_hash: d50f4fad9677a48e9305be7fdf75f238bce2b64130455ab898d66b0ad9c64b6f
 - recipe_hash: d0bf0716f2ca34406944f5a1d6dc0c933b526ff12d5107c5121228f6f6fbfb8a
+- schema_hash: 9fddf6a68c1ffbaa06ee142c718c1827a879824fe3eada3c0cb63029cf18f56c

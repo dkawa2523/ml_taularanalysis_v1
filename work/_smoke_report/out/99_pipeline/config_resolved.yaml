@@ -1,16 +1,38 @@
 run:
-  usecase_id: TabularAnalysis
+  usecase_id: test_4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae_20260113_225752
   output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/out
   schema_version: v1
-  grid_run_id: ba100fe6f6f046239a34635479d0d6f7
+  grid_run_id: ebadcc7c025c4a1b8c3d9351971cbd48
   retrain_run_id: null
   clearml:
     enabled: false
     execution: local
+    code_repository: auto
+    code_branch: auto
+    code_version_mode: branch_head
     project_root: MFG
+    template_usecase_id: TabularAnalysis
     queue_name: null
     clone_from_task_id: null
     extra_tags: []
+    policy:
+      name: test_minimal
+      tags:
+      - solution:tabular-analysis
+      properties: {}
+    project_layout:
+      solution_root: TabularAnalysis
+      separator: /
+      group_map:
+        dataset_register: 01_Datasets
+        preprocess: 02_Preprocess
+        train_model: 03_TrainModels
+        train_ensemble: 04_Ensembles
+        infer: 05_Infer
+        leaderboard: 06_Leaderboards
+        pipeline: 00_Pipelines
+      misc_group: 99_Misc
+    project_name: MFG/TabularAnalysis/test_4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae_20260113_225752/00_Pipelines
   alerts:
     enabled: false
     sinks:
@@ -23,6 +45,21 @@ run:
         enabled: false
         url: null
         timeout_sec: 5
+  usecase_id_policy:
+    name: test_dataset_timestamp
+    strategy: dataset_timestamp
+    prefix: test
+    timestamp_format: '%Y%m%d_%H%M%S'
+    dataset_id_paths:
+    - retrain.dataset_id
+    - retrain.dataset_path
+    - data.raw_dataset_id
+    - data.processed_dataset_id
+    - data.dataset_path
+    fallback: unknown
+ops:
+  processed_dataset:
+    store_features: true
 exec_policy:
   limits:
     max_jobs: 50
@@ -89,7 +126,7 @@ data:
       - uuid
       - guid
   dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_report/tmp/toy.csv
-  raw_dataset_id: null
+  raw_dataset_id: local:4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae
   processed_dataset_id: null
   target_column: target
   id_columns: []
@@ -151,6 +188,11 @@ eval:
     mode: auto
     top_k: 1
   metrics:
+    regression:
+    - r2
+    - mse
+    - rmse
+    - mae
     classification_multiclass:
     - accuracy
     - f1_macro
@@ -196,14 +238,15 @@ group:
 task:
   name: pipeline
   stage: 99_pipeline
-  project_name: ${run.clearml.project_root}/${run.usecase_id}/99_pipeline
+  project_name: MFG/TabularAnalysis/test_4dd16162b6de06cd75c7b537734834eb9bc9269475c2db8618deee0dcddfdaae_20260113_225752/00_Pipelines
 pipeline:
-  run_dataset_register: true
+  run_dataset_register: false
   run_preprocess: true
   run_train: true
   run_leaderboard: true
   run_infer: false
   plan_only: false
+  dry_run: false
   grid:
     preprocess_variants:
     - stdscaler_ohe

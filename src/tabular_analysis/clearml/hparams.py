@@ -397,6 +397,47 @@ def connect_train_model(
     _connect_sections(ctx, sections, _section_order(sections_cfg))
 
 
+def connect_train_ensemble(
+    ctx: Any,
+    cfg: Any,
+    *,
+    processed_dataset_id: str | None,
+    task_type: str | None,
+    primary_metric: str | None,
+    method: str | None,
+    top_k: int | None,
+) -> None:
+    sections_cfg = _resolve_sections_cfg(cfg)
+    sections = _extract_sections(cfg, sections_cfg)
+    dataset_key = _section_key(sections_cfg, "dataset")
+    model_key = _section_key(sections_cfg, "model")
+    eval_key = _section_key(sections_cfg, "eval")
+    clearml_key = _section_key(sections_cfg, "clearml")
+    _merge_section(
+        sections,
+        dataset_key,
+        {"data.processed_dataset_id": processed_dataset_id},
+    )
+    _merge_section(
+        sections,
+        model_key,
+        {
+            "ensemble.method": method,
+            "ensemble.top_k": top_k,
+        },
+    )
+    _merge_section(
+        sections,
+        eval_key,
+        {
+            "eval.task_type": task_type,
+            "eval.primary_metric": primary_metric,
+        },
+    )
+    _merge_section(sections, clearml_key, _execution_hparams(cfg))
+    _connect_sections(ctx, sections, _section_order(sections_cfg))
+
+
 def connect_infer(
     ctx: Any,
     cfg: Any,

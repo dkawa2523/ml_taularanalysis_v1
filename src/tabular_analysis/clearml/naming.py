@@ -133,6 +133,14 @@ def _resolve_preprocess_variant(cfg: Any) -> str:
     value = _normalize_str(_cfg_value(cfg, "preprocess_variant.name"))
     if value is None:
         value = _normalize_str(_cfg_value(cfg, "preprocess.variant"))
+    if value is None:
+        value = _normalize_str(_cfg_value(cfg, "group.preprocess.preprocess_variant.name"))
+    if value is None:
+        run_dir = _normalize_str(_cfg_value(cfg, "train.inputs.preprocess_run_dir"))
+        if run_dir:
+            name = Path(run_dir).name
+            if name.startswith("preprocess__"):
+                value = name.split("__", 1)[-1]
     return _sanitize_identifier(value or "unknown")
 
 
@@ -171,6 +179,33 @@ def apply_train_model_naming(cfg: Any) -> dict[str, Any]:
         f"preprocess:{preprocess_variant}",
         f"dataset:{raw_dataset_id}",
     ]
+    _set_cfg_value(cfg, "run.clearml.task_name", task_name)
+    _merge_extra_tags(cfg, tags)
+    return {"task_name": task_name, "tags": tags}
+
+
+def apply_train_ensemble_naming(cfg: Any) -> dict[str, Any]:
+    """Apply train_ensemble naming/tagging policy to config."""
+    method = _normalize_str(_cfg_value(cfg, "ensemble.method")) or "mean_topk"
+    top_k = _cfg_value(cfg, "ensemble.top_k")
+    try:
+        top_k = int(top_k) if top_k is not None else None
+    except Exception:
+        top_k = None
+    preprocess_variant = _resolve_preprocess_variant(cfg)
+    method_token = _sanitize_identifier(method)
+    model_abbr = f"ensemble_{method_token}"
+    if top_k is not None:
+        task_name = f"train_ensemble/{method_token}(k={top_k})"
+    else:
+        task_name = f"train_ensemble/{method_token}"
+    tags = [
+        f"model:{model_abbr}",
+        f"ensemble:{method_token}",
+        f"preprocess:{preprocess_variant}",
+    ]
+    if top_k is not None:
+        tags.append(f"topk:{top_k}")
     _set_cfg_value(cfg, "run.clearml.task_name", task_name)
     _merge_extra_tags(cfg, tags)
     return {"task_name": task_name, "tags": tags}

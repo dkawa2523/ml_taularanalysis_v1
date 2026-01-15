@@ -21,10 +21,13 @@ from ..io.bundle_io import load_bundle
 from ..ops.clearml_identity import apply_clearml_identity
 from ..platform_adapter import (
     PlatformAdapterError,
+    clearml_task_id,
+    clearml_task_tags,
     get_task_artifact_local_copy,
     hash_config,
     init_task_context,
     is_clearml_enabled,
+    list_clearml_tasks_by_tags,
     resolve_version_props,
     save_config_resolved,
     update_task_properties,
@@ -275,6 +278,51 @@ def _resolve_run_dir(ref: str) -> Path:
     return path
 
 
+def _dedupe_refs(values: Iterable[str]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for value in values:
+        text = _normalize_str(value)
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        ordered.append(text)
+    return ordered
+
+
+def _collect_clearml_refs(cfg: Any) -> list[str]:
+    usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+    grid_run_id = _normalize_str(_cfg_value(cfg, "run.grid_run_id"))
+    base_tags = [f"usecase:{usecase_id}"]
+    if grid_run_id:
+        base_tags.append(f"grid:{grid_run_id}")
+    refs: list[str] = []
+    for process in ("train_model", "train_ensemble"):
+        tags = [*base_tags, f"process:{process}"]
+        try:
+            tasks = list_clearml_tasks_by_tags(tags)
+        except PlatformAdapterError:
+            continue
+        for task in tasks:
+            task_tags = clearml_task_tags(task)
+            if "template:true" in task_tags:
+                continue
+            task_id = clearml_task_id(task)
+            if task_id:
+                refs.append(task_id)
+    return _dedupe_refs(refs)
+
+
+def _scan_local_refs(cfg: Any) -> list[str]:
+    run_root = Path(getattr(cfg.run, "output_dir", "outputs")).expanduser().resolve()
+    search_root = run_root.parent if run_root.name.startswith("leaderboard") else run_root
+    refs: list[str] = []
+    for out_path in search_root.glob("**/03_train_model/out.json"):
+        refs.append(str(out_path.parent))
+    for out_path in search_root.glob("**/04_train_ensemble/out.json"):
+        refs.append(str(out_path.parent))
+    return _dedupe_refs(refs)
+
 def _resolve_model_bundle_path(run_dir: Path, model_id: str | None) -> Path | None:
     if model_id:
         candidate = Path(model_id).expanduser()
@@ -320,6 +368,7 @@ def _build_entry(
     out: dict[str, Any],
     manifest: dict[str, Any] | None,
     metrics_payload: dict[str, Any] | None,
+    ensemble_spec_payload: dict[str, Any] | None,
     train_task_ref: str,
     model_bundle_path: Path | None,
     expected_primary_metric: str | None,
@@ -339,6 +388,14 @@ def _build_entry(
     primary_metric = _normalize_str(out.get("primary_metric")) or expected_primary_metric
     if primary_metric is None:
         errors.append("primary_metric is missing.")
+
+    process_name = None
+    if isinstance(manifest, dict):
+        process_name = manifest.get("process")
+        if isinstance(process_name, dict):
+            process_name = process_name.get("name")
+    process_name = _normalize_str(process_name)
+    model_family = "ensemble" if process_name == "train_ensemble" else "single"
 
     inputs = {}
     if isinstance(manifest, dict):
@@ -365,6 +422,22 @@ def _build_entry(
         errors.append("best_score is missing or invalid.")
 
     model_variant = _normalize_str(inputs.get("model_variant"))
+    ensemble_method = None
+    n_base_models = None
+    primary_metric_source = _normalize_str(out.get("primary_metric_source"))
+    if not primary_metric_source and isinstance(metrics_payload, dict):
+        primary_metric_source = _normalize_str(metrics_payload.get("primary_metric_source"))
+    if model_family == "ensemble":
+        if isinstance(ensemble_spec_payload, dict):
+            ensemble_method = _normalize_str(ensemble_spec_payload.get("method"))
+            n_base_models = _normalize_int(ensemble_spec_payload.get("n_base_models"))
+            if n_base_models is None:
+                included = ensemble_spec_payload.get("included")
+                if isinstance(included, list):
+                    n_base_models = len(included)
+            if not primary_metric_source:
+                primary_metric_source = _normalize_str(ensemble_spec_payload.get("primary_metric_source"))
+    primary_metric_source = primary_metric_source or "valid"
     preprocess_variant = None
 
     if model_bundle_path is not None:
@@ -377,6 +450,8 @@ def _build_entry(
         except Exception as exc:
             warnings.append(f"Failed to load model_bundle.joblib: {exc}")
 
+    if model_family == "ensemble" and ensemble_method:
+        model_variant = f"ensemble_{ensemble_method}"
     if model_variant is None:
         model_variant = "unknown"
     if preprocess_variant is None:
@@ -408,6 +483,7 @@ def _build_entry(
         "model_id": model_id,
         "best_score": best_score,
         "primary_metric": primary_metric,
+        "primary_metric_source": primary_metric_source,
         "direction": direction,
         "seed": seed,
         "task_type": task_type,
@@ -416,6 +492,9 @@ def _build_entry(
         "recipe_hash": recipe_hash,
         "preprocess_variant": preprocess_variant,
         "model_variant": model_variant,
+        "model_family": model_family,
+        "ensemble_method": ensemble_method,
+        "n_base_models": n_base_models,
         "primary_metric_ci_low": metric_ci.get("low") if metric_ci else None,
         "primary_metric_ci_mid": metric_ci.get("mid") if metric_ci else None,
         "primary_metric_ci_high": metric_ci.get("high") if metric_ci else None,
@@ -461,12 +540,16 @@ def _write_leaderboard_csv(
 ) -> None:
     fieldnames = [
         "rank",
+        "model_family",
+        "ensemble_method",
+        "n_base_models",
         "composite_score",
         "best_score",
         "primary_metric_ci_low",
         "primary_metric_ci_mid",
         "primary_metric_ci_high",
         "primary_metric",
+        "primary_metric_source",
         "task_type",
         *[name for name in metric_names],
         "model_id",
@@ -545,13 +628,24 @@ def run(cfg: Any) -> None:
     require_comparable = bool(getattr(lb_cfg, "require_comparable", True))
     top_k = int(getattr(lb_cfg, "top_k", 10) or 0)
     dry_run = bool(getattr(lb_cfg, "dry_run", False))
+    recommend_cfg = getattr(lb_cfg, "recommend", None)
+    metric_source_priority = _ensure_list(
+        getattr(recommend_cfg, "metric_source_priority", None)
+    )
+    if not metric_source_priority:
+        metric_source_priority = ["test", "valid", "meta_cv_on_valid"]
+    allow_cross_metric_source = bool(
+        getattr(recommend_cfg, "allow_cross_metric_source", False)
+    )
+    allow_ensemble = bool(getattr(recommend_cfg, "allow_ensemble", False))
+    tie_breaker = _normalize_str(getattr(recommend_cfg, "tie_breaker", None)) or "prefer_simple"
 
     if clearml_enabled:
-        refs = train_task_ids
+        refs = train_task_ids or _collect_clearml_refs(cfg)
         if not refs and not dry_run:
             raise ValueError("leaderboard.train_task_ids is required when ClearML is enabled.")
     else:
-        refs = train_run_dirs or train_task_ids
+        refs = train_run_dirs or train_task_ids or _scan_local_refs(cfg)
         if not refs and not dry_run:
             raise ValueError(
                 "leaderboard.train_run_dirs (or train_task_ids) is required when ClearML is disabled."
@@ -772,10 +866,12 @@ def run(cfg: Any) -> None:
 
     entries: list[dict[str, Any]] = []
     excluded: list[str] = []
+    skipped_entries: list[dict[str, Any]] = []
     warnings: list[str] = []
     non_comparable: list[str] = []
 
     for ref in refs:
+        ref_str = str(ref)
         entry: dict[str, Any] | None = None
         entry_warnings: list[str] = []
         entry_errors: list[str] = []
@@ -792,6 +888,7 @@ def run(cfg: Any) -> None:
                 manifest = _load_json(manifest_path)
                 metrics_payload = None
                 model_bundle_path = None
+                ensemble_spec_payload = None
                 try:
                     model_bundle_path = get_task_artifact_local_copy(cfg, ref, "model_bundle.joblib")
                 except PlatformAdapterError as exc:
@@ -803,10 +900,16 @@ def run(cfg: Any) -> None:
                     metrics_path = None
                 if metrics_path is not None:
                     metrics_payload = _load_json(metrics_path)
+                try:
+                    spec_path = get_task_artifact_local_copy(cfg, ref, "ensemble_spec.json")
+                    ensemble_spec_payload = _load_json(spec_path)
+                except PlatformAdapterError:
+                    ensemble_spec_payload = None
                 entry, build_warnings, entry_errors = _build_entry(
                     out=out,
                     manifest=manifest,
                     metrics_payload=metrics_payload,
+                    ensemble_spec_payload=ensemble_spec_payload,
                     train_task_ref=str(ref),
                     model_bundle_path=model_bundle_path,
                     expected_primary_metric=expected_primary_metric,
@@ -835,10 +938,18 @@ def run(cfg: Any) -> None:
                         metrics_payload = _load_json(metrics_path)
                     else:
                         entry_warnings.append(f"metrics.json not found under {run_dir}")
+                    ensemble_spec_payload = None
+                    spec_path = run_dir / "ensemble_spec.json"
+                    if spec_path.exists():
+                        try:
+                            ensemble_spec_payload = _load_json(spec_path)
+                        except Exception as exc:
+                            entry_warnings.append(f"ensemble_spec.json invalid: {exc}")
                     entry, build_warnings, entry_errors = _build_entry(
                         out=out,
                         manifest=manifest,
                         metrics_payload=metrics_payload,
+                        ensemble_spec_payload=ensemble_spec_payload,
                         train_task_ref=str(run_dir),
                         model_bundle_path=model_bundle_path,
                         expected_primary_metric=expected_primary_metric,
@@ -848,15 +959,21 @@ def run(cfg: Any) -> None:
                     entry_warnings.extend(build_warnings)
 
         for warning in entry_warnings:
-            warnings.append(f"{ref}: {warning}")
+            warnings.append(f"{ref_str}: {warning}")
         if entry_errors:
-            excluded.append(str(ref))
+            excluded.append(ref_str)
+            skipped_entries.append(
+                {"train_task_ref": ref_str, "reason": "entry_error", "details": entry_errors}
+            )
             for error in entry_errors:
-                warnings.append(f"{ref}: {error}")
+                warnings.append(f"{ref_str}: {error}")
             continue
         if entry is None:
-            excluded.append(str(ref))
-            warnings.append(f"{ref}: entry build failed")
+            excluded.append(ref_str)
+            skipped_entries.append(
+                {"train_task_ref": ref_str, "reason": "entry_missing", "details": "entry build failed"}
+            )
+            warnings.append(f"{ref_str}: entry build failed")
             continue
 
         if clearml_enabled and entry.get("train_task_id") is None:
@@ -877,11 +994,18 @@ def run(cfg: Any) -> None:
         mismatches = _compare_comparability(entry, ref_values)
         if mismatches:
             if require_comparable:
-                excluded.append(str(ref))
-                warnings.append(f"{ref}: excluded ({', '.join(mismatches)})")
+                excluded.append(ref_str)
+                skipped_entries.append(
+                    {
+                        "train_task_ref": ref_str,
+                        "reason": "non_comparable",
+                        "details": mismatches,
+                    }
+                )
+                warnings.append(f"{ref_str}: excluded ({', '.join(mismatches)})")
                 continue
-            non_comparable.append(str(ref))
-            warnings.append(f"{ref}: non-comparable ({', '.join(mismatches)})")
+            non_comparable.append(ref_str)
+            warnings.append(f"{ref_str}: non-comparable ({', '.join(mismatches)})")
 
         entries.append(entry)
 
@@ -948,18 +1072,62 @@ def run(cfg: Any) -> None:
         reverse=ranking_direction == "maximize",
     )
 
+    def _filter_recommend_candidates(source_entries: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        filtered = source_entries
+        if not allow_cross_metric_source:
+            for source in metric_source_priority:
+                subset = [
+                    entry
+                    for entry in filtered
+                    if (entry.get("primary_metric_source") or "valid") == source
+                ]
+                if subset:
+                    filtered = subset
+                    break
+        if not allow_ensemble:
+            subset = [entry for entry in filtered if entry.get("model_family") != "ensemble"]
+            if subset:
+                filtered = subset
+        return filtered
+
+    def _apply_tie_breaker(candidates: list[dict[str, Any]]) -> dict[str, Any]:
+        if not candidates:
+            raise ValueError("No candidates for tie-breaker.")
+        if tie_breaker != "prefer_simple":
+            return candidates[0]
+        top_score = _to_float(candidates[0].get(ranking_score_key))
+        if top_score is None:
+            return candidates[0]
+        tie_group = []
+        for entry in candidates:
+            value = _to_float(entry.get(ranking_score_key))
+            if value is None:
+                break
+            if math.isclose(value, top_score, rel_tol=1e-9, abs_tol=1e-12):
+                tie_group.append(entry)
+            else:
+                break
+        for entry in tie_group:
+            if entry.get("model_family") == "single":
+                return entry
+        return candidates[0]
+
     if top_k <= 0:
         top_k = len(entries_sorted)
     rows = []
     for idx, entry in enumerate(entries_sorted[:top_k], start=1):
         row = {
             "rank": idx,
+            "model_family": entry.get("model_family"),
+            "ensemble_method": entry.get("ensemble_method"),
+            "n_base_models": entry.get("n_base_models"),
             "composite_score": entry.get("composite_score"),
             "best_score": entry["best_score"],
             "primary_metric_ci_low": entry.get("primary_metric_ci_low"),
             "primary_metric_ci_mid": entry.get("primary_metric_ci_mid"),
             "primary_metric_ci_high": entry.get("primary_metric_ci_high"),
             "primary_metric": entry["primary_metric"],
+            "primary_metric_source": entry.get("primary_metric_source"),
             "task_type": entry.get("task_type"),
             "model_id": entry["model_id"],
             "preprocess_variant": entry["preprocess_variant"],
@@ -975,13 +1143,20 @@ def run(cfg: Any) -> None:
     leaderboard_path = ctx.output_dir / "leaderboard.csv"
     _write_leaderboard_csv(leaderboard_path, rows, metric_names=scoring_metrics)
 
-    recommended = entries_sorted[0]
+    recommend_candidates = _filter_recommend_candidates(entries_sorted)
+    if not recommend_candidates:
+        recommend_candidates = entries_sorted
+    recommended = _apply_tie_breaker(recommend_candidates)
     recommended_metrics = {name: recommended.get(name) for name in scoring_metrics}
     recommendation = {
         "recommended_train_task_ref": recommended["train_task_ref"],
         "recommended_model_id": recommended["model_id"],
         "recommended_best_score": recommended["best_score"],
         "recommended_primary_metric": recommended["primary_metric"],
+        "recommended_primary_metric_source": recommended.get("primary_metric_source"),
+        "recommended_model_family": recommended.get("model_family"),
+        "recommended_ensemble_method": recommended.get("ensemble_method"),
+        "recommended_n_base_models": recommended.get("n_base_models"),
         "recommended_composite_score": recommended.get("composite_score"),
         "recommended_metrics": recommended_metrics,
         "ranking_score_key": ranking_score_key,
@@ -990,6 +1165,12 @@ def run(cfg: Any) -> None:
             "metrics": scoring_metrics,
             "weights": scoring_weights,
             "normalization": scoring_normalization,
+        },
+        "recommend_policy": {
+            "metric_source_priority": metric_source_priority,
+            "allow_cross_metric_source": allow_cross_metric_source,
+            "allow_ensemble": allow_ensemble,
+            "tie_breaker": tie_breaker,
         },
     }
     recommendation_path = ctx.output_dir / "recommendation.json"
@@ -1034,6 +1215,10 @@ def run(cfg: Any) -> None:
         summary_lines.extend([f"- {line}" for line in warnings])
     summary_path = ctx.output_dir / "summary.md"
     summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
+    skipped_path = ctx.output_dir / "leaderboard_skipped.json"
+    skipped_path.write_text(
+        json.dumps(skipped_entries, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
     if clearml_enabled and rows:
         ranking_score_label = (
@@ -1106,6 +1291,7 @@ def run(cfg: Any) -> None:
         f"- recommended_model_id: {recommended.get('model_id')}",
         f"- train_task_ref: {recommended.get('train_task_ref')}",
         f"- primary_metric: {recommended.get('primary_metric')} ({direction})",
+        f"- primary_metric_source: {recommended.get('primary_metric_source')}",
         f"- best_score: {_format_float(recommended.get('best_score'))}",
         f"- ranking_score_key: {ranking_score_key} ({ranking_direction})",
     ]
@@ -1119,6 +1305,10 @@ def run(cfg: Any) -> None:
         decision_lines.append(f"- task_type: {recommended.get('task_type')}")
     if recommended.get("n_classes") is not None:
         decision_lines.append(f"- n_classes: {recommended.get('n_classes')}")
+    if recommended.get("model_family"):
+        decision_lines.append(f"- model_family: {recommended.get('model_family')}")
+    if recommended.get("ensemble_method"):
+        decision_lines.append(f"- ensemble_method: {recommended.get('ensemble_method')}")
     decision_lines.extend(
         [
             "",
@@ -1138,6 +1328,12 @@ def run(cfg: Any) -> None:
         decision_lines.append(f"- warning_count: {len(warnings)} (see summary.md)")
     decision_lines.extend(
         [
+            "",
+            "## Recommend Policy",
+            f"- metric_source_priority: {', '.join(metric_source_priority)}",
+            f"- allow_cross_metric_source: {allow_cross_metric_source}",
+            f"- allow_ensemble: {allow_ensemble}",
+            f"- tie_breaker: {tie_breaker}",
             "",
             "## Scoring",
             f"- normalization: {scoring_normalization}",
@@ -1231,9 +1427,13 @@ def run(cfg: Any) -> None:
             "train_task_id": recommended.get("train_task_id"),
             "best_score": recommended.get("best_score"),
             "primary_metric": recommended.get("primary_metric"),
+            "primary_metric_source": recommended.get("primary_metric_source"),
             "primary_metric_ci": recommended.get("primary_metric_ci"),
             "composite_score": recommended.get("composite_score"),
             "metrics": recommended_metrics,
+            "model_family": recommended.get("model_family"),
+            "ensemble_method": recommended.get("ensemble_method"),
+            "n_base_models": recommended.get("n_base_models"),
             "task_type": recommended.get("task_type"),
             "n_classes": recommended.get("n_classes"),
             "class_labels": recommended.get("class_labels"),
@@ -1248,6 +1448,12 @@ def run(cfg: Any) -> None:
             "normalization": scoring_normalization,
             "ranking_score_key": ranking_score_key,
             "ranking_direction": ranking_direction,
+        },
+        "recommend_policy": {
+            "metric_source_priority": metric_source_priority,
+            "allow_cross_metric_source": allow_cross_metric_source,
+            "allow_ensemble": allow_ensemble,
+            "tie_breaker": tie_breaker,
         },
         "comparability": {
             "require_comparable": require_comparable,
@@ -1285,6 +1491,7 @@ def run(cfg: Any) -> None:
             ("leaderboard.csv", leaderboard_path),
             ("recommendation.json", recommendation_path),
             ("summary.md", summary_path),
+            ("leaderboard_skipped.json", skipped_path),
             ("decision_summary.md", decision_summary_path),
             ("decision_summary.json", decision_summary_json_path),
         ]:
@@ -1297,6 +1504,7 @@ def run(cfg: Any) -> None:
         properties_payload = {
             "recommended_train_task_id": recommended.get("train_task_id") or None,
             "recommended_model_id": recommended.get("model_id"),
+            "recommended_primary_metric_source": recommended.get("primary_metric_source"),
             "excluded_count": len(excluded),
             "selection_policy": selection_policy,
         }
@@ -1306,11 +1514,16 @@ def run(cfg: Any) -> None:
 
     out = {
         "leaderboard_csv": str(leaderboard_path),
+        "leaderboard_skipped": str(skipped_path),
         "recommended_train_task_id": recommended.get("train_task_id") or None,
         "recommended_train_task_ref": recommended.get("train_task_ref"),
         "recommended_model_id": recommended.get("model_id"),
         "recommended_best_score": recommended.get("best_score"),
         "recommended_primary_metric": recommended.get("primary_metric"),
+        "recommended_primary_metric_source": recommended.get("primary_metric_source"),
+        "recommended_model_family": recommended.get("model_family"),
+        "recommended_ensemble_method": recommended.get("ensemble_method"),
+        "recommended_n_base_models": recommended.get("n_base_models"),
         "recommended_composite_score": recommended.get("composite_score"),
         "ranking_score_key": ranking_score_key,
         "ranking_direction": ranking_direction,
@@ -1346,6 +1559,7 @@ def run(cfg: Any) -> None:
         "leaderboard_csv": str(leaderboard_path),
         "recommended_train_task_id": recommended.get("train_task_id") or None,
         "recommended_model_id": recommended.get("model_id"),
+        "recommended_primary_metric_source": recommended.get("primary_metric_source"),
         "recommended_composite_score": recommended.get("composite_score"),
         "excluded_count": len(excluded),
     }

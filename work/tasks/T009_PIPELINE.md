@@ -22,6 +22,11 @@
 - local モード（run.clearml.execution=local）では、まず「サブプロセス実行」で確実に分離する
   - 例: `python -m tabular_analysis.cli task=preprocess ...` を subprocess で呼ぶ
   - 出力ディレクトリを stage ごとに分け、out.json で次工程へ渡す
+- logging 実行時は子プロセスで `CLEARML_TASK_ID` / `TRAINS_TASK_ID` に加えて
+  `CLEARML_PROC_MASTER_ID` / `TRAINS_PROC_MASTER_ID` も外し、
+  ClearML の subprocess 判定で親タスクへ吸収されないようにする（leaderboard の train_task_id 参照のため）
+- ClearML Task.init は `reuse_last_task_id=True` が既定なので、agent 実行でない場合は
+  `reuse_last_task_id=False` を明示して前回タスクの再利用を防ぐ
 - ClearML enabled の場合は platform の機能を使って agent/clone 実行へ投げる（実行戦略は docs/10）
 - grid_run_id は UUID などで生成し、全タスクに tags/properties で付与する（docs/03）
 

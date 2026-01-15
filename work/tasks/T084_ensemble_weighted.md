@@ -108,3 +108,8 @@
 ## Update (2026-01-13)
 - mean_topk (T083) の実装が前提のため後段対応
 - refactor plan の Phase 3 (T101) に統合
+
+## Update (2026-01-14)
+- weighted を train_ensemble に実装。回帰は linear/ridge を試して失敗時は random simplex、分類は random simplex 探索。`src/tabular_analysis/processes/train_ensemble.py`
+- `ensemble.weighted.*` を設定追加。`conf/ensemble/base.yaml` / `conf/ensemble/weighted.yaml`
+- spec に weights と探索設定を記録し、ClearML では weights table を出力。

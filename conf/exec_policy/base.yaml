@@ -15,6 +15,7 @@ queues:
   dataset_register: ${exec_policy.queues.default}
   preprocess: ${exec_policy.queues.default}
   train_model: ${exec_policy.queues.default}
+  train_ensemble: ${exec_policy.queues.default}
   # Queue for heavy models when heavy_model_variants is set.
   train_model_heavy: gpu
   leaderboard: ${exec_policy.queues.default}

@@ -1,5 +1,5 @@
 run:
-  usecase_id: TabularAnalysis
+  usecase_id: test_unknown_20260113_225653
   output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out
   schema_version: v1
   grid_run_id: null
@@ -7,10 +7,32 @@ run:
   clearml:
     enabled: false
     execution: local
+    code_repository: auto
+    code_branch: auto
+    code_version_mode: branch_head
     project_root: MFG
+    template_usecase_id: TabularAnalysis
     queue_name: null
     clone_from_task_id: null
     extra_tags: []
+    policy:
+      name: test_minimal
+      tags:
+      - solution:tabular-analysis
+      properties: {}
+    project_layout:
+      solution_root: TabularAnalysis
+      separator: /
+      group_map:
+        dataset_register: 01_Datasets
+        preprocess: 02_Preprocess
+        train_model: 03_TrainModels
+        train_ensemble: 04_Ensembles
+        infer: 05_Infer
+        leaderboard: 06_Leaderboards
+        pipeline: 00_Pipelines
+      misc_group: 99_Misc
+    project_name: MFG/TabularAnalysis/test_unknown_20260113_225653/05_Infer
   alerts:
     enabled: false
     sinks:
@@ -23,6 +45,21 @@ run:
         enabled: false
         url: null
         timeout_sec: 5
+  usecase_id_policy:
+    name: test_dataset_timestamp
+    strategy: dataset_timestamp
+    prefix: test
+    timestamp_format: '%Y%m%d_%H%M%S'
+    dataset_id_paths:
+    - retrain.dataset_id
+    - retrain.dataset_path
+    - data.raw_dataset_id
+    - data.processed_dataset_id
+    - data.dataset_path
+    fallback: unknown
+ops:
+  processed_dataset:
+    store_features: true
 exec_policy:
   limits:
     max_jobs: 50
@@ -151,6 +188,11 @@ eval:
     mode: auto
     top_k: 1
   metrics:
+    regression:
+    - r2
+    - mse
+    - rmse
+    - mae
     classification_multiclass:
     - accuracy
     - f1_macro
@@ -196,20 +238,46 @@ group:
 task:
   name: infer
   stage: 04_infer
-  project_name: ${run.clearml.project_root}/${run.usecase_id}/04_infer
+  project_name: MFG/TabularAnalysis/test_unknown_20260113_225653/05_Infer
 infer:
   model_id: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/_smoke_classification/out/03_train_model/model_bundle.joblib
   train_task_id: null
   mode: single
   input_path: null
   input_json: null
+  dry_run: false
   validation:
     mode: warn
   batch:
+    inputs_path: null
+    inputs_json: null
+    max_children: null
+    wait_timeout_sec: 3600
+    poll_interval_sec: 10
     chunk_size: 50000
     output_format: csv
     write_mode: overwrite
     max_rows: null
+    child_task: false
+  optimize:
+    n_trials: 20
+    direction: maximize
+    sampler: tpe
+    seed: 0
+    top_k: 5
+    wait_timeout_sec: 3600
+    poll_interval_sec: 10
+    objective:
+      key: prediction
+    search_space: []
+    plots:
+      history_log_scale: false
+      contour_params: null
+    child_task: false
+  plots:
+    max_rows: 5
+    max_input_columns: 20
+    max_output_columns: 12
   drift:
     enabled: false
     psi_warn_threshold: 0.2

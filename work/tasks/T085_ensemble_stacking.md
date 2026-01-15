@@ -122,3 +122,8 @@ meta-model は artifact（pickle/joblib）として保存。
 ## Update (2026-01-13)
 - base 契約 (T083) が未整備のため後段対応
 - test split の有無を確認し、`primary_metric_source` の設計を Phase 3 (T101) で確定する
+
+## Update (2026-01-14)
+- stacking を train_ensemble に実装。valid 上の meta-CV を primary として `primary_metric_source=meta_cv_on_valid` を記録し、fit_score は参考値として保持。`src/tabular_analysis/processes/train_ensemble.py`
+- meta-model は回帰: ridge/elasticnet、分類: logistic regression。`conf/ensemble/stacking.yaml`
+- stacking 失敗時は mean_topk に degrade し、spec に退避情報を記録。

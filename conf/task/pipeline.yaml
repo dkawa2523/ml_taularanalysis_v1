@@ -8,6 +8,7 @@ pipeline:
   run_dataset_register: false
   run_preprocess: true
   run_train: true
+  run_train_ensemble: ${ensemble.enabled}
   run_leaderboard: true
   run_infer: false
   plan_only: false

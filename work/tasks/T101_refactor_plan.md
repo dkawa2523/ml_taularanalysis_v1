@@ -10,8 +10,9 @@
    - `plan.json` / `run_summary.json` / fail_policy / groups/profile が未反映
    - docs: `docs/60_PIPELINE_TRAIN_CONTRACT.md` / `docs/52_CLEARML_PIPELINE_CONTROLLER_CONTRACT.md`
 
-2) Ensemble が未実装
-   - `train_ensemble` が存在せず、leaderboard で比較できない
+2) Ensemble 実装は完了、検証/微調整が残る
+   - `train_ensemble` / leaderboard / preds_valid 契約は実装済み
+   - ClearML 実行 + UI 契約の再検証が必要
    - docs: `docs/83_ENSEMBLE_POLICY.md` / `docs/55_CLEARML_UI_CHECKLIST.md`
 
 3) Rehearsal runner と UI audit の不足
@@ -41,9 +42,10 @@
 - T093/T094: fail_policy / run_summary / limits の実装
 - T095: Local/Agent で plan 共有の見え方一致を確認
 
-### Phase 3: Ensemble 実装
+### Phase 3: Ensemble 実装（実装済み）
 - T083/T084/T085: mean_topk / weighted / stacking を追加
 - T086: leaderboard で比較・推薦
+- 残り: ClearML UI 契約の再検証とリハーサル実行
 
 ### Phase 4: Docs と運用の再整備
 - T098/T099: UI checklist / docs の整合確認
@@ -51,7 +53,7 @@
 
 ## 既存タスクとの関係
 - Pipeline v2: T089, T091, T093, T094, T095
-- Ensemble: T083, T084, T085, T086
+- Ensemble: T083, T084, T085, T086（実装済み、検証待ち）
 - Rehearsal/UI audit: T087, T096, T100
 - ClearML設定統一: T077, T079, T082
 - Docs整合: T098, T099
@@ -59,3 +61,8 @@
 ## 検証
 - `PYTHONPATH=src python3 tools/tests/verify_all.py --quick`
 - logging + pipeline_controller で UI 契約を再確認（`docs/55_CLEARML_UI_CHECKLIST.md`）
+
+## Update (2026-01-14)
+- train_ensemble の新規追加と pipeline/leaderboard 統合を実装済み。
+- train_model の preds_valid/classes 出力を追加し、ensemble 収集の前提を整備。
+- 現時点の残タスクは ClearML UI 契約の再確認とリハーサル再実行。

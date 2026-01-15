@@ -18,6 +18,7 @@ _STAGE_BY_PROCESS = {
     "dataset_register": "01_dataset_register",
     "preprocess": "02_preprocess",
     "train_model": "03_train_model",
+    "train_ensemble": "04_train_ensemble",
     "infer": "04_infer",
     "leaderboard": "05_leaderboard",
     "promote_model": "06_promote_model",

@@ -113,3 +113,6 @@
 - 接着剤：plan 生成 + driver 実行（local_sequential / pipeline_controller）。
 - `pipeline_run.json`, `plan.json`, `report.md`, `run_summary.json` を出力する（詳細は `docs/60_PIPELINE_TRAIN_CONTRACT.md`）。
 - `ensemble.enabled=true` の場合は train_ensemble を含め、leaderboard は単体 + アンサンブルを比較する（`docs/83_ENSEMBLE_POLICY.md`）。
+
+
+

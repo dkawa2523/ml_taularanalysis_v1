@@ -14,3 +14,9 @@ leaderboard:
 
   top_k: ${exec_policy.limits.max_models}
   dry_run: false
+
+  recommend:
+    metric_source_priority: ["test", "valid", "meta_cv_on_valid"]
+    allow_cross_metric_source: false
+    allow_ensemble: false
+    tie_breaker: prefer_simple

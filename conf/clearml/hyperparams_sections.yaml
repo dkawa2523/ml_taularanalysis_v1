@@ -25,6 +25,7 @@ sections:
     - train.model
     - train.params
     - model_variant.*
+    - ensemble.*
   eval:
     - eval.*
     - leaderboard.*

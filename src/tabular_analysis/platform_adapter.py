@@ -1027,10 +1027,18 @@ def init_task_context(
             extra_tags=_cfg_value(cfg, "run.clearml.extra_tags") or [],
             tags=tags,
         )
+        reuse_last_task_id = None
+        if not os.getenv("CLEARML_TASK_ID") and not os.getenv("TRAINS_TASK_ID"):
+            reuse_last_task_id = False
         try:
-            task = task_factory(cfg, tags=merged_tags, task_type=task_type)
+            task = task_factory(
+                cfg,
+                tags=merged_tags,
+                task_type=task_type,
+                reuse_last_task_id=reuse_last_task_id,
+            )
         except TypeError:
-            task = task_factory(cfg, tags=merged_tags)
+            task = task_factory(cfg, tags=merged_tags, reuse_last_task_id=reuse_last_task_id)
         _apply_clearml_task_script_override(task, cfg)
         _apply_clearml_system_tags(task, system_tags)
         setter = getattr(platform_clearml, "set_user_properties", None)
@@ -1543,7 +1551,13 @@ def list_clearml_tasks_by_tags(
         )
     except Exception as exc:
         raise PlatformAdapterError(f"Failed to query ClearML tasks by tags: {exc}") from exc
-    return list(tasks or [])
+    required = set(tag_list)
+    filtered: list[Any] = []
+    for task in list(tasks or []):
+        task_tags = set(_task_tags(task))
+        if required.issubset(task_tags):
+            filtered.append(task)
+    return filtered
 
 
 def clearml_task_id(task: Any) -> str | None:
