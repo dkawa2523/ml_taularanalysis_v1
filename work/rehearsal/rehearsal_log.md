@@ -590,3 +590,76 @@ $ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/
 $ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260114_133023 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/logging/test_toy_20260114_133023 data.raw_dataset_id=8d82fef017654db4a86775e67d3b7f22 data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
 ```
 - result: success
+## 2026-01-16T02:34:55Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260116_023455
+- repo: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023455
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260116_023455 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023455 data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260116_023455 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023455 data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL
+
+/Library/Frameworks/Python.framework/Versions/3.10/bin/python3: Error while finding module specification for 'tabular_analysis.cli' (ModuleNotFoundError: No module named 'tabular_analysis')
+## 2026-01-16T02:35:46Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260116_023546
+- repo: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023546
+- python: 3.10.8 (/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260116_023546 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023546 data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260116_023546 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_023546 data.raw_dataset_id=3146a1dc54494ffea93ea1be84d3a767 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default run.clearml.project_root=LOCAL +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py --usecase-id test_toy_20260116_023546 --project-root LOCAL
+
+usecase_id: test_toy_20260116_023546
+errors:
+- missing processes: leaderboard, pipeline, preprocess, train_model
+## 2026-01-16T02:55:21Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260116_025521
+- repo: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_025521
+- python: 3.10.8 (/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260116_025521 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_025521 data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260116_025521 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_025521 data.raw_dataset_id=4701035b4d1a443fa24928a74f9594ba data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default run.clearml.project_root=LOCAL +pipeline.preprocess_variant=stdscaler_ohe +pipeline.model_set=regression_all
+```
+- result: success
+## 2026-01-16T03:54:19Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260116_035419
+- repo: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_035419
+- python: 3.10.8 (/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260116_035419 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_035419 data.dataset_path=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv data.target_column=target run.clearml.enabled=true run.clearml.execution=logging run.clearml.project_root=LOCAL
+$ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260116_035419 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_035419 data.raw_dataset_id=1c4ebb141c914edba6ca8e33f41d09d6 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default run.clearml.project_root=LOCAL +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[catboost,elasticnet,extra_trees,gaussian_process,gradient_boosting,knn,lasso,lgbm,linear_regression,mlp,random_forest,ridge,svc,svr,xgboost]'
+```
+- result: success
