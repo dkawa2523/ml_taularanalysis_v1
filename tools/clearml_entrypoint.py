@@ -175,23 +175,25 @@ def _uv_sync(
     subprocess.run(cmd, check=True, env=env)
 
 
-def _reexec_with_python(python_path: Path, argv: list[str]) -> None:
-    os.environ[_BOOTSTRAP_ENV] = "1"
-    os.execv(str(python_path), [str(python_path), *argv])
-
-
-def _can_import(python_path: Path, module: str) -> bool:
-    try:
-        subprocess.run(
-            [str(python_path), "-c", f"import {module}"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-        )
-        return True
-    except Exception:
-        return False
+def _exec_uv_run(repo_root: Path, argv: list[str]) -> None:
+    env = os.environ.copy()
+    env[_BOOTSTRAP_ENV] = "1"
+    env.setdefault("TABULAR_ANALYSIS_CONFIG_DIR", str(repo_root / "conf"))
+    cmd = [
+        sys.executable,
+        "-m",
+        "uv",
+        "run",
+        "--project",
+        str(repo_root),
+        "--",
+        "python",
+        "-m",
+        "tabular_analysis.cli",
+        *argv,
+    ]
+    subprocess.run(cmd, check=True, env=env)
+    raise SystemExit(0)
 
 
 def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
@@ -218,27 +220,7 @@ def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
         all_extras=all_extras,
         frozen=frozen,
     )
-    python_path = (venv_path / "bin" / "python").resolve()
-    if os.name == "nt":
-        python_path = (venv_path / "Scripts" / "python.exe").resolve()
-    if not python_path.exists():
-        raise RuntimeError(f"uv venv python not found: {python_path}")
-    if not _can_import(python_path, "hydra"):
-        print(
-            "[clearml_entrypoint] uv venv missing hydra; falling back to current env bootstrap.",
-            file=sys.stderr,
-        )
-        fallback_env = Path(sys.prefix).resolve()
-        _uv_sync(
-            repo_root,
-            fallback_env,
-            extras=extras,
-            all_extras=all_extras,
-            frozen=frozen,
-        )
-        os.environ[_BOOTSTRAP_ENV] = "1"
-        return
-    _reexec_with_python(python_path, [str(Path(__file__)), *argv])
+    _exec_uv_run(repo_root, argv)
 
 
 def _looks_like_container(text: str) -> bool:
