@@ -37,7 +37,7 @@ from ..platform_adapter import (
     write_manifest,
     write_out_json,
 )
-from ..ops.clearml_identity import apply_clearml_identity, build_project_name
+from ..ops.clearml_identity import apply_clearml_identity, build_project_name, resolve_clearml_metadata
 from ..reporting.pipeline_report import build_pipeline_report_bundle
 
 _STAGE_BY_TASK = {
@@ -754,15 +754,30 @@ def _make_base_task_factory(base_task_id: str, *, project_name: str):
     except Exception as exc:
         raise RuntimeError("clearml is required to clone base tasks for pipeline steps.") from exc
 
-    def _factory(node: Any):  # ClearML PipelineController.Node
-        name = getattr(node, "name", None) or "pipeline_step"
+    project_id = None
+    try:
         project_id = get_or_create_project(
             session=ClearMLTask._get_default_session(),
             project_name=str(project_name),
         )
-        if not project_id:
-            raise RuntimeError(f"Failed to resolve ClearML project id for {project_name}")
-        return ClearMLTask.clone(base_task_id, name=str(name), project=project_id)
+    except Exception:
+        project_id = None
+    if not project_id:
+        try:
+            project_id = ClearMLTask.get_project_id(str(project_name))
+        except Exception:
+            project_id = None
+
+    def _factory(node: Any):  # ClearML PipelineController.Node
+        name = getattr(node, "name", None) or "pipeline_step"
+        if project_id:
+            return ClearMLTask.clone(base_task_id, name=str(name), project=project_id)
+        task = ClearMLTask.clone(base_task_id, name=str(name))
+        try:
+            task.set_project(project_name=str(project_name))
+        except Exception:
+            pass
+        return task
 
     return _factory
 
@@ -1288,13 +1303,35 @@ def _add_pipeline_step(
     add_step = getattr(controller, "add_step", None)
     if not callable(add_step):
         raise AttributeError("Pipeline controller does not support add_step.")
-    if execution_queue:
-        try:
-            signature = inspect.signature(add_step)
-        except Exception:
-            signature = None
-        if signature is not None and "execution_queue" in signature.parameters:
+    try:
+        signature = inspect.signature(add_step)
+    except Exception:
+        signature = None
+    if signature is not None:
+        params = signature.parameters
+        if execution_queue and "execution_queue" in params:
             kwargs["execution_queue"] = execution_queue
+        base_task_factory = kwargs.get("base_task_factory")
+        if base_task_factory and "base_task_factory" not in params:
+            kwargs.pop("base_task_factory", None)
+            try:
+                node_name = kwargs.get("name") or "pipeline_step"
+
+                class _Node:
+                    def __init__(self, name: str):
+                        self.name = name
+
+                clone_task = base_task_factory(_Node(str(node_name)))
+                task_id = getattr(clone_task, "id", None)
+                if task_id and "base_task_id" in params:
+                    kwargs["base_task_id"] = str(task_id)
+                if task_id and "clone_base_task" in params:
+                    kwargs["clone_base_task"] = False
+            except Exception:
+                pass
+        kwargs = {key: value for key, value in kwargs.items() if key in params}
+    elif execution_queue:
+        kwargs["execution_queue"] = execution_queue
     add_step(**kwargs)
 
 
@@ -1560,7 +1597,19 @@ def _run_clearml_pipeline(
                     break
 
         pipeline_name = _normalize_str(_cfg_value(cfg, "run.clearml.task_name")) or "pipeline"
-        controller = create_pipeline_controller(cfg, name=pipeline_name, default_queue=pipeline_queue)
+        metadata = resolve_clearml_metadata(
+            cfg,
+            stage=getattr(getattr(cfg, "task", None), "stage", "99_pipeline"),
+            task_name="pipeline",
+            clearml_enabled=True,
+        )
+        controller = create_pipeline_controller(
+            cfg,
+            name=pipeline_name,
+            tags=metadata.get("tags"),
+            properties=metadata.get("user_properties"),
+            default_queue=pipeline_queue,
+        )
         controller_overrides = _hydra_task_overrides()
         if controller_overrides:
             _ensure_override(controller_overrides, "task", "pipeline")
@@ -1631,7 +1680,10 @@ def _run_clearml_pipeline(
                 task_id = _resolve_base_task_id(cfg, task_name, use_templates=use_templates)
                 template_task_ids[task_name] = task_id
             project_name = _clearml_project(cfg, _STAGE_BY_TASK[task_name])
-            return {"base_task_factory": _make_base_task_factory(task_id, project_name=project_name)}
+            return {
+                "base_task_id": task_id,
+                "base_task_factory": _make_base_task_factory(task_id, project_name=project_name),
+            }
 
         if plan["run_dataset_register"]:
             step = steps["dataset_register"]

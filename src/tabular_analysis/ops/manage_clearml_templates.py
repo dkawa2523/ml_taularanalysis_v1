@@ -371,6 +371,8 @@ def main(argv: Optional[list[str]] = None) -> int:
         project_root=str(args.project_root or defaults.project_root),
         usecase_id=str(args.usecase_id or defaults.usecase_id),
         schema_version=str(args.schema_version or defaults.schema_version),
+        solution_root=str(defaults.solution_root),
+        group_map=dict(defaults.group_map),
     )
     spec_path = Path(args.spec)
     if not spec_path.is_absolute():

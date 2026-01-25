@@ -1016,6 +1016,31 @@ def _apply_clearml_system_tags(task: Any, system_tags: Iterable[str] | None) -> 
         raise PlatformAdapterError(f"Failed to set ClearML system tags: {exc}") from exc
 
 
+def _apply_clearml_tags(task: Any, tags: Iterable[str] | None) -> None:
+    tag_list = _dedupe_tags(tags or [])
+    if not tag_list:
+        return
+    existing = _task_tags(task)
+    merged = _dedupe_tags([*existing, *tag_list])
+    setter = getattr(task, "set_tags", None)
+    if callable(setter):
+        try:
+            setter(merged)
+            return
+        except Exception as exc:
+            raise PlatformAdapterError(f"Failed to set ClearML tags: {exc}") from exc
+    adder = getattr(task, "add_tags", None)
+    if not callable(adder):
+        raise PlatformAdapterError("ClearML Task.add_tags is not available.")
+    missing = [tag for tag in tag_list if tag not in existing]
+    if not missing:
+        return
+    try:
+        adder(missing)
+    except Exception as exc:
+        raise PlatformAdapterError(f"Failed to add ClearML tags: {exc}") from exc
+
+
 def _apply_clearml_task_type(task: Any, task_type: str | None) -> None:
     if not task_type:
         return
@@ -2565,6 +2590,7 @@ def create_pipeline_controller(
     *,
     name: str | None = None,
     tags: Iterable[str] | None = None,
+    properties: Mapping[str, Any] | None = None,
     default_queue: str | None = None,
 ) -> Any:
     pipeline_utils = _load_clearml_pipeline_utils(clearml_enabled=True)
@@ -2581,6 +2607,19 @@ def create_pipeline_controller(
             controller._target_project = False
     except Exception:
         pass
+    task = _resolve_clearml_task(controller)
+    _apply_clearml_task_type(task, clearml_task_type_controller())
+    _apply_clearml_system_tags(task, ["pipeline"])
+    if tags:
+        _apply_clearml_tags(task, tags)
+    if properties:
+        platform_clearml = _load_clearml_module(clearml_enabled=True)
+        setter = getattr(platform_clearml, "set_user_properties", None)
+        if setter is None:
+            raise PlatformAdapterError("ml_platform.integrations.clearml.set_user_properties not found.")
+        existing = _existing_user_properties(task)
+        merged = {**existing, **dict(properties)}
+        setter(task, merged)
     _apply_clearml_task_script_override(controller, cfg)
     _apply_clearml_pipeline_args(controller, cfg)
     _apply_clearml_task_requirements(

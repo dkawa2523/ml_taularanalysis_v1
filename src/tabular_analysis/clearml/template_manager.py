@@ -15,6 +15,8 @@ class TemplateContext:
     project_root: str
     usecase_id: str
     schema_version: str
+    solution_root: str
+    group_map: dict[str, Any]
 
 
 @dataclass(frozen=True)
@@ -85,9 +87,37 @@ def _dedupe(values: Iterable[Any]) -> list[str]:
 
 
 def load_default_context(repo_root: Path) -> TemplateContext:
+    project_layout_path = repo_root / "conf" / "clearml" / "project_layout.yaml"
+    if project_layout_path.exists():
+        layout_cfg = OmegaConf.load(project_layout_path)
+    else:
+        layout_cfg = OmegaConf.create({})
+    solution_root = getattr(layout_cfg, "solution_root", None) or "TabularAnalysis"
+    group_map = getattr(layout_cfg, "group_map", None)
+    if group_map is None:
+        group_map = {}
+    if not isinstance(group_map, dict):
+        group_map = dict(group_map)
+    defaults = {
+        "dataset_register": "01_Datasets",
+        "preprocess": "02_Preprocess",
+        "train_model": "03_TrainModels",
+        "train_ensemble": "04_Ensembles",
+        "infer": "05_Infer",
+        "leaderboard": "06_Leaderboards",
+        "pipeline": "00_Pipelines",
+    }
+    for key, value in defaults.items():
+        group_map.setdefault(key, value)
     run_cfg_path = repo_root / "conf" / "run" / "base.yaml"
     if not run_cfg_path.exists():
-        return TemplateContext(project_root="MFG", usecase_id="TabularAnalysis", schema_version="v1")
+        return TemplateContext(
+            project_root="MFG",
+            usecase_id="TabularAnalysis",
+            schema_version="v1",
+            solution_root=str(solution_root),
+            group_map=dict(group_map),
+        )
     cfg = OmegaConf.load(run_cfg_path)
     clearml_cfg = getattr(cfg, "clearml", None)
     project_root = getattr(clearml_cfg, "project_root", None) or "MFG"
@@ -98,6 +128,8 @@ def load_default_context(repo_root: Path) -> TemplateContext:
         project_root=str(project_root),
         usecase_id=str(usecase_id),
         schema_version=str(schema_version),
+        solution_root=str(solution_root),
+        group_map=dict(group_map),
     )
 
 
@@ -111,6 +143,8 @@ def load_template_specs(spec_path: Path, ctx: TemplateContext) -> list[TemplateS
         "project_root": ctx.project_root,
         "usecase_id": ctx.usecase_id,
         "schema_version": ctx.schema_version,
+        "solution_root": ctx.solution_root,
+        "group_map": ctx.group_map,
     }
     specs: list[TemplateSpec] = []
     for name, payload in templates.items():

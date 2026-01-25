@@ -100,6 +100,8 @@ def _report_templates(
         project_root=str(defaults.project_root),
         usecase_id=str(defaults.usecase_id),
         schema_version=str(defaults.schema_version),
+        solution_root=str(defaults.solution_root),
+        group_map=dict(defaults.group_map),
     )
     spec_path = repo_root / "conf" / "clearml" / "templates.yaml"
     specs = template_manager.load_template_specs(spec_path, ctx)

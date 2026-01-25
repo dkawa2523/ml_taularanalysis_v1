@@ -2,7 +2,7 @@
 task:
   name: preprocess
   stage: "02_preprocess"
-  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/02_preprocess"
+  project_name: "${run.clearml.project_root}/${run.clearml.project_layout.solution_root}/${run.usecase_id}/${run.clearml.project_layout.group_map.preprocess}"
 
 preprocess:
   # 前処理バリアント（conf/group/preprocess/*.yaml で定義）

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Mapping
 
+from ..ops.clearml_identity import build_project_name
 from ..platform_adapter import (
     clearml_script_mismatches,
     clearml_task_id,
@@ -13,16 +14,6 @@ from ..platform_adapter import (
     list_clearml_tasks_by_tags,
     resolve_clearml_script_spec,
 )
-
-_STAGE_BY_PROCESS = {
-    "dataset_register": "01_dataset_register",
-    "preprocess": "02_preprocess",
-    "train_model": "03_train_model",
-    "train_ensemble": "04_train_ensemble",
-    "infer": "04_infer",
-    "leaderboard": "05_leaderboard",
-    "pipeline": "99_pipeline",
-}
 _SOLUTION_TAG = "solution:tabular-analysis"
 
 
@@ -61,12 +52,15 @@ def _normalize_str(value: Any) -> str | None:
 
 
 def _template_project_name(cfg: Any, process: str) -> str | None:
-    stage = _STAGE_BY_PROCESS.get(process)
-    if not stage:
-        return None
     project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root")) or "MFG"
     template_usecase = _normalize_str(_cfg_value(cfg, "run.clearml.template_usecase_id")) or "TabularAnalysis"
-    return f"{project_root}/{template_usecase}/{stage}"
+    return build_project_name(
+        project_root,
+        template_usecase,
+        process,
+        process=process,
+        cfg=cfg,
+    )
 
 
 def resolve_template_task_id(cfg: Any, process: str) -> str:

@@ -2,7 +2,7 @@
 task:
   name: infer
   stage: "04_infer"
-  project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/04_infer"
+  project_name: "${run.clearml.project_root}/${run.clearml.project_layout.solution_root}/${run.usecase_id}/${run.clearml.project_layout.group_map.infer}"
 
 infer:
   # 推論に使う model の指定方法：
