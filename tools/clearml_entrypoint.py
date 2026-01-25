@@ -102,24 +102,44 @@ def _in_docker() -> bool:
 def _maybe_patch_clearml_files_host() -> None:
     if os.getenv("CLEARML_FILES_HOST"):
         return
-    api_host = os.getenv("CLEARML_API_HOST") or os.getenv("CLEARML_WEB_HOST") or ""
-    if not api_host:
-        return
-    try:
-        from urllib.parse import urlparse
+    def _set_from_url(url: str) -> bool:
+        try:
+            from urllib.parse import urlparse
 
-        parsed = urlparse(api_host)
-    except Exception:
+            parsed = urlparse(url)
+        except Exception:
+            return False
+        host = parsed.hostname
+        if not host:
+            return False
+        if host in {"localhost", "127.0.0.1"} and _in_docker():
+            host = "host.docker.internal"
+        if "docker.internal" not in host:
+            return False
+        scheme = parsed.scheme or "http"
+        os.environ["CLEARML_FILES_HOST"] = f"{scheme}://{host}:8081"
+        return True
+
+    api_host = os.getenv("CLEARML_API_HOST") or os.getenv("CLEARML_WEB_HOST") or ""
+    if api_host and _set_from_url(api_host):
         return
-    host = parsed.hostname
-    if not host:
-        return
-    if host in {"localhost", "127.0.0.1"} and _in_docker():
-        host = "host.docker.internal"
-    if "docker.internal" not in host:
-        return
-    scheme = parsed.scheme or "http"
-    os.environ["CLEARML_FILES_HOST"] = f"{scheme}://{host}:8081"
+
+    cfg_path = os.getenv("CLEARML_CONFIG_FILE")
+    if cfg_path:
+        try:
+            import configparser
+
+            parser = configparser.ConfigParser()
+            parser.read(cfg_path)
+            api_section = parser["api"] if "api" in parser else {}
+            files_host = api_section.get("files_server") or api_section.get("files") or ""
+            if files_host and _set_from_url(files_host):
+                return
+            api_server = api_section.get("host") or api_section.get("api_server") or api_section.get("web_server")
+            if api_server:
+                _set_from_url(api_server)
+        except Exception:
+            return
 
 
 def _resolve_bootstrap_mode(overrides: dict[str, str]) -> str:
