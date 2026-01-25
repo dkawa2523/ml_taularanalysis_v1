@@ -750,12 +750,19 @@ def _resolve_base_task_id(cfg: Any, task_name: str, *, use_templates: bool) -> s
 def _make_base_task_factory(base_task_id: str, *, project_name: str):
     try:
         from clearml import Task as ClearMLTask  # type: ignore
+        from clearml.backend_interface.util import get_or_create_project  # type: ignore
     except Exception as exc:
         raise RuntimeError("clearml is required to clone base tasks for pipeline steps.") from exc
 
     def _factory(node: Any):  # ClearML PipelineController.Node
         name = getattr(node, "name", None) or "pipeline_step"
-        return ClearMLTask.clone(base_task_id, name=str(name), project=str(project_name))
+        project_id = get_or_create_project(
+            session=ClearMLTask._get_default_session(),
+            project_name=str(project_name),
+        )
+        if not project_id:
+            raise RuntimeError(f"Failed to resolve ClearML project id for {project_name}")
+        return ClearMLTask.clone(base_task_id, name=str(name), project=project_id)
 
     return _factory
 
