@@ -26,6 +26,13 @@ def _with_repo_env(repo: Path) -> dict[str, str]:
     if venv_bin.exists():
         path = env.get("PATH", "")
         env["PATH"] = f"{venv_bin}{os.pathsep}{path}" if path else str(venv_bin)
+    src_dir = repo / "src"
+    if src_dir.exists():
+        existing = env.get("PYTHONPATH", "")
+        entries = [item for item in existing.split(os.pathsep) if item]
+        if str(src_dir) not in entries:
+            entries.insert(0, str(src_dir))
+            env["PYTHONPATH"] = os.pathsep.join(entries)
     return env
 
 
