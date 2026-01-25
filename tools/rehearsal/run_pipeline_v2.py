@@ -167,11 +167,18 @@ def _format_override(key: str, value: str | list[str]) -> str:
     return f"{key}={_format_value(str(value))}"
 
 
+def _output_dir_override(repo: Path, output_dir: Path) -> str:
+    try:
+        return str(output_dir.relative_to(repo))
+    except ValueError:
+        return str(output_dir)
+
+
 def _build_dataset_register_cmd(
     *,
     execution: str,
     py: str,
-    output_dir: Path,
+    output_dir: str,
     dataset_path: Path,
     target_column: str,
     usecase_id: str,
@@ -184,7 +191,7 @@ def _build_dataset_register_cmd(
         "tabular_analysis.cli",
         "task=dataset_register",
         _format_override("run.usecase_id", usecase_id),
-        _format_override("run.output_dir", str(output_dir)),
+        _format_override("run.output_dir", output_dir),
         _format_override("data.dataset_path", str(dataset_path)),
         _format_override("data.target_column", target_column),
     ]
@@ -230,7 +237,7 @@ def _build_pipeline_cmd(
     *,
     execution: str,
     py: str,
-    output_dir: Path,
+    output_dir: str,
     dataset_path: Path,
     raw_dataset_id: str,
     target_column: str,
@@ -248,7 +255,7 @@ def _build_pipeline_cmd(
         "tabular_analysis.cli",
         "task=pipeline",
         _format_override("run.usecase_id", usecase_id),
-        _format_override("run.output_dir", str(output_dir)),
+        _format_override("run.output_dir", output_dir),
         _format_override("data.raw_dataset_id", raw_dataset_id),
         _format_override("data.target_column", target_column),
     ]
@@ -385,6 +392,7 @@ def main() -> int:
     dataset_token = _dataset_token(dataset_path)
     usecase_id = args.usecase_id or f"test_{dataset_token}_{stamp}"
     output_dir = output_root / args.execution / usecase_id
+    output_dir_arg = _output_dir_override(repo, output_dir)
 
     py = sys.executable
     commands: list[list[str]] = []
@@ -395,7 +403,7 @@ def main() -> int:
         cmd_register = _build_dataset_register_cmd(
             execution=args.execution,
             py=py,
-            output_dir=output_dir,
+            output_dir=output_dir_arg,
             dataset_path=dataset_path,
             target_column=args.target_column,
             usecase_id=usecase_id,
@@ -414,7 +422,7 @@ def main() -> int:
             cmd_pipeline = _build_pipeline_cmd(
                 execution=args.execution,
                 py=py,
-                output_dir=output_dir,
+                output_dir=output_dir_arg,
                 dataset_path=dataset_path,
                 raw_dataset_id=raw_dataset_id,
                 target_column=args.target_column,
@@ -457,7 +465,7 @@ def main() -> int:
             cmd_pipeline = _build_pipeline_cmd(
                 execution=args.execution,
                 py=py,
-                output_dir=output_dir,
+                output_dir=output_dir_arg,
                 dataset_path=dataset_path,
                 raw_dataset_id=raw_dataset_id,
                 target_column=args.target_column,
