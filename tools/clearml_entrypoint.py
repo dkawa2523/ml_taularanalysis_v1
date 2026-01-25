@@ -95,6 +95,33 @@ def _is_clearml_context() -> bool:
     )
 
 
+def _in_docker() -> bool:
+    return Path("/.dockerenv").exists()
+
+
+def _maybe_patch_clearml_files_host() -> None:
+    if os.getenv("CLEARML_FILES_HOST"):
+        return
+    api_host = os.getenv("CLEARML_API_HOST") or os.getenv("CLEARML_WEB_HOST") or ""
+    if not api_host:
+        return
+    try:
+        from urllib.parse import urlparse
+
+        parsed = urlparse(api_host)
+    except Exception:
+        return
+    host = parsed.hostname
+    if not host:
+        return
+    if host in {"localhost", "127.0.0.1"} and _in_docker():
+        host = "host.docker.internal"
+    if "docker.internal" not in host:
+        return
+    scheme = parsed.scheme or "http"
+    os.environ["CLEARML_FILES_HOST"] = f"{scheme}://{host}:8081"
+
+
 def _resolve_bootstrap_mode(overrides: dict[str, str]) -> str:
     for key in ("run.clearml.env.bootstrap", "run.clearml.bootstrap"):
         value = overrides.get(key)
@@ -355,6 +382,7 @@ def main(argv: list[str] | None = None) -> None:
 
     if not os.getenv("TABULAR_ANALYSIS_CONFIG_DIR"):
         os.environ["TABULAR_ANALYSIS_CONFIG_DIR"] = str(repo_root / "conf")
+    _maybe_patch_clearml_files_host()
 
     args = _merge_clearml_overrides(list(argv or []))
     _maybe_bootstrap_uv(repo_root, args)
