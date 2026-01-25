@@ -589,6 +589,15 @@ def _collect_run_overrides(
         overrides["run.clearml.project_root"] = getattr(clearml_cfg, "project_root", None)
         overrides["run.clearml.queue_name"] = getattr(clearml_cfg, "queue_name", None)
         overrides["run.clearml.clone_from_task_id"] = getattr(clearml_cfg, "clone_from_task_id", None)
+        env_cfg = getattr(clearml_cfg, "env", None)
+        if env_cfg is not None:
+            overrides["run.clearml.env.bootstrap"] = getattr(env_cfg, "bootstrap", None)
+            uv_cfg = getattr(env_cfg, "uv", None)
+            if uv_cfg is not None:
+                overrides["run.clearml.env.uv.venv_dir"] = getattr(uv_cfg, "venv_dir", None)
+                overrides["run.clearml.env.uv.extras"] = getattr(uv_cfg, "extras", None)
+                overrides["run.clearml.env.uv.all_extras"] = getattr(uv_cfg, "all_extras", None)
+                overrides["run.clearml.env.uv.frozen"] = getattr(uv_cfg, "frozen", None)
         extra_tags = getattr(clearml_cfg, "extra_tags", None)
         if extra_tags:
             overrides["run.clearml.extra_tags"] = list(extra_tags)
