@@ -28,6 +28,7 @@ from ..monitoring.drift import build_train_profile
 from .drift_report import annotate_profile, resolve_drift_settings, sample_frame
 from ..ops.clearml_identity import apply_clearml_identity
 from ..platform_adapter import (
+    get_task_artifact_local_copy,
     hash_config,
     init_task_context,
     is_clearml_enabled,
@@ -1553,6 +1554,11 @@ def run(cfg: Any) -> None:
         candidate = Path(processed_ref).expanduser()
         if candidate.exists():
             processed_ref_path = candidate.resolve()
+    preprocess_task_id = _normalize_str(
+        _cfg_value(cfg, "train.inputs.preprocess_task_id")
+        or _cfg_value(cfg, "train.preprocess_task_id")
+        or _cfg_value(cfg, "inputs.preprocess_task_id")
+    )
 
     preprocess_run_dir = _resolve_preprocess_run_dir(cfg, processed_ref_path)
     preprocess_out_path = preprocess_run_dir / "out.json"
@@ -1573,6 +1579,13 @@ def run(cfg: Any) -> None:
             )
         assets_dir = preprocess_run_dir
     else:
+        if clearml_enabled and preprocess_task_id and not processed_ref:
+            try:
+                task_out = get_task_artifact_local_copy(cfg, preprocess_task_id, "out.json")
+                task_payload = _load_json(task_out)
+                processed_ref = _normalize_str(task_payload.get("processed_dataset_id")) or processed_ref
+            except Exception as exc:
+                warnings.warn(f"Failed to fetch preprocess out.json from task {preprocess_task_id}: {exc}")
         if processed_ref_path is not None:
             assets_dir = processed_ref_path if processed_ref_path.is_dir() else processed_ref_path.parent
         elif processed_ref and clearml_enabled and not processed_ref.startswith("local:"):

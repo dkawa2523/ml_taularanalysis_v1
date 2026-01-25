@@ -14,3 +14,4 @@ train:
   # preprocess の出力ディレクトリ（out.json/processed_dataset.parquet 等）
   inputs:
     preprocess_run_dir: null
+    preprocess_task_id: null

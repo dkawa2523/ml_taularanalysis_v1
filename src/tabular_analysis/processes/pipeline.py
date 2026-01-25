@@ -666,6 +666,46 @@ def _collect_eval_overrides(cfg: Any) -> dict[str, Any]:
     return overrides
 
 
+def _resolve_ensemble_methods(cfg: Any) -> list[str]:
+    methods = [_normalize_str(item) for item in _to_list(_cfg_value(cfg, "ensemble.methods"))]
+    methods = [item for item in methods if item]
+    if methods:
+        seen: set[str] = set()
+        ordered: list[str] = []
+        for item in methods:
+            if item in seen:
+                continue
+            seen.add(item)
+            ordered.append(item)
+        return ordered
+    method = _normalize_str(_cfg_value(cfg, "ensemble.method")) or "mean_topk"
+    return [method]
+
+
+def _collect_ensemble_overrides(cfg: Any) -> dict[str, Any]:
+    ensemble_cfg = getattr(cfg, "ensemble", None)
+    overrides: dict[str, Any] = {}
+    if ensemble_cfg is None:
+        return overrides
+    for key in ("top_k", "selection_metric", "exclude_variants", "fallback_rerun_predict"):
+        value = getattr(ensemble_cfg, key, None)
+        if value is not None:
+            overrides[f"ensemble.{key}"] = list(value) if key == "exclude_variants" else value
+    weighted_cfg = getattr(ensemble_cfg, "weighted", None)
+    if weighted_cfg is not None:
+        for key in ("search", "n_samples", "seed", "top_k_max"):
+            value = getattr(weighted_cfg, key, None)
+            if value is not None:
+                overrides[f"ensemble.weighted.{key}"] = value
+    stacking_cfg = getattr(ensemble_cfg, "stacking", None)
+    if stacking_cfg is not None:
+        for key in ("meta_model", "cv_folds", "seed", "require_test_split"):
+            value = getattr(stacking_cfg, key, None)
+            if value is not None:
+                overrides[f"ensemble.stacking.{key}"] = value
+    return overrides
+
+
 def _build_run_root(base_output_dir: Path, grid_run_id: str, name: str) -> Path:
     safe_name = _sanitize_component(name)
     return base_output_dir / "grid" / str(grid_run_id) / safe_name
@@ -831,6 +871,8 @@ def _build_plan_steps(
     base_extra_tags: list[str],
     max_models: int,
     queues: Mapping[str, Any],
+    ensemble_methods: list[str],
+    ensemble_overrides: Mapping[str, Any],
 ) -> dict[str, Any]:
     dataset_step = None
     preprocess_steps: list[dict[str, Any]] = []
@@ -907,6 +949,7 @@ def _build_plan_steps(
             run_root = _build_run_root(base_output_dir, grid_run_id, run_name)
             overrides = {
                 "group/model": model_variant,
+                "+preprocess.variant": preprocess_variant,
                 "train.inputs.preprocess_run_dir": str(preprocess_run_dir),
                 "run.output_dir": str(run_root),
             }
@@ -945,30 +988,39 @@ def _build_plan_steps(
             if not variant:
                 continue
             by_variant.setdefault(variant, []).append(step)
+        methods = ensemble_methods or ["mean_topk"]
         for preprocess_variant, parent_steps in by_variant.items():
-            step_name = f"ensemble__{_sanitize_component(preprocess_variant)}"
-            run_root = _build_run_root(base_output_dir, grid_run_id, f"ensemble__{preprocess_variant}")
-            overrides = {
-                "run.output_dir": str(run_root),
-                "+preprocess.variant": preprocess_variant,
-                "group/preprocess": preprocess_variant,
-                "ensemble.enabled": True,
-            }
-            step_queue = _select_queue(queues, "train_ensemble")
-            if step_queue:
-                overrides["run.clearml.queue_name"] = step_queue
-            train_ensemble_steps.append(
-                {
-                    "step_name": step_name,
-                    "task_name": "train_ensemble",
-                    "run_root": run_root,
-                    "run_dir": _stage_dir(run_root, "train_ensemble"),
-                    "parents": [step["step_name"] for step in parent_steps],
-                    "queue": step_queue,
-                    "overrides": overrides,
-                    "preprocess_variant": preprocess_variant,
+            for method in methods:
+                method_key = _sanitize_component(method)
+                step_name = f"ensemble__{_sanitize_component(preprocess_variant)}__{method_key}"
+                run_root = _build_run_root(
+                    base_output_dir,
+                    grid_run_id,
+                    f"ensemble__{preprocess_variant}__{method}",
+                )
+                overrides = {
+                    "run.output_dir": str(run_root),
+                    "+preprocess.variant": preprocess_variant,
+                    "group/preprocess": preprocess_variant,
+                    "ensemble.enabled": True,
+                    "ensemble.method": method,
                 }
-            )
+                overrides.update(ensemble_overrides)
+                step_queue = _select_queue(queues, "train_ensemble")
+                if step_queue:
+                    overrides["run.clearml.queue_name"] = step_queue
+                train_ensemble_steps.append(
+                    {
+                        "step_name": step_name,
+                        "task_name": "train_ensemble",
+                        "run_root": run_root,
+                        "run_dir": _stage_dir(run_root, "train_ensemble"),
+                        "parents": [step["step_name"] for step in parent_steps],
+                        "queue": step_queue,
+                        "overrides": overrides,
+                        "preprocess_variant": preprocess_variant,
+                    }
+                )
 
     if run_leaderboard:
         run_root = _build_run_root(base_output_dir, grid_run_id, "leaderboard")
@@ -1091,6 +1143,8 @@ def _build_pipeline_plan(
     else:
         downstream_data_overrides = dict(data_overrides)
     eval_overrides = _collect_eval_overrides(cfg)
+    ensemble_methods = _resolve_ensemble_methods(cfg)
+    ensemble_overrides = _collect_ensemble_overrides(cfg)
 
     preprocess_targets = preprocess_variants
     if run_train:
@@ -1119,6 +1173,8 @@ def _build_pipeline_plan(
         base_extra_tags=base_extra_tags,
         max_models=max_models,
         queues=queues,
+        ensemble_methods=ensemble_methods,
+        ensemble_overrides=ensemble_overrides,
     )
 
     return {
@@ -1574,6 +1630,11 @@ def _run_clearml_pipeline(
                     eval_overrides,
                     step["overrides"],
                 )
+                parents = step.get("parents") or []
+                if parents:
+                    overrides["train.inputs.preprocess_task_id"] = pipeline_step_task_id_ref(
+                        str(parents[0])
+                    )
                 _add_pipeline_step(
                     controller,
                     name=step["step_name"],

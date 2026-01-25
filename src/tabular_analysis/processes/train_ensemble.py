@@ -16,7 +16,7 @@ import warnings
 
 from ..clearml.hparams import connect_train_ensemble
 from ..clearml.naming import apply_train_ensemble_naming
-from ..clearml.ui_logger import log_debug_table, log_scalar
+from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
 from ..io.bundle_io import load_bundle, save_bundle
 from ..metrics.regression import REGRESSION_METRIC_ORDER, compute_regression_metrics
 from ..ops.clearml_identity import apply_clearml_identity
@@ -38,6 +38,16 @@ from ..platform_adapter import (
     write_out_json,
 )
 from ..registry.metrics import get_metric, metric_direction, metric_requires_proba
+from ..viz.plots import (
+    plot_confusion_matrix,
+    plot_regression_residuals,
+    plot_roc_curve,
+)
+from ..viz.regression_plots import (
+    build_regression_metrics_table,
+    build_residuals_plot,
+    build_true_pred_scatter,
+)
 
 
 @dataclass
@@ -178,6 +188,131 @@ def _normalize_task_type(value: Any) -> str:
     return "regression"
 
 
+def _build_prediction_sample(
+    y_true: Any,
+    y_pred: Any,
+    y_proba: Any | None,
+    *,
+    max_rows: int = 5,
+) -> Any | None:
+    try:
+        import numpy as np  # type: ignore
+        import pandas as pd  # type: ignore
+    except Exception:
+        return None
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    n = min(len(y_true_arr), len(y_pred_arr))
+    if n <= 0:
+        return None
+    payload: dict[str, Any] = {
+        "y_true": y_true_arr[:n],
+        "y_pred": y_pred_arr[:n],
+    }
+    if y_proba is not None:
+        proba_arr = np.asarray(y_proba)
+        if proba_arr.ndim == 2:
+            col = 1 if proba_arr.shape[1] > 1 else 0
+            payload["pred_proba"] = proba_arr[:n, col]
+        else:
+            payload["pred_proba"] = proba_arr.reshape(-1)[:n]
+    df = pd.DataFrame(payload)
+    return df.head(max_rows)
+
+
+def _plotly_go():
+    try:
+        import plotly.graph_objects as go  # type: ignore
+    except Exception:
+        return None
+    return go
+
+
+def _build_plotly_confusion_matrix(
+    y_true: Any,
+    y_pred: Any,
+    *,
+    class_names: list[str] | None,
+    normalize: bool,
+) -> Any | None:
+    go = _plotly_go()
+    if go is None:
+        return None
+    try:
+        import numpy as np  # type: ignore
+        from sklearn.metrics import confusion_matrix  # type: ignore
+    except Exception:
+        return None
+    y_true_arr = np.asarray(y_true)
+    y_pred_arr = np.asarray(y_pred)
+    if y_true_arr.shape[0] == 0 or y_pred_arr.shape[0] == 0:
+        return None
+    labels = None
+    if class_names is not None:
+        labels = list(range(len(class_names)))
+    cm = confusion_matrix(y_true_arr, y_pred_arr, labels=labels)
+    display_cm = cm.astype(float)
+    if normalize:
+        row_sums = display_cm.sum(axis=1, keepdims=True)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            display_cm = np.divide(
+                display_cm,
+                row_sums,
+                out=np.zeros_like(display_cm),
+                where=row_sums != 0,
+            )
+    if class_names is None:
+        values = np.unique(np.concatenate([y_true_arr, y_pred_arr]))
+        class_names = [str(value) for value in values]
+    fig = go.Figure(
+        go.Heatmap(
+            z=display_cm,
+            x=class_names,
+            y=class_names,
+            colorscale="Blues",
+            showscale=True,
+        )
+    )
+    fig.update_layout(
+        title="Confusion Matrix (normalized)" if normalize else "Confusion Matrix",
+        xaxis_title="predicted",
+        yaxis_title="true",
+        margin=dict(l=40, r=20, t=40, b=40),
+    )
+    return fig
+
+
+def _build_plotly_roc_curve(y_true: Any, y_score: Any) -> Any | None:
+    go = _plotly_go()
+    if go is None:
+        return None
+    try:
+        import numpy as np  # type: ignore
+        from sklearn.metrics import auc, roc_curve  # type: ignore
+    except Exception:
+        return None
+    y_true_arr = np.asarray(y_true)
+    scores = np.asarray(y_score, dtype=float)
+    if scores.ndim > 1:
+        scores = scores[:, -1]
+    if y_true_arr.shape[0] == 0:
+        return None
+    fpr, tpr, _ = roc_curve(y_true_arr, scores)
+    roc_auc = auc(fpr, tpr)
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=fpr, y=tpr, mode="lines", name=f"AUC={roc_auc:.3f}"))
+    fig.add_trace(
+        go.Scatter(x=[0, 1], y=[0, 1], mode="lines", line=dict(dash="dash"), name="chance")
+    )
+    fig.update_layout(
+        title="ROC Curve",
+        xaxis_title="false positive rate",
+        yaxis_title="true positive rate",
+        margin=dict(l=40, r=20, t=40, b=40),
+    )
+    return fig
+
+
 def _to_list(values: Any) -> list[str]:
     if values is None:
         return []
@@ -279,6 +414,22 @@ def _resolve_metric_list(cfg: Any) -> list[str]:
         seen.add(key)
         ordered.append(key)
     return ordered
+
+
+def _resolve_viz_settings(cfg: Any) -> dict[str, Any]:
+    enabled = bool(_cfg_value(cfg, "viz.enabled", True))
+    try:
+        max_points = int(_cfg_value(cfg, "viz.max_points", 1000))
+    except Exception:
+        max_points = 1000
+    confusion_normalize = bool(_cfg_value(cfg, "viz.confusion_normalize", True))
+    roc_curve = bool(_cfg_value(cfg, "viz.roc_curve", True))
+    return {
+        "enabled": enabled,
+        "max_points": max_points,
+        "confusion_normalize": confusion_normalize,
+        "roc_curve": roc_curve,
+    }
 
 
 def _resolve_classification_mode(cfg: Any, *, n_classes: int) -> str:
@@ -1548,6 +1699,7 @@ def run(cfg: Any) -> None:
     weights: list[float] | None = None
     ensemble_meta: dict[str, Any] = {}
     method_used = method
+    y_proba: Any | None = None
 
     if task_type == "classification":
         proba_stack = np.stack([np.asarray(c.preds.y_proba) for c in selected], axis=1)
@@ -1762,6 +1914,39 @@ def run(cfg: Any) -> None:
                 primary_metric=primary_metric,
             )
 
+    viz_settings = _resolve_viz_settings(cfg)
+    class_names = (
+        selected[0].preds.class_labels if task_type == "classification" else None
+    )
+    debug_sample = None
+    residuals_plot_path: Path | None = None
+    confusion_plot_path: Path | None = None
+    roc_plot_path: Path | None = None
+    if clearml_enabled:
+        debug_sample = _build_prediction_sample(y_true, y_pred, y_proba)
+        if viz_settings["enabled"]:
+            if task_type == "regression":
+                residuals_plot_path = plot_regression_residuals(
+                    y_true,
+                    y_pred,
+                    ctx.output_dir / "residuals.png",
+                    max_points=viz_settings["max_points"],
+                )
+            else:
+                confusion_plot_path = plot_confusion_matrix(
+                    y_true,
+                    y_pred,
+                    ctx.output_dir / "confusion_matrix.png",
+                    class_names=class_names,
+                    normalize=viz_settings["confusion_normalize"],
+                )
+                if viz_settings["roc_curve"] and n_classes == 2 and y_proba is not None:
+                    roc_plot_path = plot_roc_curve(
+                        y_true,
+                        y_proba[:, 1],
+                        ctx.output_dir / "roc_curve.png",
+                    )
+
     included = [
         {
             "train_task_id": c.train_task_id or c.train_task_ref,
@@ -1871,12 +2056,17 @@ def run(cfg: Any) -> None:
                 "n_classes": n_classes,
             },
         )
+        if task_type == "regression":
+            for name in REGRESSION_METRIC_ORDER:
+                if name in metrics_holdout:
+                    log_scalar(ctx.task, "metrics", name, metrics_holdout[name], step=0)
         log_scalar(ctx.task, "ensemble", "best_score", best_score, step=0)
         log_scalar(ctx.task, "ensemble", "n_included", len(included), step=0)
         log_scalar(ctx.task, "ensemble", "n_skipped", len(skipped), step=0)
         log_scalar(ctx.task, "metrics", primary_metric, best_score, step=0)
         log_debug_table(ctx.task, "ensemble", "included", included, step=0)
-        log_debug_table(ctx.task, "ensemble", "skipped", skipped, step=0)
+        if skipped:
+            log_debug_table(ctx.task, "ensemble", "skipped", skipped, step=0)
         if weights is not None:
             weights_table = [
                 {
@@ -1887,6 +2077,59 @@ def run(cfg: Any) -> None:
                 for i, c in enumerate(selected)
             ]
             log_debug_table(ctx.task, "ensemble", "weights", weights_table, step=0)
+        if debug_sample is not None:
+            log_debug_table(ctx.task, "train_ensemble", "prediction_sample", debug_sample, step=0)
+        if viz_settings["enabled"]:
+            if task_type == "regression":
+                numeric_metrics = {
+                    key: float(value)
+                    for key, value in metrics_holdout.items()
+                    if isinstance(value, (int, float)) and math.isfinite(float(value))
+                }
+                metrics_table = build_regression_metrics_table(numeric_metrics)
+                log_plotly(ctx.task, "train_ensemble", "metrics_table", metrics_table, step=0)
+                scatter = build_true_pred_scatter(
+                    y_true,
+                    y_pred,
+                    r2=metrics_holdout.get("r2"),
+                    max_points=viz_settings["max_points"],
+                )
+                log_plotly(ctx.task, "train_ensemble", "true_vs_pred", scatter, step=0)
+                fig = build_residuals_plot(
+                    y_true,
+                    y_pred,
+                    max_points=viz_settings["max_points"],
+                )
+                log_plotly(
+                    ctx.task,
+                    "train_ensemble",
+                    "residuals",
+                    fig or residuals_plot_path,
+                    step=0,
+                )
+            else:
+                fig = _build_plotly_confusion_matrix(
+                    y_true,
+                    y_pred,
+                    class_names=class_names,
+                    normalize=viz_settings["confusion_normalize"],
+                )
+                log_plotly(
+                    ctx.task,
+                    "train_ensemble",
+                    "confusion_matrix",
+                    fig or confusion_plot_path,
+                    step=0,
+                )
+                if y_proba is not None and n_classes == 2:
+                    fig = _build_plotly_roc_curve(y_true, y_proba[:, 1])
+                    log_plotly(
+                        ctx.task,
+                        "train_ensemble",
+                        "roc_curve",
+                        fig or roc_plot_path,
+                        step=0,
+                    )
 
     out = {
         "processed_dataset_id": ref_values.get("processed_dataset_id"),
