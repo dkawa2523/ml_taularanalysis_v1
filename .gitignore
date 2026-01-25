@@ -8,12 +8,19 @@ __pycache__/
 .dist/
 build/
 
+# macOS / Finder
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
 # Virtual env
 .venv/
 
 # Hydra
 .outputs/
 .multirun/
+outputs/
 
 # ClearML
 clearml.conf
@@ -35,6 +42,7 @@ work/.codex_lock.json
 
 # Smoke / verify outputs
 work/_smoke/
+work/_smoke_*/
 work/_verify_outputs/
 
 # Data (keep repo clean)
@@ -42,3 +50,11 @@ work/_verify_outputs/
 *.parquet
 *.pkl
 *.joblib
+
+# Local runtime artifacts
+catboost_info/
+work/cache/
+work/_runs/
+work/clearml-agent*.log
+work/rehearsal/out*/
+work/rehearsal/out_runner/
