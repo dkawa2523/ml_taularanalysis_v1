@@ -124,9 +124,8 @@ python tools/tests/smoke_calibration.py
 python tools/tests/smoke_decision_summary.py
 ```
 
-### 4) ガバナンス / 監視 / スケール / Serving
+### 4) 監視 / スケール / Serving
 ```bash
-python tools/tests/smoke_champion_registry.py
 python tools/tests/smoke_drift_enhanced.py
 python tools/tests/smoke_batch_chunked.py
 python tools/tests/smoke_serve_import.py

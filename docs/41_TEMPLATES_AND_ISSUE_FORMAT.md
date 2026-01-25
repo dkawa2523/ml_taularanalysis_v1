@@ -12,7 +12,7 @@
 ## テンプレTask運用の基本方針（将来）
 
 - テンプレは「用途/工程」で最小限に分ける
-  - dataset_register / preprocess / train_model / leaderboard / infer / promote / retrain
+  - dataset_register / preprocess / train_model / leaderboard / infer / retrain
 - テンプレTaskは `TEMPLATES/...` のプロジェクト配下に置ける設計を想定する
 - テンプレの更新は頻繁にしない（更新する場合は version を付けて新テンプレを追加）
 

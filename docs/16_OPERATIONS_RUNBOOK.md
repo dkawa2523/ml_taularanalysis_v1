@@ -1,7 +1,7 @@
-# 16_OPERATIONS_RUNBOOK (Promotion Flow)
+# 16_OPERATIONS_RUNBOOK (Selection Flow)
 
 ## Goal
-運用担当者が **pipeline 実行 → leaderboard レビュー → promote_model** まで迷わず進められるよう、
+運用担当者が **pipeline 実行 → leaderboard レビュー → 推論時のモデル選択** まで迷わず進められるよう、
 最低限の手順と確認ポイントをまとめます。
 
 ## Audience
@@ -121,48 +121,35 @@ python -m tabular_analysis.cli task=pipeline \
 - `primary_metric` / `direction` が意図どおりか確認
 - `split_hash` / `recipe_hash` が一致しているか確認（比較可能性の保証）
 
-### 3) Promote（staging/production/archived）
-- promote.stage: `staging | production | archived`（default: production）
-- promote.set_champion: `true|false`（default: true）
-- promote.rollback: `true|false`（default: false）
-- champion registry: `work/registry/champions.json`（usecase_id ごとに管理）
+### 3) 推論時のモデル選択
+推論時に **ユーザーが model_id を指定**して実行します。
 
 Local mode での例:
 ```bash
-python -m tabular_analysis.cli task=promote_model \
+python -m tabular_analysis.cli task=infer \
   run.clearml.enabled=false \
-  run.output_dir=outputs/20260101_120000 \
-  promotion.source_leaderboard_dir=outputs/20260101_120000/05_leaderboard \
-  promote.stage=staging \
-  promote.set_champion=true \
-  promotion.note="initial candidate"
+  infer.model_id=outputs/20260101_120000/03_train_model/model_bundle.joblib
 ```
 
-ClearML 有効時は leaderboard task_id も指定可能です:
+ClearML registry を使う場合の例:
 ```bash
-python -m tabular_analysis.cli task=promote_model \
+python -m tabular_analysis.cli task=infer \
   run.clearml.enabled=true \
-  promotion.source_leaderboard_dir=<leaderboard_task_id> \
-  promote.stage=production \
-  promote.set_champion=true \
-  promotion.note="approved by ops"
+  infer.model_id=<CLEARML_REGISTRY_MODEL_ID>
 ```
 
-`promotion.recommended_model_id` を直接指定することで、推薦を上書きできます。
-`promotion.*` / `promote.*` はどちらも利用可能（promote が優先）。
-
-## Post-Promotion Checks
-- `promotion.json` / `summary.md` / `out.json` / `manifest.json` を確認
-- `work/registry/champions.json` が更新されていることを確認
-- ClearML では registry 登録の status と tags/properties を確認
-  - tags: `stage:<stage>` / `usecase:<id>` / `process:promote_model`
-  - properties: `metric` / `score` / `split_hash` / `recipe_hash` / `processed_dataset_id`
-
-## Rollback / Archive
-- 不具合が出た場合は `promote.stage=archived` で該当モデルをアーカイブ
-- 直前の champion へ戻す場合は `promote.rollback=true` を使う（rollback は `work/registry/champions.json` の履歴を参照）
-- 直前に安定していたモデルを再度 `promote_model` で `production` に昇格
-- デプロイ側は `registry_model_id` / `model_id` を元に復旧
+## Registry Tag運用（安定運用のための前提）
+- `train_model` / `train_ensemble` が **全モデルを registry に登録**する運用
+- 絞り込み用タグ:
+  - `usecase:<id>` / `dataset:<processed_dataset_id>` / `split:<split_hash>` / `recipe:<recipe_hash>`
+  - `preprocess:<variant>` / `model_variant:<variant>` / `task_type:<type>`
+  - `task:pipeline:<id>` / `task:preprocess:<id>` / `task:train_model:<id>` / `task:train_ensemble:<id>`
+- 推薦モデルの絞り込み:
+  - `leaderboard:recommended` + `recommend_rank:<n>`
+  - スコアは metadata に保存（tagでは保持しない）
+- Tag上限対策（ensemble）:
+  - `train_ensemble.registry.tag_limits.train_task_ids` で tag化する train_task_id の上限を設定
+  - 全ID一覧が必要な場合は `train_ensemble.registry.metadata.full_train_task_ids=true` を使用
 
 ## Troubleshooting
 - `model_bundle.joblib` が見つからない: train 出力か ClearML の artifact を確認
@@ -172,4 +159,3 @@ python -m tabular_analysis.cli task=promote_model \
 ## Outputs
 - 共通: `config_resolved.yaml`, `out.json`, `manifest.json`
 - pipeline: `pipeline_run.json`, `report.md`
-- promote_model: `promotion.json`, `summary.md`, `work/registry/champions.json`

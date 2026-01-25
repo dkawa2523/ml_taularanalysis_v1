@@ -34,8 +34,8 @@ Available settings (defaults in `conf/run/alerts/base.yaml`):
 - Only active when `url` is set and enabled
 
 ## Severity Guidance
-- `info`: promotions, routine operational events
-- `warning`: drift warnings, challenger underperforming, rollback events
+- `info`: recommendation updates, routine operational events
+- `warning`: drift warnings, model underperforming, retrain triggered
 - `error`: data quality gate failures, drift fail threshold exceeded
 
 ## ClearML Integration

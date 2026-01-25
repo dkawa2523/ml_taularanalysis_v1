@@ -707,6 +707,9 @@ def run(cfg: Any) -> None:
                 "weights": scoring_weights,
                 "normalization": scoring_normalization,
             },
+            "recommended_top_k": recommend_top_k,
+            "recommendation_count": 0,
+            "recommended_models": [],
         }
         recommendation_path = ctx.output_dir / "recommendation.json"
         recommendation_path.write_text(
@@ -1186,6 +1189,7 @@ def run(cfg: Any) -> None:
             "normalization": scoring_normalization,
         },
         "recommended_top_k": recommend_top_k,
+        "recommendation_count": len(recommended_list),
         "recommended_models": [
             {
                 "rank": idx,
@@ -1513,13 +1517,15 @@ def run(cfg: Any) -> None:
         )
     else:
         decision_lines.append("- imbalance_handling: disabled")
-    decision_lines.extend(["", "## Promote Command", "```bash"])
+    decision_lines.extend(["", "## Inference Selection", "```bash"])
     decision_lines.append(
-        f"python -m tabular_analysis.cli task=promote_model promotion.source_leaderboard_dir={ctx.output_dir}"
+        f"python -m tabular_analysis.cli task=infer infer.model_id={recommended.get('model_id')}"
     )
-    task_id = _resolve_task_id(ctx)
-    if task_id:
-        decision_lines.append(f"# ClearML task id (optional): {task_id}")
+    decision_lines.append("# or use ClearML registry model id if available")
+    if recommended.get("registry_model_id"):
+        decision_lines.append(
+            f"python -m tabular_analysis.cli task=infer infer.model_id={recommended.get('registry_model_id')}"
+        )
     decision_lines.append("```")
     decision_summary_path = ctx.output_dir / "decision_summary.md"
     decision_summary_path.write_text("\n".join(decision_lines) + "\n", encoding="utf-8")

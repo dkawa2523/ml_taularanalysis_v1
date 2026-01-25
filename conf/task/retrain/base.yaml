@@ -7,14 +7,3 @@ task:
 retrain:
   dataset_path: ${data.dataset_path}
   dataset_id: ${data.raw_dataset_id}
-  baseline_stage: production
-  champion_model_ref: null
-  eval_dataset_ref: null
-  auto_promote: false
-  promote_stage: ${retrain.baseline_stage}
-  promote_set_champion: true
-  decision_threshold: 0.0
-  promote_criteria:
-    min_improvement: 0.0
-    require_comparable: true
-    allow_tie: false

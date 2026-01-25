@@ -85,18 +85,6 @@ def _select_runner(task_name: str):
         from .processes.retrain import run
 
         return run
-    if task_name == "promote_model":
-        from .processes.promote_model import run
-
-        return run
-    if task_name == "rollback_model":
-        from .processes.rollback_model import run
-
-        return run
-    if task_name == "champion_challenger":
-        from .processes.champion_challenger import run
-
-        return run
 
     raise ValueError(f"Unknown task.name: {task_name}")
 

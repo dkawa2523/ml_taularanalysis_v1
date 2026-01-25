@@ -36,9 +36,3 @@ templates:
     task_name: pipeline
     entrypoint: python tools/clearml_entrypoint.py task=pipeline
     updated_at: '2026-01-10T17:33:38Z'
-  promote_model:
-    task_id: 57096ab21efe437ca276431c0496a6d8
-    project_name: MFG/TabularAnalysis/06_promote_model
-    task_name: promote_model
-    entrypoint: python tools/clearml_entrypoint.py task=promote_model
-    updated_at: '2026-01-10T17:33:38Z'

@@ -23,7 +23,7 @@
   - top-N 一覧（leaderboard.csvへのリンク/抜粋）
   - comparable 条件（split/metric など）
   - 推奨モデルの metrics / CI / 追加機能（校正/区間/不均衡）要約
-  - promote 手順への導線（promote_model のコマンド例）
+  - 推論時のモデル選択導線（infer のコマンド例）
 
 ### 3) ClearMLノイズ制御
 - Markdown を “Artifacts” にアップロード（Plotsの乱用はしない）

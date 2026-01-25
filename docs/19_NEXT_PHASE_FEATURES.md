@@ -15,7 +15,7 @@
 - 不確かさ: 回帰の予測区間（conformal split）
 - 評価の堅牢化: ブートストラップCI
 - 意思決定支援: model card / decision summary
-- ガバナンス: champion-challenger（promote/rollback）
+- ガバナンス: recommendation tagging / decision summary
 - 監視: drift の強化（train profile ↔ infer profile）
 - スケール: chunked batch infer
 - 任意: Serving API skeleton（fastapiはoptional）

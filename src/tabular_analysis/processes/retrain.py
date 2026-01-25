@@ -1,6 +1,6 @@
 """retrain process.
 
-- Orchestrate monitoring -> retrain -> compare -> optional promote.
+- Orchestrate retrain and emit leaderboard-based decision artifacts.
 """
 
 from __future__ import annotations
@@ -29,12 +29,7 @@ from ..platform_adapter import (
     write_manifest,
     write_out_json,
 )
-from ..registry.model_registry_state import get_current_entry, load_registry_state
-from . import champion_challenger as champion_challenger_process
 from . import pipeline as pipeline_process
-from . import promote_model as promote_model_process
-
-_ALLOWED_STAGES = ("staging", "production", "archived")
 
 
 def _normalize_str(value: Any) -> str | None:
@@ -42,31 +37,6 @@ def _normalize_str(value: Any) -> str | None:
         return None
     text = str(value).strip()
     return text or None
-
-
-def _normalize_bool(value: Any, default: bool) -> bool:
-    if value is None:
-        return default
-    if isinstance(value, bool):
-        return value
-    text = str(value).strip().lower()
-    if text in ("1", "true", "yes", "y", "on"):
-        return True
-    if text in ("0", "false", "no", "n", "off"):
-        return False
-    return default
-
-
-def _to_float(value: Any) -> float | None:
-    if value is None:
-        return None
-    try:
-        num = float(value)
-    except Exception:
-        return None
-    if num != num:
-        return None
-    return num
 
 
 def _cfg_value(cfg: Any, dotted_path: str, default: Any | None = None) -> Any:
@@ -166,18 +136,6 @@ def _to_mapping(value: Any) -> dict[str, Any]:
     return {}
 
 
-def _normalize_stage(value: Any) -> str:
-    stage = _normalize_str(value) or "production"
-    key = stage.lower()
-    if key == "prod":
-        key = "production"
-    if key == "archive":
-        key = "archived"
-    if key not in _ALLOWED_STAGES:
-        raise ValueError(f"retrain.baseline_stage must be one of {', '.join(_ALLOWED_STAGES)}.")
-    return key
-
-
 def _ensure_run_id(cfg: Any, path: str) -> str:
     existing = _normalize_str(_cfg_value(cfg, path))
     if existing:
@@ -257,85 +215,6 @@ def _resolve_challenger_ref(
     return None
 
 
-def _resolve_champion_ref(
-    cfg: Any,
-    *,
-    baseline_stage: str,
-    usecase_id: str,
-    explicit_ref: str | None,
-) -> tuple[str | None, list[str]]:
-    if explicit_ref:
-        return explicit_ref, []
-    warnings: list[str] = []
-    registry_path = _base_output_dir(cfg) / "model_registry_state.json"
-    if registry_path.exists():
-        registry_state = load_registry_state(registry_path)
-        entry = get_current_entry(registry_state, usecase_id=usecase_id, stage=baseline_stage)
-        if entry:
-            ref = _normalize_str(entry.get("train_task_ref") or entry.get("train_task_id"))
-            if not ref:
-                ref = _normalize_str(entry.get("model_id"))
-            if ref:
-                return ref, []
-    warnings.append(
-        "Champion model reference was not found. Provide retrain.champion_model_ref or "
-        "promote a baseline model to populate model_registry_state.json."
-    )
-    return None, warnings
-
-
-def _evaluate_promote_criteria(
-    criteria: Mapping[str, Any],
-    comparison: Mapping[str, Any] | None,
-) -> tuple[bool, list[str], dict[str, Any]]:
-    reasons: list[str] = []
-    checks: dict[str, Any] = {}
-
-    if comparison is None:
-        return False, ["comparison not available"], checks
-
-    require_comparable = _normalize_bool(criteria.get("require_comparable"), True)
-    allow_tie = _normalize_bool(criteria.get("allow_tie"), False)
-    min_improvement = _to_float(criteria.get("min_improvement"))
-    if min_improvement is None:
-        min_improvement = 0.0
-
-    comparability = comparison.get("comparability") if isinstance(comparison, Mapping) else None
-    comparability_ok = True
-    if isinstance(comparability, Mapping):
-        for key in ("processed_dataset_id_match", "split_hash_match"):
-            value = comparability.get(key)
-            if value is False or value is None:
-                comparability_ok = False
-    else:
-        comparability_ok = False
-
-    winner = _normalize_str(comparison.get("winner")) if isinstance(comparison, Mapping) else None
-    directional_delta = _to_float(comparison.get("directional_delta")) if isinstance(comparison, Mapping) else None
-
-    checks.update(
-        {
-            "require_comparable": require_comparable,
-            "comparability_ok": comparability_ok,
-            "allow_tie": allow_tie,
-            "min_improvement": min_improvement,
-            "directional_delta": directional_delta,
-            "winner": winner,
-        }
-    )
-
-    if require_comparable and not comparability_ok:
-        reasons.append("comparability check failed")
-    if winner is None:
-        reasons.append("winner is missing")
-    elif winner != "challenger" and not (allow_tie and winner == "tie"):
-        reasons.append(f"winner is {winner}")
-    if directional_delta is None:
-        reasons.append("directional_delta is missing")
-    elif directional_delta < min_improvement:
-        reasons.append("directional_delta below min_improvement")
-
-    return len(reasons) == 0, reasons, checks
 
 
 def run(cfg: Any) -> None:
@@ -389,110 +268,12 @@ def run(cfg: Any) -> None:
     if not challenger_ref:
         raise ValueError("leaderboard did not provide a challenger reference.")
 
-    baseline_stage = _normalize_stage(_cfg_value(cfg, "retrain.baseline_stage"))
-    champion_ref = _normalize_str(_cfg_value(cfg, "retrain.champion_model_ref"))
-    eval_ref = _normalize_str(_cfg_value(cfg, "retrain.eval_dataset_ref"))
-    champion_ref, champion_warnings = _resolve_champion_ref(
-        cfg,
-        baseline_stage=baseline_stage,
-        usecase_id=usecase_id,
-        explicit_ref=champion_ref,
-    )
-
-    decision_threshold = _to_float(_cfg_value(cfg, "retrain.decision_threshold"))
-    if decision_threshold is None:
-        decision_threshold = 0.0
-
-    comparison: dict[str, Any] | None = None
-    comparison_dir: Path | None = None
-    comparison_path: Path | None = None
-    comparison_summary_path: Path | None = None
-    if champion_ref:
-        cc_cfg = copy.deepcopy(cfg)
-        _set_cfg_value(cc_cfg, "task.name", "champion_challenger")
-        _set_cfg_value(cc_cfg, "task.stage", "07_champion_challenger")
-        _set_cfg_value(cc_cfg, "task.project_name", _project_name(cfg, "07_champion_challenger"))
-        _set_cfg_value(cc_cfg, "champion_challenger.champion_model_ref", champion_ref)
-        _set_cfg_value(cc_cfg, "champion_challenger.challenger_model_ref", challenger_ref)
-        if eval_ref:
-            _set_cfg_value(cc_cfg, "champion_challenger.eval_dataset_ref", eval_ref)
-        _set_cfg_value(cc_cfg, "champion_challenger.decision_threshold", decision_threshold)
-        _set_cfg_value(cc_cfg, "run.grid_run_id", grid_run_id)
-        _set_cfg_value(cc_cfg, "run.retrain_run_id", retrain_run_id)
-        champion_challenger_process.run(cc_cfg)
-        comparison_dir = resolve_output_dir(cc_cfg, getattr(cc_cfg.task, "stage", "07_champion_challenger"))
-        comparison_path = comparison_dir / "decision.json"
-        comparison_summary_path = comparison_dir / "summary.md"
-        comparison = _load_optional_json(comparison_path) if comparison_path else None
-
-    promote_criteria = _to_mapping(_cfg_value(cfg, "retrain.promote_criteria"))
-    auto_promote = _normalize_bool(_cfg_value(cfg, "retrain.auto_promote"), False)
-    promote_stage = _normalize_stage(
-        _cfg_value(cfg, "retrain.promote_stage", None) or baseline_stage
-    )
-    promote_set_champion = _normalize_bool(_cfg_value(cfg, "retrain.promote_set_champion"), True)
-
-    promote_status = {
-        "status": "skipped",
-        "reason": "auto_promote is false",
-        "stage": promote_stage,
-        "set_champion": promote_set_champion,
-    }
-    promote_dir: Path | None = None
-    promotion_path: Path | None = None
-    promote_checks: dict[str, Any] | None = None
-    if auto_promote:
-        should_promote, promote_reasons, promote_checks = _evaluate_promote_criteria(
-            promote_criteria, comparison
-        )
-        if not should_promote:
-            promote_status = {
-                "status": "skipped",
-                "reason": "; ".join(promote_reasons) if promote_reasons else "criteria not met",
-                "stage": promote_stage,
-                "set_champion": promote_set_champion,
-                "checks": promote_checks,
-            }
-        else:
-            promote_cfg = copy.deepcopy(cfg)
-            _set_cfg_value(promote_cfg, "task.name", "promote_model")
-            _set_cfg_value(promote_cfg, "task.stage", "06_promote_model")
-            _set_cfg_value(promote_cfg, "task.project_name", _project_name(cfg, "06_promote_model"))
-            source_ref = _normalize_str(leaderboard_ref.get("task_id")) or _normalize_str(
-                leaderboard_ref.get("run_dir")
-            )
-            if not source_ref:
-                raise ValueError("leaderboard_ref missing task_id/run_dir for promote_model.")
-            _set_cfg_value(promote_cfg, "promotion.source_leaderboard_dir", source_ref)
-            _set_cfg_value(promote_cfg, "promotion.stage", promote_stage)
-            _set_cfg_value(promote_cfg, "promotion.set_champion", promote_set_champion)
-            _set_cfg_value(
-                promote_cfg,
-                "promotion.note",
-                f"auto_promote retrain_run_id={retrain_run_id}",
-            )
-            _set_cfg_value(promote_cfg, "run.grid_run_id", grid_run_id)
-            _set_cfg_value(promote_cfg, "run.retrain_run_id", retrain_run_id)
-            promote_model_process.run(promote_cfg)
-            promote_dir = resolve_output_dir(promote_cfg, getattr(promote_cfg.task, "stage", "06_promote_model"))
-            promotion_path = promote_dir / "promotion.json"
-            promote_status = {
-                "status": "success",
-                "stage": promote_stage,
-                "set_champion": promote_set_champion,
-                "promotion_json": str(promotion_path) if promotion_path else None,
-                "checks": promote_checks,
-            }
-
-    warnings = list(champion_warnings)
     decision_payload: dict[str, Any] = {
         "retrain_run_id": retrain_run_id,
         "grid_run_id": grid_run_id,
         "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "dataset_path": dataset_path,
         "dataset_id": dataset_id,
-        "baseline_stage": baseline_stage,
-        "champion_model_ref": champion_ref,
         "challenger_model_ref": challenger_ref,
         "leaderboard_out": {
             "recommended_model_id": leaderboard_out.get("recommended_model_id"),
@@ -500,19 +281,11 @@ def run(cfg: Any) -> None:
             "recommended_train_task_id": leaderboard_out.get("recommended_train_task_id"),
             "recommended_best_score": leaderboard_out.get("recommended_best_score"),
             "recommended_primary_metric": leaderboard_out.get("recommended_primary_metric"),
+            "recommendation_count": leaderboard_out.get("recommendation_count"),
+            "recommended_models": leaderboard_out.get("recommended_models"),
         },
-        "comparison": comparison,
-        "auto_promote": auto_promote,
-        "promote_status": promote_status,
-        "promote_criteria": promote_criteria,
     }
-    if warnings:
-        decision_payload["warnings"] = warnings
-
-    action = "review"
-    if promote_status.get("status") == "success":
-        action = "promote"
-    decision_payload["decision"] = {"action": action, "reason": promote_status.get("reason")}
+    decision_payload["decision"] = {"action": "select_model", "reason": "user_select_at_infer"}
 
     decision_path = ctx.output_dir / "retrain_decision.json"
     decision_path.write_text(
@@ -525,11 +298,6 @@ def run(cfg: Any) -> None:
         "pipeline_run_path": str(pipeline_run_path),
         "leaderboard_ref": leaderboard_ref,
         "leaderboard_out_path": str(leaderboard_out_path),
-        "champion_challenger_run_dir": str(comparison_dir) if comparison_dir else None,
-        "champion_challenger_decision": str(comparison_path) if comparison_path else None,
-        "champion_challenger_summary": str(comparison_summary_path) if comparison_summary_path else None,
-        "promote_run_dir": str(promote_dir) if promote_dir else None,
-        "promote_json": str(promotion_path) if promotion_path else None,
     }
     retrain_run_path = ctx.output_dir / "retrain_run.json"
     retrain_run_path.write_text(
@@ -543,36 +311,9 @@ def run(cfg: Any) -> None:
         f"- grid_run_id: {grid_run_id}",
         f"- dataset_path: {dataset_path or 'n/a'}",
         f"- dataset_id: {dataset_id or 'n/a'}",
-        f"- baseline_stage: {baseline_stage}",
-        f"- champion_model_ref: {champion_ref or 'n/a'}",
         f"- challenger_model_ref: {challenger_ref}",
     ]
-    if comparison:
-        summary_lines.extend(
-            [
-                "",
-                "## Champion vs Challenger",
-                f"- winner: {comparison.get('winner')}",
-                f"- primary_metric: {comparison.get('primary_metric')}",
-                f"- champion_score: {comparison.get('champion_score')}",
-                f"- challenger_score: {comparison.get('challenger_score')}",
-                f"- directional_delta: {comparison.get('directional_delta')}",
-            ]
-        )
-    else:
-        summary_lines.extend(["", "## Champion vs Challenger", "- comparison: skipped"])
-    summary_lines.extend(
-        [
-            "",
-            "## Auto Promote",
-            f"- auto_promote: {auto_promote}",
-            f"- status: {promote_status.get('status')}",
-            f"- reason: {promote_status.get('reason') or 'n/a'}",
-        ]
-    )
-    if warnings:
-        summary_lines.extend(["", "## Warnings"])
-        summary_lines.extend([f"- {line}" for line in warnings])
+    summary_lines.extend(["", "## Decision", "- action: select_model (choose at infer time)"])
 
     summary_path = ctx.output_dir / "retrain_summary.md"
     summary_path.write_text("\n".join(summary_lines) + "\n", encoding="utf-8")
@@ -590,9 +331,7 @@ def run(cfg: Any) -> None:
             {
                 "retrain_run_id": retrain_run_id,
                 "grid_run_id": grid_run_id,
-                "auto_promote": auto_promote,
-                "promote_status": promote_status.get("status"),
-                "winner": comparison.get("winner") if comparison else None,
+                "decision": "select_model",
             },
         )
 
@@ -604,15 +343,7 @@ def run(cfg: Any) -> None:
         "decision_json": str(decision_path),
         "summary_md": str(summary_path),
         "retrain_run_json": str(retrain_run_path),
-        "auto_promote": auto_promote,
-        "promote_status": promote_status.get("status"),
     }
-    if comparison_dir:
-        out["champion_challenger_dir"] = str(comparison_dir)
-    if promote_dir:
-        out["promote_dir"] = str(promote_dir)
-    if warnings:
-        out["warnings"] = warnings
     write_out_json(ctx, out)
 
     versions = resolve_version_props(cfg, clearml_enabled=clearml_enabled)
@@ -625,13 +356,7 @@ def run(cfg: Any) -> None:
         "inputs": {
             "dataset_path": dataset_path,
             "dataset_id": dataset_id,
-            "baseline_stage": baseline_stage,
-            "champion_model_ref": champion_ref,
             "challenger_model_ref": challenger_ref,
-            "auto_promote": auto_promote,
-            "promote_stage": promote_stage,
-            "promote_set_champion": promote_set_champion,
-            "decision_threshold": decision_threshold,
         },
         "outputs": {
             "retrain_decision_json": str(decision_path),

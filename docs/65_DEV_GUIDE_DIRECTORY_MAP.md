@@ -11,7 +11,7 @@
 ## 1) タスク実装（各プロセス）
 - `src/tabular_analysis/processes/`（実装の入口）
   - `dataset_register.py` / `preprocess.py` / `train_model.py` / `leaderboard.py` / `infer.py` / `pipeline.py`
-  - `champion_challenger.py` / `promote_model.py` / `retrain.py` / `rollback_model.py`
+  - `retrain.py`
 - `conf/task/**`（task 名・stage・project の定義）
 - `conf/task/<task>/**`（task の variant。例: `conf/task/pipeline/train_regression.yaml`）
 

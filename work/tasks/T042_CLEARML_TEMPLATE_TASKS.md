@@ -16,7 +16,7 @@
 ## Scope
 ### 1) テンプレ定義（spec）を YAML で管理
 - 例：`conf/clearml/templates.yaml`（または `conf/run/clearml_templates.yaml`）
-  - dataset_register / preprocess / train_model / infer / leaderboard / pipeline / promote_model / rollback_model / champion_challenger / retrain など
+  - dataset_register / preprocess / train_model / infer / leaderboard / pipeline / retrain など
   - 各テンプレに：
     - `project_name`
     - `task_name_template`

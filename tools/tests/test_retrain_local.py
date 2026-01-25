@@ -28,11 +28,6 @@ def _load_json(path: Path) -> Dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def _write_json(path: Path, payload: Dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=True, indent=2), encoding="utf-8")
-
-
 def _check_common(stage_dir: Path) -> None:
     _must_exist(stage_dir / "config_resolved.yaml")
     _must_exist(stage_dir / "out.json")
@@ -141,28 +136,6 @@ def main() -> int:
     _check_common(tr_dir)
     tr_out = _load_json(tr_dir / "out.json")
 
-    registry_state = {
-        "schema_version": 1,
-        "updated_at": "2026-01-01T00:00:00Z",
-        "usecases": {
-            usecase_id: {
-                "stages": {
-                    "production": {
-                        "current": {
-                            "model_id": tr_out.get("model_id"),
-                            "train_task_ref": str(tr_dir),
-                            "processed_dataset_id": tr_out.get("processed_dataset_id"),
-                            "split_hash": tr_out.get("split_hash"),
-                        }
-                    }
-                }
-            }
-        },
-    }
-    registry_path = out_root / "model_registry_state.json"
-    _write_json(registry_path, registry_state)
-    before_registry = _load_json(registry_path)
-
     _run(
         [
             py,
@@ -174,7 +147,6 @@ def main() -> int:
             f"run.usecase_id={usecase_id}",
             f"data.dataset_path={csv_path}",
             "data.target_column=target",
-            "retrain.auto_promote=false",
         ],
         cwd=repo,
     )
@@ -185,31 +157,11 @@ def main() -> int:
     _must_exist(retrain_dir / "retrain_summary.md")
 
     decision = _load_json(retrain_dir / "retrain_decision.json")
-    if decision.get("auto_promote") is not False:
-        raise AssertionError("retrain should have auto_promote=false")
-    promote_status = decision.get("promote_status", {})
-    if promote_status.get("status") != "skipped":
-        raise AssertionError("auto_promote=false should skip promotion")
-
-    after_registry = _load_json(registry_path)
-    before_model = (
-        before_registry.get("usecases", {})
-        .get(usecase_id, {})
-        .get("stages", {})
-        .get("production", {})
-        .get("current", {})
-        .get("model_id")
-    )
-    after_model = (
-        after_registry.get("usecases", {})
-        .get(usecase_id, {})
-        .get("stages", {})
-        .get("production", {})
-        .get("current", {})
-        .get("model_id")
-    )
-    if before_model != after_model:
-        raise AssertionError("auto_promote=false should not change registry state")
+    decision_action = (decision.get("decision") or {}).get("action")
+    if decision_action != "select_model":
+        raise AssertionError(f"unexpected decision action: {decision_action}")
+    if not decision.get("challenger_model_ref"):
+        raise AssertionError("retrain decision missing challenger_model_ref")
 
     print("OK: retrain local")
     return 0

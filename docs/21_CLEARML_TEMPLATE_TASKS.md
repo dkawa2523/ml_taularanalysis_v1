@@ -64,7 +64,6 @@ python -m tabular_analysis.ops.manage_clearml_templates --validate
 - infer
 - leaderboard
 - pipeline
-- promote_model
 
 ## Run Rule（Clone 実行時）
 - 変更するのは override のみ

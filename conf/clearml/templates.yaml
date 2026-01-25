@@ -161,26 +161,3 @@ templates:
       usecase_id: "{usecase_id}"
       process: "pipeline"
       schema_version: "{schema_version}"
-
-  promote_model:
-    project_name: "{project_root}/{usecase_id}/06_promote_model"
-    task_name_template: "promote_model"
-    entrypoint: "python tools/clearml_entrypoint.py task=promote_model"
-    default_overrides:
-      - "run.clearml.enabled=true"
-      - "run.clearml.execution=logging"
-      - "run.clearml.env.bootstrap=uv"
-      - "run.clearml.env.uv.all_extras=true"
-    requirements:
-      - "clearml>=1.15.0"
-      - "uv>=0.5.0"
-    tags:
-      - "template:true"
-      - "usecase:{usecase_id}"
-      - "process:promote_model"
-      - "schema:{schema_version}"
-      - "solution:tabular-analysis"
-    properties_minimal:
-      usecase_id: "{usecase_id}"
-      process: "promote_model"
-      schema_version: "{schema_version}"

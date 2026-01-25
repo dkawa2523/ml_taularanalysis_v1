@@ -21,7 +21,6 @@ _STAGE_BY_PROCESS = {
     "train_ensemble": "04_train_ensemble",
     "infer": "04_infer",
     "leaderboard": "05_leaderboard",
-    "promote_model": "06_promote_model",
     "pipeline": "99_pipeline",
 }
 _SOLUTION_TAG = "solution:tabular-analysis"

@@ -18,7 +18,6 @@ REQUIRED_TEMPLATES = {
     "infer",
     "leaderboard",
     "pipeline",
-    "promote_model",
 }
 
 REQUIRED_FIELDS = {

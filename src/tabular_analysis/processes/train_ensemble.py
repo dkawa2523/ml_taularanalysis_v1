@@ -190,6 +190,19 @@ def _normalize_task_type(value: Any) -> str:
     return "regression"
 
 
+def _normalize_bool(value: Any, default: bool) -> bool:
+    if value is None:
+        return default
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in ("1", "true", "yes", "y", "on"):
+        return True
+    if text in ("0", "false", "no", "n", "off"):
+        return False
+    return default
+
+
 def _dedupe_tags(tags: list[str]) -> list[str]:
     seen: set[str] = set()
     result: list[str] = []
@@ -2104,6 +2117,9 @@ def run(cfg: Any) -> None:
     if train_task_tag_limit and train_task_tag_limit > 0 and len(train_task_ids) > train_task_tag_limit:
         train_task_ids_tagged = train_task_ids[:train_task_tag_limit]
         train_task_truncated = True
+    full_ids_to_metadata = _normalize_bool(
+        _cfg_value(cfg, "train_ensemble.registry.metadata.full_train_task_ids"), True
+    )
     ensemble_variant = f"ensemble_{method_used}"
     registry_model_id: str | None = None
     registry_status: str | None = None
@@ -2111,6 +2127,15 @@ def run(cfg: Any) -> None:
     if clearml_enabled:
         usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
         model_name = f"{usecase_id}:{ensemble_variant}:{ref_values.get('processed_dataset_id')}"
+        metadata: dict[str, Any] | None = None
+        if full_ids_to_metadata:
+            metadata = {
+                "train_task_ids_full": train_task_ids,
+                "preprocess_task_ids_full": preprocess_task_ids,
+                "pipeline_task_id": pipeline_task_id,
+                "train_task_ids_tag_limit": train_task_tag_limit,
+                "train_task_ids_truncated": train_task_truncated,
+            }
         tags = _build_registry_tags(
             usecase_id=usecase_id,
             process="train_ensemble",
@@ -2136,6 +2161,7 @@ def run(cfg: Any) -> None:
                 model_path=model_bundle_path,
                 model_name=model_name,
                 tags=tags,
+                metadata=metadata,
             )
             registry_status = "registered"
         except Exception as exc:

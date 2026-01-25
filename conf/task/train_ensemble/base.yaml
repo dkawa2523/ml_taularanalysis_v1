@@ -8,3 +8,5 @@ train_ensemble:
   registry:
     tag_limits:
       train_task_ids: 20
+    metadata:
+      full_train_task_ids: true

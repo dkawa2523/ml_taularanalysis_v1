@@ -436,25 +436,6 @@
       ]
     },
     {
-      "id": "T025",
-      "title": "運用導線: promote_model タスク（推薦モデルを昇格）",
-      "md": "work/tasks/T025_PROMOTE_MODEL_TASK.md",
-      "deps": [
-        "T024"
-      ],
-      "must_change_globs": [
-        "conf/task/promote_model/**",
-        "src/tabular_analysis/processes/promote_model.py",
-        "src/tabular_analysis/cli.py",
-        "tools/tests/smoke_promote_model.py",
-        "docs/16_OPERATIONS_RUNBOOK.md"
-      ],
-      "verify": [
-        "python -m compileall -q src",
-        "python tools/tests/smoke_promote_model.py"
-      ]
-    },
-    {
       "id": "T026",
       "title": "推論の堅牢化: 入力スキーマ検証 + エラーレポート（strict/warn/coerce）",
       "md": "work/tasks/T026_INFER_SCHEMA_VALIDATION.md",
@@ -640,24 +621,6 @@
       ]
     },
     {
-      "id": "T036",
-      "title": "ガバナンス: champion-challenger（promote/rollback を運用で使える形に）",
-      "md": "work/tasks/T036_CHAMPION_CHALLENGER_GOVERNANCE.md",
-      "deps": [
-        "T035"
-      ],
-      "must_change_globs": [
-        "conf/task/promote_model/base.yaml",
-        "src/tabular_analysis/processes/promote_model.py",
-        "docs/19_NEXT_PHASE_FEATURES.md",
-        "tools/tests/smoke_champion_registry.py"
-      ],
-      "verify": [
-        "python -m compileall -q src",
-        "python tools/tests/smoke_champion_registry.py"
-      ]
-    },
-    {
       "id": "T037",
       "title": "監視強化: train profile ↔ infer profile による drift 詳細化（opt-in）",
       "md": "work/tasks/T037_MONITORING_ENHANCED_DRIFT.md",
@@ -783,26 +746,6 @@
       "verify": [
         "python -m compileall -q src",
         "python tools/tests/test_exec_policy.py"
-      ]
-    },
-    {
-      "id": "T044",
-      "title": "Model Lifecycle 完成（promote/rollback/champion-challenger）",
-      "md": "work/tasks/T044_MODEL_LIFECYCLE.md",
-      "deps": [
-        "T043"
-      ],
-      "must_change_globs": [
-        "src/tabular_analysis/processes/rollback_model.py",
-        "src/tabular_analysis/processes/champion_challenger.py",
-        "conf/task/rollback_model/base.yaml",
-        "conf/task/champion_challenger/base.yaml",
-        "tools/tests/test_model_lifecycle_local.py",
-        "docs/23_MODEL_LIFECYCLE.md"
-      ],
-      "verify": [
-        "python -m compileall -q src",
-        "python tools/tests/test_model_lifecycle_local.py"
       ]
     },
     {

@@ -57,26 +57,6 @@
       ]
     },
     {
-      "id": "T044",
-      "title": "Model Lifecycle 完成（promote/rollback/champion-challenger）",
-      "md": "work/tasks/T044_MODEL_LIFECYCLE.md",
-      "deps": [
-        "T043"
-      ],
-      "must_change_globs": [
-        "src/tabular_analysis/processes/rollback_model.py",
-        "src/tabular_analysis/processes/champion_challenger.py",
-        "conf/task/rollback_model/base.yaml",
-        "conf/task/champion_challenger/base.yaml",
-        "tools/tests/test_model_lifecycle_local.py",
-        "docs/23_MODEL_LIFECYCLE.md"
-      ],
-      "verify": [
-        "python -m compileall -q src",
-        "python tools/tests/test_model_lifecycle_local.py"
-      ]
-    },
-    {
       "id": "T045",
       "title": "ClearML Report 統合（結論を1ページに集約）",
       "md": "work/tasks/T045_CLEARML_REPORT_INTEGRATION.md",
@@ -150,7 +130,7 @@
     },
     {
       "id": "T049",
-      "title": "Retrain Orchestration（監視→再学習→比較→任意promote）",
+      "title": "Retrain Orchestration（監視→再学習→推薦）",
       "md": "work/tasks/T049_RETRAIN_ORCHESTRATION.md",
       "deps": [
         "T048"

@@ -42,11 +42,11 @@ dry-run での確認：
 - `python -m tabular_analysis.ops.print_clearml_identity task=pipeline ops/clearml_policy=test_richer --now 20260101_120000`
 - `python -m tabular_analysis.ops.print_clearml_identity task=pipeline ops/clearml_policy=test_richer --json`
 
-### 2) 推薦（recommend）と採用（promote）は分離
+### 2) 推薦（recommend）と採用の決定は分離
 
 試験段階でも、
 - recommendation は **自動**（leaderboardが出す）
-- promote は **手動**（CLIまたはUI操作）
+- 採用は **推論時にユーザーが選択**（retrainでは選ばない）
 
 を守ります。
 
@@ -71,6 +71,6 @@ dry-run での確認：
 
 1. localモード（ClearML無効）で pipeline を完走
 2. loggingモード（ClearML有効・ローカル実行）で pipeline を完走
-3. leaderboard / report / promote（手動）を確認
+3. leaderboard / report / decision_summary / infer で選択を確認
 
 手順は `docs/42_REHEARSAL_SCENARIOS.md` に記載します。

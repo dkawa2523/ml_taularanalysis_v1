@@ -70,7 +70,7 @@ UIで確認すること（詳細: `docs/55_CLEARML_UI_CHECKLIST.md` / `docs/53_C
 - preprocess で processed dataset が Datasets に作成されている（`processed_dataset_id` と一致）
 - train の Scalars/Plots/Debug Samples が UI に出ている（詳細は `docs/51_CLEARML_PLOTS_SCALARS_DEBUGSAMPLES_CONTRACT.md`）
 - HyperParameters が最小セットである（`usecase_id`, `schema_version`, `clearml.execution` など）
-- promoteは自動で走らない（recommendと分離されている）
+- 推薦は自動だが採用は推論時にユーザーが選ぶ
 
 processed dataset SDK確認（IDは preprocess の `out.json` から取得）：
 ```bash

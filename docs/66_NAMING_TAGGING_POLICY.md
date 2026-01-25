@@ -6,7 +6,7 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 
 ## 1) タスク名
 ### デフォルト（実装の現状）
-- task 名は **process 名のまま**（`dataset_register`, `preprocess`, `train_model`, `leaderboard`, `infer`, `pipeline`, `champion_challenger`, `promote_model`, `retrain`, `rollback_model`）
+- task 名は **process 名のまま**（`dataset_register`, `preprocess`, `train_model`, `leaderboard`, `infer`, `pipeline`, `retrain`）
 - `run.clearml.task_name` が指定されていればそちらを優先
 
 ### preprocess の自動命名
@@ -50,8 +50,6 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 - preprocess: `preprocess:<variant>`
 - pipeline grid: `grid_cell:<preprocess>__<model>`
 - HPO trial: `hpo:<hpo_run_id>`
-- promote_model: `stage:<stage>`, `champion:current`（設定時）, `rollback:true`（rollback時）
-- rollback_model: `stage:<stage>`, `rollback:true`, `rollback:manual`（target 指定時）
 - alerting: `alert:<kind>`, `severity:<level>`
 
 ### テンプレートタスク（PipelineController 用）
@@ -80,10 +78,7 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 - train_model: `processed_dataset_id`, `split_hash`, `model_id`, `primary_metric`, `best_score`, `task_type`, `n_classes`, `best_threshold`, `imbalance_enabled`, `imbalance_strategy`, `imbalance_applied`
 - leaderboard: `recommended_train_task_id`, `recommended_model_id`, `excluded_count`, `selection_policy`, `recommended_composite_score`
 - infer: `drift_alert`（drift 有効時のみ）
-- champion_challenger: `winner`, `primary_metric`, `champion_score`, `challenger_score`, `directional_delta`
-- promote_model: `promotion_stage`, `promoted_model_id`, `promotion_source`, `primary_metric`, `best_score`, `registry_model_id`, `registry_status`, `champion_usecase_id`, `champion_registry_path`, `set_champion`, `rollback`, `rollback_from_model_id`
-- rollback_model: `rollback_stage`, `rollback_reason`, `rollback_before_model_id`, `rollback_after_model_id`
-- retrain: `retrain_run_id`, `grid_run_id`, `auto_promote`, `promote_status`, `winner`
+- retrain: `retrain_run_id`, `grid_run_id`, `decision`
 - alerting: `last_alert_kind`, `last_alert_severity`, `last_alert_title`, `last_alert_at`
 
 ## 4) ルール

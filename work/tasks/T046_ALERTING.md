@@ -24,7 +24,7 @@
     - properties に `last_alert_kind` など最小セットのみ
 
 ### 2) フックの追加
-- data_quality gate / drift_report / champion_challenger / promote_model などから呼び出す
+- data_quality gate / drift_report / infer などから呼び出す
 - opt-in：`conf/run/alerts/base.yaml` で enabled を制御（デフォルト false）
 
 ### 3) docs
