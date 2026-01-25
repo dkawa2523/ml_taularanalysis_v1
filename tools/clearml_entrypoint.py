@@ -180,6 +180,20 @@ def _reexec_with_python(python_path: Path, argv: list[str]) -> None:
     os.execv(str(python_path), [str(python_path), *argv])
 
 
+def _can_import(python_path: Path, module: str) -> bool:
+    try:
+        subprocess.run(
+            [str(python_path), "-c", f"import {module}"],
+            check=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+        )
+        return True
+    except Exception:
+        return False
+
+
 def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
     if os.getenv(_BOOTSTRAP_ENV):
         return
@@ -209,6 +223,21 @@ def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
         python_path = (venv_path / "Scripts" / "python.exe").resolve()
     if not python_path.exists():
         raise RuntimeError(f"uv venv python not found: {python_path}")
+    if not _can_import(python_path, "hydra"):
+        print(
+            "[clearml_entrypoint] uv venv missing hydra; falling back to current env bootstrap.",
+            file=sys.stderr,
+        )
+        fallback_env = Path(sys.prefix).resolve()
+        _uv_sync(
+            repo_root,
+            fallback_env,
+            extras=extras,
+            all_extras=all_extras,
+            frozen=frozen,
+        )
+        os.environ[_BOOTSTRAP_ENV] = "1"
+        return
     _reexec_with_python(python_path, [str(Path(__file__)), *argv])
 
 
