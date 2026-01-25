@@ -111,6 +111,7 @@ def _maybe_patch_clearml_files_host() -> None:
             host = None
         if not (_in_docker() and host in {"localhost", "127.0.0.1"}):
             return
+
     def _set_from_url(url: str) -> bool:
         try:
             from urllib.parse import urlparse
@@ -133,21 +134,35 @@ def _maybe_patch_clearml_files_host() -> None:
     if api_host and _set_from_url(api_host):
         return
 
-    cfg_path = os.getenv("CLEARML_CONFIG_FILE")
-    if cfg_path:
+    def _set_from_config(path: Path) -> bool:
         try:
             import configparser
 
             parser = configparser.ConfigParser()
-            parser.read(cfg_path)
+            parser.read(path)
             api_section = parser["api"] if "api" in parser else {}
             files_host = api_section.get("files_server") or api_section.get("files") or ""
             if files_host and _set_from_url(files_host):
-                return
+                return True
             api_server = api_section.get("host") or api_section.get("api_server") or api_section.get("web_server")
-            if api_server:
-                _set_from_url(api_server)
+            if api_server and _set_from_url(api_server):
+                return True
         except Exception:
+            return False
+        return False
+
+    cfg_path = os.getenv("CLEARML_CONFIG_FILE")
+    if cfg_path:
+        if _set_from_config(Path(cfg_path)):
+            return
+
+    for candidate in (
+        Path.cwd() / "clearml.conf",
+        Path.home() / "clearml.conf",
+        Path.home() / ".clearml.conf",
+        Path.home() / ".config" / "clearml.conf",
+    ):
+        if candidate.exists() and _set_from_config(candidate):
             return
 
 
