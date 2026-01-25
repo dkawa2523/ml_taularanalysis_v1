@@ -26,6 +26,7 @@ import sys
 from pathlib import Path
 import re
 import subprocess
+from urllib.parse import urlparse, urlunparse
 from typing import Any, Iterable, Mapping, Optional
 
 
@@ -84,6 +85,123 @@ def _cfg_value(cfg: Any, dotted_path: str, default: Any | None = None) -> Any:
             return default
         current = getattr(current, key)
     return current
+
+
+def _in_docker() -> bool:
+    return Path("/.dockerenv").exists()
+
+
+def _normalize_files_host(url: str, *, port_override: int | None = None) -> str | None:
+    if not url:
+        return None
+    parsed = urlparse(url if "://" in url else f"http://{url}")
+    host = parsed.hostname
+    if not host:
+        return None
+    scheme = parsed.scheme or "http"
+    port = parsed.port
+    if port_override is not None:
+        port = port_override
+    if port is None:
+        port = 8081
+    return f"{scheme}://{host}:{port}"
+
+
+def _read_clearml_config_api_section() -> dict[str, str]:
+    cfg_path = os.getenv("CLEARML_CONFIG_FILE")
+    candidates = []
+    if cfg_path:
+        candidates.append(Path(cfg_path).expanduser())
+    candidates.extend(
+        [
+            Path.cwd() / "clearml.conf",
+            Path.home() / "clearml.conf",
+            Path.home() / ".clearml.conf",
+            Path.home() / ".config" / "clearml.conf",
+        ]
+    )
+    for candidate in candidates:
+        if not candidate.exists():
+            continue
+        try:
+            import configparser
+
+            parser = configparser.ConfigParser()
+            parser.read(candidate)
+            if "api" in parser:
+                return dict(parser["api"])
+        except Exception:
+            continue
+    return {}
+
+
+def _resolve_clearml_files_host_fallback() -> str | None:
+    api_section = _read_clearml_config_api_section()
+    files_host = os.getenv("CLEARML_FILES_HOST") or api_section.get("files_server") or api_section.get("files")
+    if files_host:
+        normalized = _normalize_files_host(files_host)
+        if normalized and urlparse(normalized).hostname not in {"localhost", "127.0.0.1"}:
+            return normalized
+
+    api_host = os.getenv("CLEARML_API_HOST") or os.getenv("CLEARML_WEB_HOST")
+    if not api_host:
+        api_host = api_section.get("host") or api_section.get("api_server") or api_section.get("web_server")
+    if api_host:
+        parsed = urlparse(api_host if "://" in api_host else f"http://{api_host}")
+        host = parsed.hostname
+        if host and host not in {"localhost", "127.0.0.1"}:
+            port = parsed.port
+            if port is None or port in {8008, 8080}:
+                port = 8081
+            return _normalize_files_host(api_host, port_override=port)
+
+    if _in_docker():
+        return "http://host.docker.internal:8081"
+    return None
+
+
+def _apply_clearml_files_host_substitution() -> None:
+    if not _in_docker():
+        return
+    try:
+        from clearml.backend_api.session import Session  # type: ignore
+        from clearml.storage.helper import StorageHelper  # type: ignore
+    except Exception:
+        return
+
+    try:
+        files_host = Session.get_files_server_host()
+    except Exception:
+        files_host = None
+
+    normalized = _normalize_files_host(files_host or "")
+    if normalized:
+        host = urlparse(normalized).hostname
+        if host in {"localhost", "127.0.0.1"}:
+            normalized = None
+
+    if not normalized:
+        normalized = _resolve_clearml_files_host_fallback()
+    if not normalized:
+        return
+
+    os.environ.setdefault("CLEARML_FILES_HOST", normalized)
+    try:
+        existing = {rule.registered_prefix: rule.local_prefix for rule in StorageHelper._path_substitutions}
+    except Exception:
+        existing = {}
+    for prefix in (
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "https://localhost:8081",
+        "https://127.0.0.1:8081",
+    ):
+        if existing.get(prefix) == normalized:
+            continue
+        try:
+            StorageHelper.add_path_substitution(prefix, normalized)
+        except Exception:
+            continue
 
 
 def _set_cfg_value(cfg: Any, dotted_path: str, value: Any) -> bool:
@@ -2376,7 +2494,16 @@ def get_dataset_local_copy(cfg: Any, dataset_id: str) -> Path:
         dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
         local_path = dataset.get_local_copy()
     except Exception as exc:
-        raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc}") from exc
+        error_text = str(exc)
+        if "localhost" in error_text or "127.0.0.1" in error_text:
+            _apply_clearml_files_host_substitution()
+            try:
+                dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
+                local_path = dataset.get_local_copy()
+            except Exception as exc_retry:
+                raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc_retry}") from exc_retry
+        else:
+            raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc}") from exc
     if not local_path:
         raise PlatformAdapterError("ClearML Dataset.get_local_copy returned an empty path.")
     return Path(local_path)
