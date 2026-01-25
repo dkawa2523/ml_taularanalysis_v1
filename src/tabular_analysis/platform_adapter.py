@@ -155,8 +155,6 @@ def _resolve_clearml_files_host_fallback() -> str | None:
                 port = 8081
             return _normalize_files_host(api_host, port_override=port)
 
-    if _in_docker():
-        return "http://host.docker.internal:8081"
     return None
 
 
@@ -2490,20 +2488,17 @@ def get_dataset_local_copy(cfg: Any, dataset_id: str) -> Path:
     if not is_clearml_enabled(cfg):
         raise PlatformAdapterError("ClearML is disabled; cannot fetch dataset.")
     ClearMLDataset = _load_clearml_dataset(clearml_enabled=True)
+    _apply_clearml_files_host_substitution()
     try:
         dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
         local_path = dataset.get_local_copy()
     except Exception as exc:
-        error_text = str(exc)
-        if "localhost" in error_text or "127.0.0.1" in error_text:
-            _apply_clearml_files_host_substitution()
-            try:
-                dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
-                local_path = dataset.get_local_copy()
-            except Exception as exc_retry:
-                raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc_retry}") from exc_retry
-        else:
-            raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc}") from exc
+        _apply_clearml_files_host_substitution()
+        try:
+            dataset = ClearMLDataset.get(dataset_id=str(dataset_id))
+            local_path = dataset.get_local_copy()
+        except Exception as exc_retry:
+            raise PlatformAdapterError(f"Failed to fetch dataset via ClearML: {exc_retry}") from exc_retry
     if not local_path:
         raise PlatformAdapterError("ClearML Dataset.get_local_copy returned an empty path.")
     return Path(local_path)
