@@ -733,6 +733,33 @@ def _clearml_project(cfg: Any, stage: str) -> str:
     return build_project_name(project_root, usecase_id, stage, cfg=cfg)
 
 
+def _resolve_base_task_id(cfg: Any, task_name: str, *, use_templates: bool) -> str:
+    if use_templates:
+        return resolve_template_task_id(cfg, task_name)
+    project = _clearml_project(cfg, _STAGE_BY_TASK[task_name])
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("clearml is required to resolve base tasks for pipeline steps.") from exc
+    task = ClearMLTask.get_task(project_name=project, task_name=task_name, allow_archived=True)
+    if not task or not getattr(task, "id", None):
+        raise RuntimeError(f"Base task not found for {task_name} in {project}")
+    return str(task.id)
+
+
+def _make_base_task_factory(base_task_id: str, *, project_name: str):
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception as exc:
+        raise RuntimeError("clearml is required to clone base tasks for pipeline steps.") from exc
+
+    def _factory(node: Any):  # ClearML PipelineController.Node
+        name = getattr(node, "name", None) or "pipeline_step"
+        return ClearMLTask.clone(base_task_id, name=str(name), project=str(project_name))
+
+    return _factory
+
+
 def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -1592,16 +1619,12 @@ def _run_clearml_pipeline(
         template_task_ids: dict[str, str] = {}
 
         def _base_task_kwargs(task_name: str) -> dict[str, Any]:
-            if not use_templates:
-                return {
-                    "base_task_project": _clearml_project(cfg, _STAGE_BY_TASK[task_name]),
-                    "base_task_name": task_name,
-                }
             task_id = template_task_ids.get(task_name)
             if not task_id:
-                task_id = resolve_template_task_id(cfg, task_name)
+                task_id = _resolve_base_task_id(cfg, task_name, use_templates=use_templates)
                 template_task_ids[task_name] = task_id
-            return {"base_task_id": task_id}
+            project_name = _clearml_project(cfg, _STAGE_BY_TASK[task_name])
+            return {"base_task_factory": _make_base_task_factory(task_id, project_name=project_name)}
 
         if plan["run_dataset_register"]:
             step = steps["dataset_register"]

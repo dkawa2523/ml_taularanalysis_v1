@@ -1016,6 +1016,26 @@ def _apply_clearml_system_tags(task: Any, system_tags: Iterable[str] | None) -> 
         raise PlatformAdapterError(f"Failed to set ClearML system tags: {exc}") from exc
 
 
+def _apply_clearml_task_type(task: Any, task_type: str | None) -> None:
+    if not task_type:
+        return
+    setter = getattr(task, "set_task_type", None)
+    if not callable(setter):
+        return
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+
+        normalized = task_type
+        if isinstance(task_type, str) and task_type.lower() == "controller":
+            normalized = ClearMLTask.TaskTypes.controller
+        setter(normalized)
+    except Exception:
+        try:
+            setter(task_type)
+        except Exception:
+            return
+
+
 def hash_config(payload: Any) -> str:
     try:
         from ml_platform.artifacts import hash_config as platform_hash_config  # type: ignore
@@ -1155,6 +1175,7 @@ def init_task_context(
             )
         except TypeError:
             task = task_factory(cfg, tags=merged_tags, reuse_last_task_id=reuse_last_task_id)
+        _apply_clearml_task_type(task, task_type)
         _apply_clearml_task_script_override(task, cfg)
         _apply_clearml_system_tags(task, system_tags)
         setter = getattr(platform_clearml, "set_user_properties", None)
@@ -2555,6 +2576,11 @@ def create_pipeline_controller(
         tags=tags,
         default_queue=default_queue,
     )
+    try:
+        if hasattr(controller, "_target_project"):
+            controller._target_project = False
+    except Exception:
+        pass
     _apply_clearml_task_script_override(controller, cfg)
     _apply_clearml_pipeline_args(controller, cfg)
     _apply_clearml_task_requirements(
