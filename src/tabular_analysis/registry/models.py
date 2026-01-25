@@ -26,7 +26,10 @@ _CLASS_PATH_TASK_TYPE_OVERRIDES = {
 
 class MissingOptionalDependencyError(RuntimeError):
     def __init__(self, *, module: str, class_path: str, extra: str | None = None):
-        install_hint = f'pip install -e ".[{extra}]"' if extra else f"pip install {module}"
+        if extra:
+            install_hint = f'uv sync --extra {extra} (or pip install -e ".[{extra}]")'
+        else:
+            install_hint = f"uv add {module} (or pip install {module})"
         message = (
             f"Optional dependency '{module}' is required for model '{class_path}'. "
             f"Install it with: {install_hint}"

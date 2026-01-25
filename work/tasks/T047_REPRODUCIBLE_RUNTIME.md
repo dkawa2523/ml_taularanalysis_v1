@@ -19,8 +19,9 @@
 - 各プロセスの共通初期化で呼ぶ（重複を避ける）
 
 ### 2) lockfile の運用導線
-- `requirements/lock.txt`（例）を追加し、`docs/26_REPRODUCIBLE_RUNTIME.md` に更新手順を記載
-  - 依存が増えたときに更新するコマンド例（pip-tools を必須にしない）
+- `uv.lock` を正とし、`docs/26_REPRODUCIBLE_RUNTIME.md` に更新手順を記載
+  - 依存が増えたときに `uv lock` を更新する
+- pip-only 環境向けの `requirements/lock.txt` は任意（必要なら手動生成）
 - 既存 requirements 構成（base/optional）を壊さない
 
 ### 3) verify

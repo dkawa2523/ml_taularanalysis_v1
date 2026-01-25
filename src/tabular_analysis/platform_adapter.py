@@ -711,7 +711,7 @@ def _resolve_clearml_pipeline_requirements(cfg: Any) -> list[str]:
                 return list(spec.requirements or [])
     except Exception:
         pass
-    return ["-r requirements/base.txt"]
+    return ["clearml>=1.15.0", "uv>=0.5.0"]
 
 
 def _resolve_version_props(cfg: Any, *, clearml_enabled: bool) -> dict[str, str]:

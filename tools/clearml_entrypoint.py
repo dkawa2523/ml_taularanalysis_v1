@@ -2,9 +2,13 @@
 """ClearML entrypoint wrapper for src/ layout."""
 
 import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
+
+_BOOTSTRAP_ENV = "TABULAR_ANALYSIS_BOOTSTRAPPED"
 
 
 def _find_repo_root() -> Path:
@@ -35,6 +39,176 @@ def _extract_cli_keys(argv: list[str]) -> set[str]:
         if key:
             keys.add(key)
     return keys
+
+
+def _strip_quotes(text: str) -> str:
+    if len(text) >= 2 and ((text[0] == text[-1] == "'") or (text[0] == text[-1] == '"')):
+        return text[1:-1]
+    return text
+
+
+def _parse_cli_overrides(argv: list[str]) -> dict[str, str]:
+    overrides: dict[str, str] = {}
+    for item in argv:
+        if not item or item.startswith("-") or "=" not in item:
+            continue
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if key.startswith("+"):
+            key = key.lstrip("+")
+        if not key:
+            continue
+        overrides[key] = _strip_quotes(value.strip())
+    return overrides
+
+
+def _parse_bool(value: str | None, *, default: bool = False) -> bool:
+    if value is None:
+        return default
+    text = value.strip().lower()
+    if text in {"1", "true", "yes", "y", "on"}:
+        return True
+    if text in {"0", "false", "no", "n", "off"}:
+        return False
+    return default
+
+
+def _parse_list(value: str | None) -> list[str]:
+    if not value:
+        return []
+    text = _strip_quotes(value.strip())
+    if text.startswith("[") and text.endswith("]"):
+        text = text[1:-1]
+    items = [item.strip() for item in text.split(",") if item.strip()]
+    return [_strip_quotes(item) for item in items if item]
+
+
+def _is_clearml_context() -> bool:
+    return any(
+        os.getenv(key)
+        for key in (
+            "CLEARML_TASK_ID",
+            "TRAINS_TASK_ID",
+            "CLEARML_AGENT_TASK_ID",
+            "CLEARML_TASK",
+        )
+    )
+
+
+def _resolve_bootstrap_mode(overrides: dict[str, str]) -> str:
+    for key in ("run.clearml.env.bootstrap", "run.clearml.bootstrap"):
+        value = overrides.get(key)
+        if value:
+            return value.strip().lower()
+    for key in ("TABULAR_ANALYSIS_CLEARML_BOOTSTRAP", "TABULAR_ANALYSIS_BOOTSTRAP"):
+        value = os.getenv(key)
+        if value:
+            return value.strip().lower()
+    return "none"
+
+
+def _resolve_task_name(overrides: dict[str, str]) -> str | None:
+    for key in ("task", "task.name"):
+        value = overrides.get(key)
+        if value:
+            name = value.split("/")[-1].strip()
+            return name or None
+    return None
+
+
+def _infer_optimize_enabled(overrides: dict[str, str]) -> bool:
+    for key in ("infer.mode", "infer/mode"):
+        value = overrides.get(key)
+        if value and value.strip().lower() == "optimize":
+            return True
+    return False
+
+
+def _resolve_uv_extras(overrides: dict[str, str]) -> list[str]:
+    extras: list[str] = []
+    explicit = overrides.get("run.clearml.env.uv.extras")
+    if explicit:
+        extras = _parse_list(explicit)
+    else:
+        task_name = _resolve_task_name(overrides)
+        if task_name in {"train_model", "train_ensemble", "infer"}:
+            extras = ["models", "tabpfn"]
+    if _infer_optimize_enabled(overrides) and "optuna" not in extras:
+        extras.append("optuna")
+    return extras
+
+
+def _resolve_uv_settings(overrides: dict[str, str]) -> tuple[str, list[str], bool, bool]:
+    venv_dir = overrides.get("run.clearml.env.uv.venv_dir") or ".venv"
+    extras = _resolve_uv_extras(overrides)
+    all_extras = _parse_bool(overrides.get("run.clearml.env.uv.all_extras"), default=False)
+    frozen = _parse_bool(overrides.get("run.clearml.env.uv.frozen"), default=True)
+    return (venv_dir, extras, all_extras, frozen)
+
+
+def _ensure_uv_available() -> None:
+    if shutil.which("uv"):
+        return
+    subprocess.run(
+        [sys.executable, "-m", "pip", "install", "uv"],
+        check=True,
+    )
+
+
+def _uv_sync(
+    repo_root: Path,
+    venv_dir: Path,
+    *,
+    extras: list[str],
+    all_extras: bool,
+    frozen: bool,
+) -> None:
+    cmd = ["uv", "sync", "--project", str(repo_root)]
+    if frozen:
+        cmd.append("--frozen")
+    if all_extras:
+        cmd.append("--all-extras")
+    else:
+        for extra in extras:
+            cmd.extend(["--extra", extra])
+    env = os.environ.copy()
+    env["UV_PROJECT_ENVIRONMENT"] = str(venv_dir)
+    env.setdefault("UV_PYTHON", sys.executable)
+    subprocess.run(cmd, check=True, env=env)
+
+
+def _reexec_with_python(python_path: Path, argv: list[str]) -> None:
+    os.environ[_BOOTSTRAP_ENV] = "1"
+    os.execv(str(python_path), [str(python_path), *argv])
+
+
+def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
+    if os.getenv(_BOOTSTRAP_ENV):
+        return
+    overrides = _parse_cli_overrides(argv)
+    mode = _resolve_bootstrap_mode(overrides)
+    if mode in {"none", "false", "0", "off"}:
+        return
+    if mode == "auto" and not _is_clearml_context():
+        return
+    venv_dir, extras, all_extras, frozen = _resolve_uv_settings(overrides)
+    lock_path = repo_root / "uv.lock"
+    if frozen and not lock_path.exists():
+        raise RuntimeError("uv.lock is required for frozen ClearML bootstrap.")
+    _ensure_uv_available()
+    _uv_sync(
+        repo_root,
+        repo_root / venv_dir,
+        extras=extras,
+        all_extras=all_extras,
+        frozen=frozen,
+    )
+    python_path = (repo_root / venv_dir / "bin" / "python").resolve()
+    if os.name == "nt":
+        python_path = (repo_root / venv_dir / "Scripts" / "python.exe").resolve()
+    if not python_path.exists():
+        raise RuntimeError(f"uv venv python not found: {python_path}")
+    _reexec_with_python(python_path, [str(Path(__file__)), *argv])
 
 
 def _looks_like_container(text: str) -> bool:
@@ -171,6 +345,7 @@ def main(argv: list[str] | None = None) -> None:
         os.environ["TABULAR_ANALYSIS_CONFIG_DIR"] = str(repo_root / "conf")
 
     args = _merge_clearml_overrides(list(argv or []))
+    _maybe_bootstrap_uv(repo_root, args)
 
     from tabular_analysis import cli
 

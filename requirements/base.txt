@@ -1,5 +1,5 @@
-# Base runtime dependencies for ml-solution-tabular-analysis
-# NOTE: ml-platform is required for ClearML runs.
+# Base runtime dependencies for ml-solution-tabular-analysis (pip fallback)
+# NOTE: ClearML templates use uv.lock + uv bootstrap; keep this file for local/pip-only runs.
 
 ml-platform @ git+https://github.com/dkawa2523/ml_platform_v1@master
 hydra-core>=1.3.2

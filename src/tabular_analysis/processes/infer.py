@@ -480,7 +480,8 @@ def _build_optuna_sampler(name: str, seed: int | None) -> Any:
         import optuna  # type: ignore
     except Exception as exc:
         raise RuntimeError(
-            "Optuna is required for infer.mode=optimize. Install with: pip install optuna"
+            "Optuna is required for infer.mode=optimize. Install with: "
+            "uv sync --extra optuna (or pip install optuna)"
         ) from exc
     key = (name or "").strip().lower()
     if key in ("tpe", "tp"):
@@ -2480,7 +2481,8 @@ def run(cfg: Any) -> None:
             from optuna.trial import TrialState  # type: ignore
         except Exception as exc:
             raise RuntimeError(
-                "Optuna is required for infer.mode=optimize. Install with: pip install optuna"
+                "Optuna is required for infer.mode=optimize. Install with: "
+                "uv sync --extra optuna (or pip install optuna)"
             ) from exc
 
         sampler = _build_optuna_sampler(

@@ -61,6 +61,20 @@ All items below are designed to prevent these regressions.
    - Production option: `run.clearml.code_ref.mode = commit` (only if commit is reachable on remote).
    - Legacy: `run.clearml.code_version_mode = branch_head` / `pin_commit`
 
+## Repository-side env bootstrap (uv)
+1) Template tasks install only minimal tools
+   - `clearml` + `uv` are installed by ClearML Agent requirements.
+   - All runtime dependencies come from `uv.lock`.
+2) Entry point bootstrap
+   - `run.clearml.env.bootstrap=uv` triggers `uv sync --frozen` into `.venv`.
+   - Templates set this by default.
+3) Model extras
+   - `train_model`, `train_ensemble`, `infer` templates set:
+     - `run.clearml.env.uv.extras=[models,tabpfn]`
+4) Disable/bootstrap override
+   - Set `run.clearml.env.bootstrap=none` to skip uv.
+   - Ensure `uv.lock` exists (`uv lock`) before running ClearML tasks.
+
 ## Template Tasks (Deterministic Resolution)
 1) Required tags
    - `template:true`

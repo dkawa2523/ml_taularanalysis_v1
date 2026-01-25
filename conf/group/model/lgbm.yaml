@@ -1,4 +1,4 @@
-# モデルバリアント: LightGBM（optional dependency: pip install .[models]）
+# モデルバリアント: LightGBM（optional dependency: uv sync --extra models）
 model_variant:
   name: lgbm
   framework: lightgbm

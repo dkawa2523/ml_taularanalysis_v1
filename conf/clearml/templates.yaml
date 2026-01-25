@@ -8,9 +8,10 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
     requirements:
-      - "-r requirements/base.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -29,9 +30,10 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
     requirements:
-      - "-r requirements/base.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -50,10 +52,11 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.extras=[models,tabpfn]"
     requirements:
-      - "-r requirements/base.txt"
-      - "-r requirements/models.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -72,10 +75,11 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.extras=[models,tabpfn]"
     requirements:
-      - "-r requirements/base.txt"
-      - "-r requirements/models.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -94,10 +98,11 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.extras=[models,tabpfn]"
     requirements:
-      - "-r requirements/base.txt"
-      - "-r requirements/models.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -116,9 +121,10 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
     requirements:
-      - "-r requirements/base.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -137,9 +143,10 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
     requirements:
-      - "-r requirements/base.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"
@@ -158,9 +165,10 @@ templates:
     default_overrides:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
+      - "run.clearml.env.bootstrap=uv"
     requirements:
-      - "-r requirements/base.txt"
-      - "-e ."
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
     tags:
       - "template:true"
       - "usecase:{usecase_id}"

@@ -1,4 +1,4 @@
-# Model variant: XGBoost (optional dependency: pip install .[models])
+# Model variant: XGBoost (optional dependency: uv sync --extra models)
 model_variant:
   name: xgboost
   framework: xgboost

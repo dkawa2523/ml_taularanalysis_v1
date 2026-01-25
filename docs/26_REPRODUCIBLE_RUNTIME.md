@@ -13,20 +13,21 @@ These files are written under each task's run directory (for example:
 both files are uploaded as artifacts for UI traceability. When ClearML is disabled,
 the upload step is a no-op but local files are still created.
 
-## Lockfile workflow (optional)
-`requirements/lock.txt` is an optional, environment-specific lockfile meant to capture
-fully resolved dependencies without changing the existing `requirements/base.txt` layout.
+## Lockfile workflow (uv recommended)
+`uv.lock` is the primary lockfile. It is generated from `pyproject.toml` and used by
+ClearML entrypoint bootstrap (`uv sync --frozen`) for stable, repo-side environments.
 
 ### Update steps
-1. Install (or update) the base requirements in your target environment:
+1. Regenerate the lockfile after dependency changes:
    ```bash
-   python -m pip install -r requirements/base.txt
+   uv lock
    ```
-2. If optional dependencies are needed, install them as well.
-3. Freeze the resolved environment into the lockfile:
+2. Sync a reproducible environment locally:
    ```bash
-   python -m pip freeze > requirements/lock.txt
+   uv sync --frozen
    ```
 
-Keep `requirements/base.txt` (and optional lists) as the source of truth. The lockfile is
-used for reproducible runs, CI snapshots, or forensic debugging when needed.
+### Legacy pip lock (optional)
+If you must use pip-only environments, you can still generate a `requirements/lock.txt`
+snapshot. It is not tracked by default and is not used by ClearML templates once uv
+bootstrap is enabled.

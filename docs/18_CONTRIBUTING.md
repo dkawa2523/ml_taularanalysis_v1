@@ -11,11 +11,16 @@ pip install -r requirements/base.txt
 pip install -e .
 ```
 
+uv alternative:
+```bash
+uv sync --frozen
+```
+
 Optional model extras:
 ```bash
-pip install -e ".[models]"
+uv sync --extra models
 # TabPFN (optional)
-pip install -e ".[tabpfn]"
+uv sync --extra tabpfn
 ```
 
 ## Branching

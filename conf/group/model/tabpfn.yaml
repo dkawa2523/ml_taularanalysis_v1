@@ -1,4 +1,4 @@
-# Model variant: TabPFN (optional dependency: pip install -e ".[tabpfn]")
+# Model variant: TabPFN (optional dependency: uv sync --extra tabpfn)
 model_variant:
   name: tabpfn
   framework: tabpfn

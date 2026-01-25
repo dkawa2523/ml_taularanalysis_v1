@@ -69,4 +69,13 @@ clearml:
     enable_scalars: true
     enable_plots: true
     enable_tables: true
+  # Environment bootstrap (ClearML Agent side should stay minimal).
+  env:
+    # none | uv | auto (auto uses uv only when CLEARML_TASK_ID is present)
+    bootstrap: "none"
+    uv:
+      venv_dir: ".venv"
+      extras: []
+      all_extras: false
+      frozen: true
 # Monitoring defaults are defined in conf/monitor/base.yaml.

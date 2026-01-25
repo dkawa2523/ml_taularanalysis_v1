@@ -1,4 +1,4 @@
-# Model variant: CatBoost (optional dependency: pip install .[models])
+# Model variant: CatBoost (optional dependency: uv sync --extra models)
 model_variant:
   name: catboost
   framework: catboost

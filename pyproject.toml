@@ -39,6 +39,9 @@ models = [
 tabpfn = [
   "tabpfn>=0.1",
 ]
+optuna = [
+  "optuna>=3.0.0",
+]
 dev = [
   "pytest>=7.0.0",
   "ruff>=0.4.0",

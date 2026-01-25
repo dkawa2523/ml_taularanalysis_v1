@@ -8,9 +8,9 @@ import sys
 from pathlib import Path
 from typing import List
 
-DEFAULT_INSTALL_HINT = 'pip install -e ".[models]"'
+DEFAULT_INSTALL_HINT = "uv sync --extra models"
 MODEL_INSTALL_HINTS = {
-    "tabpfn": 'pip install -e ".[tabpfn]"',
+    "tabpfn": "uv sync --extra tabpfn",
 }
 TASK_TYPES = ("regression", "classification")
 
