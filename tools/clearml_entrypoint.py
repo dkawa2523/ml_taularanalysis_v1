@@ -154,7 +154,7 @@ def _ensure_uv_available() -> None:
 
 def _uv_sync(
     repo_root: Path,
-    venv_dir: Path,
+    venv_path: Path,
     *,
     extras: list[str],
     all_extras: bool,
@@ -170,7 +170,7 @@ def _uv_sync(
         for extra in extras:
             cmd.extend(["--extra", extra])
     env = os.environ.copy()
-    env["UV_PROJECT_ENVIRONMENT"] = str(venv_dir)
+    env["UV_PROJECT_ENVIRONMENT"] = str(venv_path)
     env.setdefault("UV_PYTHON", sys.executable)
     subprocess.run(cmd, check=True, env=env)
 
@@ -194,16 +194,19 @@ def _maybe_bootstrap_uv(repo_root: Path, argv: list[str]) -> None:
     if frozen and not lock_path.exists():
         raise RuntimeError("uv.lock is required for frozen ClearML bootstrap.")
     _ensure_uv_available()
+    venv_path = Path(venv_dir)
+    if not venv_path.is_absolute():
+        venv_path = (repo_root / venv_path).resolve()
     _uv_sync(
         repo_root,
-        repo_root / venv_dir,
+        venv_path,
         extras=extras,
         all_extras=all_extras,
         frozen=frozen,
     )
-    python_path = (repo_root / venv_dir / "bin" / "python").resolve()
+    python_path = (venv_path / "bin" / "python").resolve()
     if os.name == "nt":
-        python_path = (repo_root / venv_dir / "Scripts" / "python.exe").resolve()
+        python_path = (venv_path / "Scripts" / "python.exe").resolve()
     if not python_path.exists():
         raise RuntimeError(f"uv venv python not found: {python_path}")
     _reexec_with_python(python_path, [str(Path(__file__)), *argv])
