@@ -480,6 +480,8 @@ def _render_report_markdown(payload: Mapping[str, Any], *, max_models: int) -> s
         f"- status: {_format_value(payload.get('status'))}",
         f"- models_tried: {_format_value(summary.get('models_tried'))}",
     ]
+    if summary.get("pipeline_url"):
+        lines.append(f"- pipeline_url: {_format_value(summary.get('pipeline_url'))}")
     if summary.get("planned_jobs") is not None:
         lines.append(f"- planned_jobs: {_format_value(summary.get('planned_jobs'))}")
     if summary.get("executed_jobs") is not None:
@@ -778,10 +780,17 @@ def build_pipeline_report_bundle(
     pipeline_run_dir: Path | None = None,
     pipeline_task_id: str | None = None,
 ) -> PipelineReportBundle:
-    payload = _collect_report_payload(pipeline_run, cfg=cfg, max_models=max_models)
-    markdown = _render_report_markdown(payload, max_models=max_models)
     links = build_pipeline_report_links(
         pipeline_run, cfg=cfg, pipeline_run_dir=pipeline_run_dir, pipeline_task_id=pipeline_task_id
     )
+    payload = dict(_collect_report_payload(pipeline_run, cfg=cfg, max_models=max_models))
+    payload["links"] = links
+    pipeline_entry = links.get("pipeline") if isinstance(links, Mapping) else None
+    if isinstance(pipeline_entry, Mapping):
+        pipeline_url = pipeline_entry.get("clearml_url")
+        if pipeline_url:
+            summary = dict(payload.get("summary") or {})
+            summary["pipeline_url"] = pipeline_url
+            payload["summary"] = summary
+    markdown = _render_report_markdown(payload, max_models=max_models)
     return PipelineReportBundle(markdown=markdown, payload=payload, links=links)
-

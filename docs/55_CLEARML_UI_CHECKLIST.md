@@ -66,7 +66,7 @@ Key assumptions (T097):
 ## 6. leaderboard（比較評価 + 推奨/採用の分離）
 | 項目 | 見る場所 / 確認内容 |
 | --- | --- |
-| 探し方 | - [ ] Projects: `<project_root>/TabularAnalysis/<usecase_id>/06_Leaderboards`<br>- [ ] Tags: `usecase:<usecase_id>` / `process:leaderboard` / `schema:v1` / `grid:<grid_id>` |
+| 探し方 | - [ ] Projects: `<project_root>/TabularAnalysis/<usecase_id>/00_Pipelines`（leaderboard もここに配置）<br>- [ ] Tags: `usecase:<usecase_id>` / `process:leaderboard` / `schema:v1` / `grid:<grid_id>` |
 | Configuration | - [ ] HyperParameters > eval に `eval.primary_metric`, `eval.direction`, `leaderboard.require_comparable`, `leaderboard.top_k` が載る |
 | Scalars | - [ ] `leaderboard/best_score` がある |
 | Plots | - [ ] top-k bar（スコア比較） |

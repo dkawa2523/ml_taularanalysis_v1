@@ -104,7 +104,7 @@ def load_default_context(repo_root: Path) -> TemplateContext:
         "train_model": "03_TrainModels",
         "train_ensemble": "04_Ensembles",
         "infer": "05_Infer",
-        "leaderboard": "06_Leaderboards",
+        "leaderboard": "00_Pipelines",
         "pipeline": "00_Pipelines",
     }
     for key, value in defaults.items():

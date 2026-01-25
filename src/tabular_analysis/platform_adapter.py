@@ -2596,10 +2596,15 @@ def create_pipeline_controller(
     pipeline_utils = _load_clearml_pipeline_utils(clearml_enabled=True)
     if pipeline_utils is None:
         raise PlatformAdapterError("pipeline_utils is not available.")
+    tag_list: list[str] = []
+    if tags:
+        tag_list = [str(tag) for tag in tags if tag]
+    if "pipeline" not in tag_list:
+        tag_list.append("pipeline")
     controller = pipeline_utils.create_controller(
         cfg,
         name=name,
-        tags=tags,
+        tags=tag_list,
         default_queue=default_queue,
     )
     try:
@@ -2610,8 +2615,8 @@ def create_pipeline_controller(
     task = _resolve_clearml_task(controller)
     _apply_clearml_task_type(task, clearml_task_type_controller())
     _apply_clearml_system_tags(task, ["pipeline"])
-    if tags:
-        _apply_clearml_tags(task, tags)
+    if tag_list:
+        _apply_clearml_tags(task, tag_list)
     if properties:
         platform_clearml = _load_clearml_module(clearml_enabled=True)
         setter = getattr(platform_clearml, "set_user_properties", None)
