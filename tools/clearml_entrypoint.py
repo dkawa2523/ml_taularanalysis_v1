@@ -100,8 +100,17 @@ def _in_docker() -> bool:
 
 
 def _maybe_patch_clearml_files_host() -> None:
-    if os.getenv("CLEARML_FILES_HOST"):
-        return
+    existing = os.getenv("CLEARML_FILES_HOST")
+    if existing:
+        try:
+            from urllib.parse import urlparse
+
+            parsed = urlparse(existing)
+            host = parsed.hostname
+        except Exception:
+            host = None
+        if not (_in_docker() and host in {"localhost", "127.0.0.1"}):
+            return
     def _set_from_url(url: str) -> bool:
         try:
             from urllib.parse import urlparse
