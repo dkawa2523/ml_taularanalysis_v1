@@ -14,6 +14,7 @@ import math
 import shutil
 from pathlib import Path
 from typing import Any, Iterable
+import warnings
 
 from ..clearml.hparams import connect_leaderboard
 from ..clearml.ui_logger import log_debug_table, log_plotly, log_scalar
@@ -28,6 +29,7 @@ from ..platform_adapter import (
     init_task_context,
     is_clearml_enabled,
     list_clearml_tasks_by_tags,
+    update_recommended_registry_model_tags_multi,
     resolve_version_props,
     save_config_resolved,
     update_task_properties,
@@ -145,6 +147,13 @@ def _format_float(value: Any) -> str:
     if num is None:
         return "n/a"
     return f"{num:.6g}"
+
+
+def _format_score_tag(value: Any) -> str | None:
+    num = _to_float(value)
+    if num is None:
+        return None
+    return f"recommend_score:{num:.6g}"
 
 
 def _quantile(values: list[float], q: float) -> float:
@@ -382,6 +391,7 @@ def _build_entry(
     split_hash = _normalize_str(out.get("split_hash"))
     recipe_hash = _normalize_str(out.get("recipe_hash"))
     model_id = _normalize_str(out.get("model_id"))
+    registry_model_id = _normalize_str(out.get("registry_model_id"))
     best_score = _to_float(out.get("best_score"))
     task_type = _normalize_str(out.get("task_type"))
 
@@ -481,6 +491,7 @@ def _build_entry(
         "train_task_ref": train_task_ref,
         "train_task_id": _normalize_str(out.get("train_task_id")) or None,
         "model_id": model_id,
+        "registry_model_id": registry_model_id,
         "best_score": best_score,
         "primary_metric": primary_metric,
         "primary_metric_source": primary_metric_source,
@@ -629,6 +640,9 @@ def run(cfg: Any) -> None:
     top_k = int(getattr(lb_cfg, "top_k", 10) or 0)
     dry_run = bool(getattr(lb_cfg, "dry_run", False))
     recommend_cfg = getattr(lb_cfg, "recommend", None)
+    recommend_top_k = int(getattr(recommend_cfg, "top_k", 1) or 1) if recommend_cfg else 1
+    if recommend_top_k < 1:
+        recommend_top_k = 1
     metric_source_priority = _ensure_list(
         getattr(recommend_cfg, "metric_source_priority", None)
     )
@@ -663,6 +677,7 @@ def run(cfg: Any) -> None:
         direction=expected_direction,
         require_comparable=require_comparable,
         top_k=top_k,
+        recommend_top_k=recommend_top_k,
     )
 
     ref_values: dict[str, Any] = {
@@ -1147,6 +1162,14 @@ def run(cfg: Any) -> None:
     if not recommend_candidates:
         recommend_candidates = entries_sorted
     recommended = _apply_tie_breaker(recommend_candidates)
+    recommended_list = [recommended]
+    if recommend_top_k > 1:
+        for entry in recommend_candidates:
+            if entry is recommended:
+                continue
+            recommended_list.append(entry)
+            if len(recommended_list) >= recommend_top_k:
+                break
     recommended_metrics = {name: recommended.get(name) for name in scoring_metrics}
     recommendation = {
         "recommended_train_task_ref": recommended["train_task_ref"],
@@ -1166,6 +1189,26 @@ def run(cfg: Any) -> None:
             "weights": scoring_weights,
             "normalization": scoring_normalization,
         },
+        "recommended_top_k": recommend_top_k,
+        "recommended_models": [
+            {
+                "rank": idx,
+                "train_task_ref": entry.get("train_task_ref"),
+                "train_task_id": entry.get("train_task_id"),
+                "model_id": entry.get("model_id"),
+                "registry_model_id": entry.get("registry_model_id"),
+                "best_score": entry.get("best_score"),
+                "primary_metric": entry.get("primary_metric"),
+                "primary_metric_source": entry.get("primary_metric_source"),
+                "composite_score": entry.get("composite_score"),
+                "processed_dataset_id": entry.get("processed_dataset_id"),
+                "split_hash": entry.get("split_hash"),
+                "recipe_hash": entry.get("recipe_hash"),
+                "model_family": entry.get("model_family"),
+                "ensemble_method": entry.get("ensemble_method"),
+            }
+            for idx, entry in enumerate(recommended_list, start=1)
+        ],
         "recommend_policy": {
             "metric_source_priority": metric_source_priority,
             "allow_cross_metric_source": allow_cross_metric_source,
@@ -1177,6 +1220,56 @@ def run(cfg: Any) -> None:
     recommendation_path.write_text(
         json.dumps(recommendation, ensure_ascii=False, indent=2), encoding="utf-8"
     )
+
+    if clearml_enabled:
+        usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+        processed_dataset_id = _normalize_str(recommended.get("processed_dataset_id"))
+        if processed_dataset_id is None:
+            processed_dataset_id = _normalize_str(ref_values.get("processed_dataset_id"))
+        leaderboard_task_id = clearml_task_id(ctx.task) if ctx.task is not None else None
+        if processed_dataset_id and leaderboard_task_id:
+            recommendations: list[tuple[str, list[str]]] = []
+            for idx, entry in enumerate(recommended_list, start=1):
+                registry_model_id = _normalize_str(entry.get("registry_model_id"))
+                if not registry_model_id:
+                    warnings.warn(
+                        f"recommended model is missing registry_model_id (rank {idx}); skip registry tagging."
+                    )
+                    continue
+                score_tag = _format_score_tag(entry.get("best_score"))
+                tags = [
+                    "leaderboard:recommended",
+                    f"task:leaderboard:{leaderboard_task_id}",
+                    f"recommend_metric:{entry.get('primary_metric')}",
+                    f"recommend_rank:{idx}",
+                ]
+                if recommendation.get("ranking_direction"):
+                    tags.append(f"recommend_direction:{recommendation.get('ranking_direction')}")
+                if score_tag:
+                    tags.append(score_tag)
+                recommendations.append((registry_model_id, tags))
+            if recommendations:
+                try:
+                    update_recommended_registry_model_tags_multi(
+                        usecase_id=usecase_id,
+                        processed_dataset_id=processed_dataset_id,
+                        recommendations=recommendations,
+                        remove_prefixes=[
+                            "leaderboard:recommended",
+                            "task:leaderboard:",
+                            "recommend_metric:",
+                            "recommend_score:",
+                            "recommend_rank:",
+                            "recommend_direction:",
+                        ],
+                    )
+                except Exception as exc:
+                    warnings.warn(f"Failed to update registry recommendation tags: {exc}")
+        else:
+            if not processed_dataset_id:
+                warnings.warn("processed_dataset_id is missing; skip registry tagging.")
+            if not leaderboard_task_id:
+                warnings.warn("leaderboard task id is unavailable; skip registry tagging.")
 
     summary_lines = [
         "# Leaderboard Summary",

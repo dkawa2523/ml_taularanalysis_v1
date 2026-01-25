@@ -60,6 +60,8 @@ clearml:
 
   # clone 実行時のテンプレ task_id（任意。運用で固定）
   clone_from_task_id: null
+  # pipeline タスク ID（子タスクへ伝播して registry tag に利用）
+  pipeline_task_id: null
 
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []

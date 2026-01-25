@@ -32,6 +32,7 @@ from ..platform_adapter import (
     hash_config,
     init_task_context,
     is_clearml_enabled,
+    register_model_artifact,
     resolve_output_dir,
     resolve_version_props,
     save_config_resolved,
@@ -1134,6 +1135,52 @@ def _resolve_task_id(ctx) -> str | None:
     return None
 
 
+def _dedupe_tags(tags: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in tags:
+        text = str(tag).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        result.append(text)
+    return result
+
+
+def _build_registry_tags(
+    *,
+    usecase_id: str,
+    process: str,
+    processed_dataset_id: str,
+    split_hash: str,
+    recipe_hash: str,
+    preprocess_variant: str,
+    model_variant: str,
+    task_type: str | None,
+    train_task_id: str | None,
+    preprocess_task_id: str | None,
+    pipeline_task_id: str | None,
+) -> list[str]:
+    tags = [
+        f"usecase:{usecase_id}",
+        f"process:{process}",
+        f"dataset:{processed_dataset_id}",
+        f"split:{split_hash}",
+        f"recipe:{recipe_hash}",
+        f"preprocess:{preprocess_variant}",
+        f"model_variant:{model_variant}",
+    ]
+    if task_type:
+        tags.append(f"task_type:{task_type}")
+    if train_task_id:
+        tags.append(f"task:train_model:{train_task_id}")
+    if preprocess_task_id:
+        tags.append(f"task:preprocess:{preprocess_task_id}")
+    if pipeline_task_id:
+        tags.append(f"task:pipeline:{pipeline_task_id}")
+    return _dedupe_tags(tags)
+
+
 def _normalize_indices(values: Any, *, label: str) -> list[int]:
     if not isinstance(values, list):
         raise ValueError(f"{label} must be a list of indices.")
@@ -1559,6 +1606,7 @@ def run(cfg: Any) -> None:
         or _cfg_value(cfg, "train.preprocess_task_id")
         or _cfg_value(cfg, "inputs.preprocess_task_id")
     )
+    pipeline_task_id = _normalize_str(_cfg_value(cfg, "run.clearml.pipeline_task_id"))
 
     preprocess_run_dir = _resolve_preprocess_run_dir(cfg, processed_ref_path)
     preprocess_out_path = preprocess_run_dir / "out.json"
@@ -2430,6 +2478,33 @@ def run(cfg: Any) -> None:
     model_card_path = ctx.output_dir / "model_card.md"
     model_card_path.write_text("\n".join(model_card_lines) + "\n", encoding="utf-8")
 
+    registry_model_id: str | None = None
+    if clearml_enabled:
+        usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+        model_name = f"{usecase_id}:{model_variant_name}:{processed_dataset_id}"
+        tags = _build_registry_tags(
+            usecase_id=usecase_id,
+            process="train_model",
+            processed_dataset_id=processed_dataset_id,
+            split_hash=split_hash,
+            recipe_hash=recipe_hash,
+            preprocess_variant=preprocess_variant,
+            model_variant=model_variant_name,
+            task_type=task_type,
+            train_task_id=train_task_id,
+            preprocess_task_id=preprocess_task_id,
+            pipeline_task_id=pipeline_task_id,
+        )
+        try:
+            registry_model_id = register_model_artifact(
+                ctx,
+                model_path=model_bundle_path,
+                model_name=model_name,
+                tags=tags,
+            )
+        except Exception as exc:
+            warnings.warn(f"Failed to register model in ClearML registry: {exc}")
+
     if clearml_enabled:
         upload_artifact(ctx, "metrics.json", metrics_path)
         if metrics_ci_path is not None:
@@ -2456,6 +2531,8 @@ def run(cfg: Any) -> None:
         extra_props["imbalance_enabled"] = bool(imbalance_report.get("enabled"))
         extra_props["imbalance_strategy"] = imbalance_report.get("strategy")
         extra_props["imbalance_applied"] = bool(imbalance_report.get("applied"))
+        if registry_model_id:
+            extra_props["registry_model_id"] = registry_model_id
         update_task_properties(
             ctx,
             {
@@ -2471,6 +2548,8 @@ def run(cfg: Any) -> None:
     out = {
         "model_id": model_id,
         "train_task_id": train_task_id,
+        "preprocess_task_id": preprocess_task_id,
+        "pipeline_task_id": pipeline_task_id,
         "best_score": best_score,
         "primary_metric": primary_metric,
         "processed_dataset_id": processed_dataset_id,
@@ -2478,6 +2557,8 @@ def run(cfg: Any) -> None:
         "recipe_hash": recipe_hash,
         "task_type": task_type,
     }
+    if registry_model_id:
+        out["registry_model_id"] = registry_model_id
     if n_classes is not None:
         out["n_classes"] = n_classes
     if class_labels is not None:

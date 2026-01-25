@@ -30,6 +30,7 @@ from ..platform_adapter import (
     init_task_context,
     is_clearml_enabled,
     list_clearml_tasks_by_tags,
+    register_model_artifact,
     resolve_version_props,
     save_config_resolved,
     update_task_properties,
@@ -63,6 +64,7 @@ class PredsPayload:
 class Candidate:
     train_task_ref: str
     train_task_id: str | None
+    preprocess_task_id: str | None
     model_id: str | None
     model_variant: str
     task_type: str
@@ -186,6 +188,57 @@ def _normalize_task_type(value: Any) -> str:
     if key in ("classification", "classifier", "class"):
         return "classification"
     return "regression"
+
+
+def _dedupe_tags(tags: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in tags:
+        text = str(tag).strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        result.append(text)
+    return result
+
+
+def _build_registry_tags(
+    *,
+    usecase_id: str,
+    process: str,
+    processed_dataset_id: str,
+    split_hash: str,
+    recipe_hash: str,
+    preprocess_variant: str,
+    model_variant: str,
+    task_type: str | None,
+    train_ensemble_task_id: str | None,
+    train_task_ids: Iterable[str],
+    preprocess_task_ids: Iterable[str],
+    pipeline_task_id: str | None,
+) -> list[str]:
+    tags = [
+        f"usecase:{usecase_id}",
+        f"process:{process}",
+        f"dataset:{processed_dataset_id}",
+        f"split:{split_hash}",
+        f"recipe:{recipe_hash}",
+        f"preprocess:{preprocess_variant}",
+        f"model_variant:{model_variant}",
+    ]
+    if task_type:
+        tags.append(f"task_type:{task_type}")
+    if train_ensemble_task_id:
+        tags.append(f"task:train_ensemble:{train_ensemble_task_id}")
+    for task_id in train_task_ids:
+        if task_id:
+            tags.append(f"task:train_model:{task_id}")
+    for task_id in preprocess_task_ids:
+        if task_id:
+            tags.append(f"task:preprocess:{task_id}")
+    if pipeline_task_id:
+        tags.append(f"task:pipeline:{pipeline_task_id}")
+    return _dedupe_tags(tags)
 
 
 def _build_prediction_sample(
@@ -738,6 +791,7 @@ def _collect_candidates_clearml(
         processed_dataset_id = _normalize_str(out.get("processed_dataset_id"))
         split_hash = _normalize_str(out.get("split_hash"))
         recipe_hash = _normalize_str(out.get("recipe_hash"))
+        preprocess_task_id = _normalize_str(out.get("preprocess_task_id"))
         task_type = _normalize_task_type(out.get("task_type"))
         n_classes = _to_int(out.get("n_classes"))
         model_id = _normalize_str(out.get("model_id"))
@@ -902,6 +956,7 @@ def _collect_candidates_clearml(
             Candidate(
                 train_task_ref=task_id,
                 train_task_id=task_id,
+                preprocess_task_id=preprocess_task_id,
                 model_id=model_id,
                 model_variant=model_variant,
                 task_type=task_type,
@@ -962,6 +1017,7 @@ def _collect_candidates_local(
         processed_dataset_id = _normalize_str(out.get("processed_dataset_id"))
         split_hash = _normalize_str(out.get("split_hash"))
         recipe_hash = _normalize_str(out.get("recipe_hash"))
+        preprocess_task_id = _normalize_str(out.get("preprocess_task_id"))
         task_type = _normalize_task_type(out.get("task_type"))
         n_classes = _to_int(out.get("n_classes"))
         model_id = _normalize_str(out.get("model_id"))
@@ -1123,6 +1179,7 @@ def _collect_candidates_local(
             Candidate(
                 train_task_ref=str(run_dir),
                 train_task_id=_normalize_str(out.get("train_task_id")),
+                preprocess_task_id=preprocess_task_id,
                 model_id=model_id,
                 model_variant=model_variant,
                 task_type=task_type,
@@ -2030,6 +2087,46 @@ def run(cfg: Any) -> None:
     save_bundle(model_bundle_path, model_bundle)
     model_id = str(model_bundle_path)
 
+    pipeline_task_id = _normalize_str(_cfg_value(cfg, "run.clearml.pipeline_task_id"))
+    train_task_ids = [
+        c.train_task_id or c.train_task_ref for c in selected if c.train_task_id or c.train_task_ref
+    ]
+    preprocess_task_ids = sorted(
+        {
+            c.preprocess_task_id
+            for c in selected
+            if c.preprocess_task_id is not None and str(c.preprocess_task_id).strip()
+        }
+    )
+    ensemble_variant = f"ensemble_{method_used}"
+    registry_model_id: str | None = None
+    if clearml_enabled:
+        usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
+        model_name = f"{usecase_id}:{ensemble_variant}:{ref_values.get('processed_dataset_id')}"
+        tags = _build_registry_tags(
+            usecase_id=usecase_id,
+            process="train_ensemble",
+            processed_dataset_id=str(ref_values.get("processed_dataset_id")),
+            split_hash=str(ref_values.get("split_hash")),
+            recipe_hash=str(ref_values.get("recipe_hash")),
+            preprocess_variant=preprocess_variant,
+            model_variant=ensemble_variant,
+            task_type=task_type,
+            train_ensemble_task_id=task_id,
+            train_task_ids=train_task_ids,
+            preprocess_task_ids=preprocess_task_ids,
+            pipeline_task_id=pipeline_task_id,
+        )
+        try:
+            registry_model_id = register_model_artifact(
+                ctx,
+                model_path=model_bundle_path,
+                model_name=model_name,
+                tags=tags,
+            )
+        except Exception as exc:
+            warnings.warn(f"Failed to register ensemble model in ClearML registry: {exc}")
+
     connect_train_ensemble(
         ctx,
         cfg,
@@ -2044,18 +2141,18 @@ def run(cfg: Any) -> None:
         upload_artifact(ctx, "ensemble_spec.json", spec_path)
         upload_artifact(ctx, "metrics.json", metrics_path)
         upload_artifact(ctx, "model_bundle.joblib", model_bundle_path)
-        update_task_properties(
-            ctx,
-            {
-                "processed_dataset_id": ref_values.get("processed_dataset_id"),
-                "split_hash": ref_values.get("split_hash"),
-                "model_id": model_id,
-                "primary_metric": primary_metric,
-                "best_score": best_score,
-                "task_type": task_type,
-                "n_classes": n_classes,
-            },
-        )
+        props = {
+            "processed_dataset_id": ref_values.get("processed_dataset_id"),
+            "split_hash": ref_values.get("split_hash"),
+            "model_id": model_id,
+            "primary_metric": primary_metric,
+            "best_score": best_score,
+            "task_type": task_type,
+            "n_classes": n_classes,
+        }
+        if registry_model_id:
+            props["registry_model_id"] = registry_model_id
+        update_task_properties(ctx, props)
         if task_type == "regression":
             for name in REGRESSION_METRIC_ORDER:
                 if name in metrics_holdout:
@@ -2136,12 +2233,17 @@ def run(cfg: Any) -> None:
         "split_hash": ref_values.get("split_hash"),
         "recipe_hash": ref_values.get("recipe_hash"),
         "train_task_id": task_id,
+        "pipeline_task_id": pipeline_task_id,
+        "preprocess_task_ids": preprocess_task_ids,
+        "base_train_task_ids": train_task_ids,
         "model_id": model_id,
         "best_score": best_score,
         "primary_metric": primary_metric,
         "task_type": task_type,
         "primary_metric_source": primary_metric_source,
     }
+    if registry_model_id:
+        out["registry_model_id"] = registry_model_id
     if n_classes is not None:
         out["n_classes"] = n_classes
     write_out_json(ctx, out)

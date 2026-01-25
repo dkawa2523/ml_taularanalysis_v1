@@ -507,6 +507,7 @@ def connect_leaderboard(
     direction: str | None,
     require_comparable: bool | None,
     top_k: int | None,
+    recommend_top_k: int | None,
 ) -> None:
     sections_cfg = _resolve_sections_cfg(cfg)
     sections = _extract_sections(cfg, sections_cfg)
@@ -520,6 +521,7 @@ def connect_leaderboard(
             "eval.direction": direction,
             "leaderboard.require_comparable": require_comparable,
             "leaderboard.top_k": top_k,
+            "leaderboard.recommend.top_k": recommend_top_k,
         },
     )
     _merge_section(sections, clearml_key, _execution_hparams(cfg))
@@ -629,6 +631,7 @@ def connect_leaderboard_hparams(
     direction: str | None,
     require_comparable: bool | None,
     top_k: int | None,
+    recommend_top_k: int | None,
 ) -> None:
     connect_leaderboard(
         ctx,
@@ -637,4 +640,5 @@ def connect_leaderboard_hparams(
         direction=direction,
         require_comparable=require_comparable,
         top_k=top_k,
+        recommend_top_k=recommend_top_k,
     )

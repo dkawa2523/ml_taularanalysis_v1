@@ -1232,7 +1232,7 @@ def add_task_tags(ctx: TaskContext, tags: Iterable[str]) -> None:
     raise PlatformAdapterError("ClearML task does not support tag updates.")
 
 
-def register_promoted_model(
+def register_model_artifact(
     ctx: TaskContext,
     *,
     model_path: Path,
@@ -1281,6 +1281,28 @@ def register_promoted_model(
         return str(output_model.id)
     except Exception as exc:
         raise PlatformAdapterError(f"Failed to register model via ClearML: {exc}") from exc
+
+
+def register_promoted_model(
+    ctx: TaskContext,
+    *,
+    model_path: Path,
+    model_name: str,
+    tags: Iterable[str] | None = None,
+    metadata: Mapping[str, Any] | None = None,
+    comment: str | None = None,
+    framework: str | None = None,
+) -> str:
+    """Register a promoted model artifact in ClearML model registry and tag it."""
+    return register_model_artifact(
+        ctx,
+        model_path=model_path,
+        model_name=model_name,
+        tags=tags,
+        metadata=metadata,
+        comment=comment,
+        framework=framework,
+    )
 
 
 def get_clearml_model_local_copy(model_id: str) -> Path:
@@ -1364,6 +1386,119 @@ def _set_model_tags(model: Any, tags: Iterable[str]) -> None:
     except Exception as exc:
         raise PlatformAdapterError(f"Failed to update model tags via ClearML: {exc}") from exc
 
+
+def _strip_tag_prefixes(tags: Iterable[str], prefixes: Iterable[str]) -> list[str]:
+    prefix_list = [str(prefix) for prefix in prefixes if prefix is not None]
+    if not prefix_list:
+        return [str(tag) for tag in tags if tag is not None]
+    cleaned: list[str] = []
+    for tag in tags:
+        if tag is None:
+            continue
+        text = str(tag)
+        if any(text.startswith(prefix) for prefix in prefix_list):
+            continue
+        cleaned.append(text)
+    return cleaned
+
+
+def update_registry_model_tags(
+    *,
+    model_id: str,
+    add_tags: Iterable[str] | None = None,
+    remove_prefixes: Iterable[str] | None = None,
+) -> list[str]:
+    """Update tags on a ClearML registry model and return the final tags."""
+    try:
+        from clearml import Model  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml.Model is required for registry tag updates.") from exc
+    model = Model(model_id=str(model_id))
+    tags = _model_tags(model)
+    if remove_prefixes:
+        tags = _strip_tag_prefixes(tags, remove_prefixes)
+    if add_tags:
+        tags = _dedupe_tags([*tags, *list(add_tags)])
+    _set_model_tags(model, tags)
+    return tags
+
+
+def update_recommended_registry_model_tags(
+    *,
+    usecase_id: str,
+    processed_dataset_id: str,
+    recommended_model_id: str,
+    tags_to_add: Iterable[str],
+    remove_prefixes: Iterable[str],
+) -> dict[str, Any]:
+    """Mark the recommended model and clear old recommendation tags for the same dataset."""
+    try:
+        from clearml import Model  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml.Model is required for registry queries.") from exc
+    base_tags = ["__$all", f"usecase:{usecase_id}", f"dataset:{processed_dataset_id}"]
+    try:
+        models = Model.query_models(
+            tags=base_tags,
+            only_published=False,
+            include_archived=True,
+            max_results=200,
+        )
+    except Exception as exc:
+        raise PlatformAdapterError(
+            f"Failed to query ClearML registry for dataset={processed_dataset_id}: {exc}"
+        ) from exc
+    updated = 0
+    for model in models:
+        model_id = getattr(model, "id", None) or getattr(model, "model_id", None)
+        model_id_str = str(model_id) if model_id is not None else ""
+        tags = _strip_tag_prefixes(_model_tags(model), remove_prefixes)
+        if model_id_str == recommended_model_id:
+            tags = _dedupe_tags([*tags, *list(tags_to_add)])
+        _set_model_tags(model, tags)
+        updated += 1
+    return {"updated_models": updated, "matched_models": len(models)}
+
+
+def update_recommended_registry_model_tags_multi(
+    *,
+    usecase_id: str,
+    processed_dataset_id: str,
+    recommendations: Iterable[tuple[str, Iterable[str]]],
+    remove_prefixes: Iterable[str],
+) -> dict[str, Any]:
+    """Update recommendation tags for multiple models (latest-only per dataset)."""
+    try:
+        from clearml import Model  # type: ignore
+    except Exception as exc:
+        raise PlatformAdapterError("clearml.Model is required for registry queries.") from exc
+    rec_map = {str(model_id): list(tags) for model_id, tags in recommendations if model_id}
+    base_tags = ["__$all", f"usecase:{usecase_id}", f"dataset:{processed_dataset_id}"]
+    try:
+        models = Model.query_models(
+            tags=base_tags,
+            only_published=False,
+            include_archived=True,
+            max_results=200,
+        )
+    except Exception as exc:
+        raise PlatformAdapterError(
+            f"Failed to query ClearML registry for dataset={processed_dataset_id}: {exc}"
+        ) from exc
+    updated = 0
+    for model in models:
+        model_id = getattr(model, "id", None) or getattr(model, "model_id", None)
+        model_id_str = str(model_id) if model_id is not None else ""
+        tags = _strip_tag_prefixes(_model_tags(model), remove_prefixes)
+        if model_id_str in rec_map:
+            tags = _dedupe_tags([*tags, *rec_map[model_id_str]])
+        _set_model_tags(model, tags)
+        updated += 1
+    return {
+        "updated_models": updated,
+        "matched_models": len(models),
+        "recommended_models": len(rec_map),
+    }
 
 def _update_model_metadata(model: Any, metadata: Mapping[str, Any]) -> None:
     setter = getattr(model, "set_metadata", None)

@@ -1475,12 +1475,15 @@ def _run_clearml_pipeline(
     *,
     use_templates: bool,
     controller_execution: str | None = None,
+    pipeline_task_id: str | None = None,
 ) -> dict[str, Any]:
     child_execution = "logging" if use_templates else None
     controller_execution = _normalize_str(controller_execution) or ""
     run_controller_locally = controller_execution != "pipeline_controller"
     plan = _build_pipeline_plan(cfg, grid_run_id, child_execution=child_execution)
     run_overrides = plan["run_overrides"]
+    if pipeline_task_id:
+        run_overrides["run.clearml.pipeline_task_id"] = pipeline_task_id
     data_overrides = plan["data_overrides"]
     downstream_data_overrides = plan["downstream_data_overrides"]
     eval_overrides = plan["eval_overrides"]
@@ -1844,6 +1847,11 @@ def run(cfg: Any) -> None:
     save_config_resolved(ctx, cfg)
 
     clearml_enabled = is_clearml_enabled(cfg)
+    pipeline_task_id = None
+    if ctx.task is not None:
+        task_id_value = getattr(ctx.task, "id", None)
+        if task_id_value:
+            pipeline_task_id = str(task_id_value)
 
     if clearml_enabled and execution in ("pipeline_controller", "pipeline_controller_local"):
         pipeline_run = _run_clearml_pipeline(
@@ -1851,6 +1859,7 @@ def run(cfg: Any) -> None:
             grid_run_id,
             use_templates=True,
             controller_execution=execution,
+            pipeline_task_id=pipeline_task_id,
         )
     elif clearml_enabled and execution in ("agent", "clone"):
         pipeline_run = _run_clearml_pipeline(
@@ -1858,6 +1867,7 @@ def run(cfg: Any) -> None:
             grid_run_id,
             use_templates=False,
             controller_execution=execution,
+            pipeline_task_id=pipeline_task_id,
         )
     else:
         pipeline_run = _run_local_pipeline(cfg, grid_run_id, clearml_enabled=clearml_enabled)
@@ -1878,11 +1888,6 @@ def run(cfg: Any) -> None:
     report_path = ctx.output_dir / "report.md"
     limits = _resolve_exec_policy_limits(cfg)
     report_max_models = limits["max_models"] if limits["max_models"] > 0 else 5
-    pipeline_task_id = None
-    if ctx.task is not None:
-        task_id_value = getattr(ctx.task, "id", None)
-        if task_id_value:
-            pipeline_task_id = str(task_id_value)
     report_bundle = build_pipeline_report_bundle(
         pipeline_run,
         cfg=cfg,
