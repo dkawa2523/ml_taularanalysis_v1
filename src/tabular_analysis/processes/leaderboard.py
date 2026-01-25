@@ -149,11 +149,6 @@ def _format_float(value: Any) -> str:
     return f"{num:.6g}"
 
 
-def _format_score_tag(value: Any) -> str | None:
-    num = _to_float(value)
-    if num is None:
-        return None
-    return f"recommend_score:{num:.6g}"
 
 
 def _quantile(values: list[float], q: float) -> float:
@@ -732,6 +727,7 @@ def run(cfg: Any) -> None:
             f"- primary_metric: {expected_primary_metric or 'unknown'}",
             f"- direction: {expected_direction or 'unknown'}",
             f"- task_type: {expected_task_type or 'unknown'}",
+            f"- recommended_top_k: {recommend_top_k}",
         ]
         if scoring_warnings:
             summary_lines.extend(["", "## Warnings"])
@@ -1226,9 +1222,15 @@ def run(cfg: Any) -> None:
         processed_dataset_id = _normalize_str(recommended.get("processed_dataset_id"))
         if processed_dataset_id is None:
             processed_dataset_id = _normalize_str(ref_values.get("processed_dataset_id"))
+        split_hash = _normalize_str(recommended.get("split_hash")) or _normalize_str(
+            ref_values.get("split_hash")
+        )
+        recipe_hash = _normalize_str(recommended.get("recipe_hash")) or _normalize_str(
+            ref_values.get("recipe_hash")
+        )
         leaderboard_task_id = clearml_task_id(ctx.task) if ctx.task is not None else None
         if processed_dataset_id and leaderboard_task_id:
-            recommendations: list[tuple[str, list[str]]] = []
+            recommendations: list[tuple[str, list[str], dict[str, Any]]] = []
             for idx, entry in enumerate(recommended_list, start=1):
                 registry_model_id = _normalize_str(entry.get("registry_model_id"))
                 if not registry_model_id:
@@ -1236,7 +1238,6 @@ def run(cfg: Any) -> None:
                         f"recommended model is missing registry_model_id (rank {idx}); skip registry tagging."
                     )
                     continue
-                score_tag = _format_score_tag(entry.get("best_score"))
                 tags = [
                     "leaderboard:recommended",
                     f"task:leaderboard:{leaderboard_task_id}",
@@ -1245,14 +1246,22 @@ def run(cfg: Any) -> None:
                 ]
                 if recommendation.get("ranking_direction"):
                     tags.append(f"recommend_direction:{recommendation.get('ranking_direction')}")
-                if score_tag:
-                    tags.append(score_tag)
-                recommendations.append((registry_model_id, tags))
+                metadata = {
+                    "recommend_rank": idx,
+                    "recommend_score": entry.get("best_score"),
+                    "recommend_metric": entry.get("primary_metric"),
+                    "recommend_direction": recommendation.get("ranking_direction"),
+                    "leaderboard_task_id": leaderboard_task_id,
+                    "recommendation_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+                }
+                recommendations.append((registry_model_id, tags, metadata))
             if recommendations:
                 try:
                     update_recommended_registry_model_tags_multi(
                         usecase_id=usecase_id,
                         processed_dataset_id=processed_dataset_id,
+                        split_hash=split_hash,
+                        recipe_hash=recipe_hash,
                         recommendations=recommendations,
                         remove_prefixes=[
                             "leaderboard:recommended",
@@ -1287,6 +1296,8 @@ def run(cfg: Any) -> None:
         f"- seed: {ref_values.get('seed') if ref_values.get('seed') is not None else 'unknown'}",
         f"- processed_dataset_id: {ref_values.get('processed_dataset_id') or 'unknown'}",
         f"- split_hash: {ref_values.get('split_hash') or 'unknown'}",
+        f"- recommended_top_k: {recommend_top_k}",
+        f"- recommended_models: {len(recommended_list)}",
         "",
         "## Top Results",
     ]

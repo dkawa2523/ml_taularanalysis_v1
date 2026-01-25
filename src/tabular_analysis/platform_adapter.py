@@ -1464,7 +1464,9 @@ def update_recommended_registry_model_tags_multi(
     *,
     usecase_id: str,
     processed_dataset_id: str,
-    recommendations: Iterable[tuple[str, Iterable[str]]],
+    split_hash: str | None = None,
+    recipe_hash: str | None = None,
+    recommendations: Iterable[tuple[str, Iterable[str], Mapping[str, Any] | None]],
     remove_prefixes: Iterable[str],
 ) -> dict[str, Any]:
     """Update recommendation tags for multiple models (latest-only per dataset)."""
@@ -1472,8 +1474,16 @@ def update_recommended_registry_model_tags_multi(
         from clearml import Model  # type: ignore
     except Exception as exc:
         raise PlatformAdapterError("clearml.Model is required for registry queries.") from exc
-    rec_map = {str(model_id): list(tags) for model_id, tags in recommendations if model_id}
+    rec_map = {
+        str(model_id): {"tags": list(tags), "metadata": metadata or {}}
+        for model_id, tags, metadata in recommendations
+        if model_id
+    }
     base_tags = ["__$all", f"usecase:{usecase_id}", f"dataset:{processed_dataset_id}"]
+    if split_hash:
+        base_tags.append(f"split:{split_hash}")
+    if recipe_hash:
+        base_tags.append(f"recipe:{recipe_hash}")
     try:
         models = Model.query_models(
             tags=base_tags,
@@ -1491,7 +1501,11 @@ def update_recommended_registry_model_tags_multi(
         model_id_str = str(model_id) if model_id is not None else ""
         tags = _strip_tag_prefixes(_model_tags(model), remove_prefixes)
         if model_id_str in rec_map:
-            tags = _dedupe_tags([*tags, *rec_map[model_id_str]])
+            payload = rec_map[model_id_str]
+            tags = _dedupe_tags([*tags, *payload.get("tags", [])])
+            metadata = payload.get("metadata") or {}
+            if metadata:
+                _update_model_metadata(model, metadata)
         _set_model_tags(model, tags)
         updated += 1
     return {

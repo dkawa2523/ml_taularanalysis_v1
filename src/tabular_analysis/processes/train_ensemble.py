@@ -2098,8 +2098,16 @@ def run(cfg: Any) -> None:
             if c.preprocess_task_id is not None and str(c.preprocess_task_id).strip()
         }
     )
+    train_task_tag_limit = _to_int(_cfg_value(cfg, "train_ensemble.registry.tag_limits.train_task_ids"))
+    train_task_ids_tagged = train_task_ids
+    train_task_truncated = False
+    if train_task_tag_limit and train_task_tag_limit > 0 and len(train_task_ids) > train_task_tag_limit:
+        train_task_ids_tagged = train_task_ids[:train_task_tag_limit]
+        train_task_truncated = True
     ensemble_variant = f"ensemble_{method_used}"
     registry_model_id: str | None = None
+    registry_status: str | None = None
+    registry_error: dict[str, Any] | None = None
     if clearml_enabled:
         usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
         model_name = f"{usecase_id}:{ensemble_variant}:{ref_values.get('processed_dataset_id')}"
@@ -2113,10 +2121,15 @@ def run(cfg: Any) -> None:
             model_variant=ensemble_variant,
             task_type=task_type,
             train_ensemble_task_id=task_id,
-            train_task_ids=train_task_ids,
+            train_task_ids=train_task_ids_tagged,
             preprocess_task_ids=preprocess_task_ids,
             pipeline_task_id=pipeline_task_id,
         )
+        if train_task_ids:
+            tags.append(f"task:train_model_count:{len(train_task_ids)}")
+        if train_task_truncated:
+            tags.append("task:train_model_truncated:true")
+        tags = _dedupe_tags(tags)
         try:
             registry_model_id = register_model_artifact(
                 ctx,
@@ -2124,7 +2137,10 @@ def run(cfg: Any) -> None:
                 model_name=model_name,
                 tags=tags,
             )
+            registry_status = "registered"
         except Exception as exc:
+            registry_status = "failed"
+            registry_error = {"type": exc.__class__.__name__, "message": str(exc)}
             warnings.warn(f"Failed to register ensemble model in ClearML registry: {exc}")
 
     connect_train_ensemble(
@@ -2152,6 +2168,8 @@ def run(cfg: Any) -> None:
         }
         if registry_model_id:
             props["registry_model_id"] = registry_model_id
+        if registry_status:
+            props["registry_status"] = registry_status
         update_task_properties(ctx, props)
         if task_type == "regression":
             for name in REGRESSION_METRIC_ORDER:
@@ -2244,6 +2262,10 @@ def run(cfg: Any) -> None:
     }
     if registry_model_id:
         out["registry_model_id"] = registry_model_id
+    if registry_status:
+        out["registry_status"] = registry_status
+    if registry_error:
+        out["registry_error"] = registry_error
     if n_classes is not None:
         out["n_classes"] = n_classes
     write_out_json(ctx, out)

@@ -3,3 +3,8 @@ task:
   name: train_ensemble
   stage: "04_train_ensemble"
   project_name: "${run.clearml.project_root}/TabularAnalysis/${run.usecase_id}/04_train_ensemble"
+
+train_ensemble:
+  registry:
+    tag_limits:
+      train_task_ids: 20

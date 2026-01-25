@@ -2479,6 +2479,8 @@ def run(cfg: Any) -> None:
     model_card_path.write_text("\n".join(model_card_lines) + "\n", encoding="utf-8")
 
     registry_model_id: str | None = None
+    registry_status: str | None = None
+    registry_error: dict[str, Any] | None = None
     if clearml_enabled:
         usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id")) or "unknown"
         model_name = f"{usecase_id}:{model_variant_name}:{processed_dataset_id}"
@@ -2502,7 +2504,10 @@ def run(cfg: Any) -> None:
                 model_name=model_name,
                 tags=tags,
             )
+            registry_status = "registered"
         except Exception as exc:
+            registry_status = "failed"
+            registry_error = {"type": exc.__class__.__name__, "message": str(exc)}
             warnings.warn(f"Failed to register model in ClearML registry: {exc}")
 
     if clearml_enabled:
@@ -2533,6 +2538,8 @@ def run(cfg: Any) -> None:
         extra_props["imbalance_applied"] = bool(imbalance_report.get("applied"))
         if registry_model_id:
             extra_props["registry_model_id"] = registry_model_id
+        if registry_status:
+            extra_props["registry_status"] = registry_status
         update_task_properties(
             ctx,
             {
@@ -2559,6 +2566,10 @@ def run(cfg: Any) -> None:
     }
     if registry_model_id:
         out["registry_model_id"] = registry_model_id
+    if registry_status:
+        out["registry_status"] = registry_status
+    if registry_error:
+        out["registry_error"] = registry_error
     if n_classes is not None:
         out["n_classes"] = n_classes
     if class_labels is not None:

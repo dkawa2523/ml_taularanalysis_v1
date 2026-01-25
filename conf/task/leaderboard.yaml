@@ -16,6 +16,7 @@ leaderboard:
   dry_run: false
 
   recommend:
+    top_k: 1
     metric_source_priority: ["test", "valid", "meta_cv_on_valid"]
     allow_cross_metric_source: false
     allow_ensemble: false
