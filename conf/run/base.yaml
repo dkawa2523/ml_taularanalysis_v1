@@ -63,6 +63,13 @@ clearml:
   # pipeline タスク ID（子タスクへ伝播して registry tag に利用）
   pipeline_task_id: null
 
+  # PipelineController を hidden project にせず可視 project に置くための設定
+  # project_mode: subproject | visible
+  pipeline:
+    project_mode: "visible"
+    # Optional override for pipeline controller project (full path)
+    project_name: null
+
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []
 

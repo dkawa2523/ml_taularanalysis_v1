@@ -2596,6 +2596,17 @@ def create_pipeline_controller(
     pipeline_utils = _load_clearml_pipeline_utils(clearml_enabled=True)
     if pipeline_utils is None:
         raise PlatformAdapterError("pipeline_utils is not available.")
+    project_mode = str(_cfg_value(cfg, "run.clearml.pipeline.project_mode", "subproject")).lower()
+    controller_project = _cfg_value(cfg, "run.clearml.pipeline.project_name")
+    if not controller_project:
+        controller_project = _cfg_value(cfg, "run.clearml.project_name")
+    if project_mode == "visible":
+        try:
+            from clearml.automation import PipelineController  # type: ignore
+        except Exception:
+            PipelineController = None
+        if PipelineController is not None:
+            PipelineController._pipeline_as_sub_project_cached = False
     tag_list: list[str] = []
     if tags:
         tag_list = [str(tag) for tag in tags if tag]
@@ -2604,6 +2615,7 @@ def create_pipeline_controller(
     controller = pipeline_utils.create_controller(
         cfg,
         name=name,
+        project=str(controller_project) if controller_project else None,
         tags=tag_list,
         default_queue=default_queue,
     )
