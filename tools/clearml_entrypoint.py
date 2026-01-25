@@ -149,10 +149,7 @@ def _resolve_uv_settings(overrides: dict[str, str]) -> tuple[str, list[str], boo
 def _ensure_uv_available() -> None:
     if shutil.which("uv"):
         return
-    subprocess.run(
-        [sys.executable, "-m", "pip", "install", "uv"],
-        check=True,
-    )
+    subprocess.run([sys.executable, "-m", "pip", "install", "uv"], check=True)
 
 
 def _uv_sync(
@@ -163,7 +160,8 @@ def _uv_sync(
     all_extras: bool,
     frozen: bool,
 ) -> None:
-    cmd = ["uv", "sync", "--project", str(repo_root)]
+    # Use module invocation so we don't depend on a PATH entry for the uv binary.
+    cmd = [sys.executable, "-m", "uv", "sync", "--project", str(repo_root)]
     if frozen:
         cmd.append("--frozen")
     if all_extras:
