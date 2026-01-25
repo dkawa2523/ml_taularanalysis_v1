@@ -66,11 +66,10 @@ All items below are designed to prevent these regressions.
    - `clearml` + `uv` are installed by ClearML Agent requirements.
    - All runtime dependencies come from `uv.lock`.
 2) Entry point bootstrap
-   - `run.clearml.env.bootstrap=uv` triggers `uv sync --frozen` into `.venv`.
+   - `run.clearml.env.bootstrap=uv` triggers `uv sync --all-extras --frozen` into `.venv`.
    - Templates set this by default.
 3) Model extras
-   - `train_model`, `train_ensemble`, `infer` templates set:
-     - `run.clearml.env.uv.extras=[models,tabpfn]`
+   - Templates set `run.clearml.env.uv.all_extras=true` for deterministic installs.
 4) Disable/bootstrap override
    - Set `run.clearml.env.bootstrap=none` to skip uv.
    - Ensure `uv.lock` exists (`uv lock`) before running ClearML tasks.

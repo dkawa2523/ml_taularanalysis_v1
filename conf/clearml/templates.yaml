@@ -9,6 +9,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -31,6 +32,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -53,7 +55,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
-      - "run.clearml.env.uv.extras=[models,tabpfn]"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -76,7 +78,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
-      - "run.clearml.env.uv.extras=[models,tabpfn]"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -99,7 +101,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
-      - "run.clearml.env.uv.extras=[models,tabpfn]"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -122,6 +124,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -144,6 +147,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"
@@ -166,6 +170,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
       - "uv>=0.5.0"

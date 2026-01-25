@@ -15,7 +15,8 @@ the upload step is a no-op but local files are still created.
 
 ## Lockfile workflow (uv recommended)
 `uv.lock` is the primary lockfile. It is generated from `pyproject.toml` and used by
-ClearML entrypoint bootstrap (`uv sync --frozen`) for stable, repo-side environments.
+ClearML entrypoint bootstrap (`uv sync --all-extras --frozen`) for stable, repo-side
+environments.
 
 ### Update steps
 1. Regenerate the lockfile after dependency changes:
@@ -26,6 +27,7 @@ ClearML entrypoint bootstrap (`uv sync --frozen`) for stable, repo-side environm
    ```bash
    uv sync --frozen
    ```
+   - For ClearML parity, use `uv sync --all-extras --frozen`.
 
 ### Legacy pip lock (optional)
 If you must use pip-only environments, you can still generate a `requirements/lock.txt`

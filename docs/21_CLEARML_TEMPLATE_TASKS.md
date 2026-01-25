@@ -52,9 +52,9 @@ python -m tabular_analysis.ops.manage_clearml_templates --validate
 
 ## ClearML Agent 実行の前提
 - テンプレは `run.clearml.env.bootstrap=uv` を既定にしており、
-  実行時に `uv sync --frozen` で `.venv` を構築して再実行する。
-- train/infer では extras を指定（`run.clearml.env.uv.extras=[models,tabpfn]`）。
-- `infer.mode=optimize` は optuna が必要（uv extras で自動付与）。
+  実行時に `uv sync --all-extras --frozen` で `.venv` を構築して再実行する。
+- templates は `run.clearml.env.uv.all_extras=true` を既定にする。
+- `infer.mode=optimize` の optuna も all-extras に含まれる。
 
 ## Template 一覧（現行）
 - dataset_register

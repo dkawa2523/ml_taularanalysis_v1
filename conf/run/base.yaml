@@ -76,6 +76,6 @@ clearml:
     uv:
       venv_dir: ".venv"
       extras: []
-      all_extras: false
+      all_extras: true
       frozen: true
 # Monitoring defaults are defined in conf/monitor/base.yaml.
