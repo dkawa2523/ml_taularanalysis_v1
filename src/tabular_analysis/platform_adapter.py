@@ -1016,6 +1016,112 @@ def _apply_clearml_system_tags(task: Any, system_tags: Iterable[str] | None) -> 
         raise PlatformAdapterError(f"Failed to set ClearML system tags: {exc}") from exc
 
 
+def _ensure_clearml_project_system_tags(
+    project_name: str | None,
+    add_tags: Iterable[str] | None = None,
+    *,
+    remove_tags: Iterable[str] | None = None,
+) -> None:
+    if not project_name:
+        return
+    add_list = _dedupe_tags(add_tags or [])
+    remove_set = {tag for tag in _dedupe_tags(remove_tags or []) if tag}
+    if not add_list and not remove_set:
+        return
+    try:
+        from clearml.backend_api.session import Session  # type: ignore
+    except Exception:
+        return
+    try:
+        session = Session()
+    except Exception as exc:
+        print(f"[warn] ClearML Session init failed for project tags: {exc}", file=sys.stderr)
+        return
+    project: Mapping[str, Any] | None = None
+    project_id: str | None = None
+    looks_like_id = "/" not in project_name and len(project_name) in {24, 32}
+    if looks_like_id:
+        project_id = project_name
+    if project_id is None:
+        try:
+            response = session.send_request(
+                service="projects",
+                action="get_all",
+                json={"name": project_name, "search_hidden": True, "size": 10},
+            )
+        except Exception as exc:
+            print(f"[warn] ClearML project lookup failed: {exc}", file=sys.stderr)
+            return
+        if not getattr(response, "ok", False):
+            return
+        try:
+            payload = response.json() or {}
+        except Exception:
+            payload = {}
+        projects: list[Mapping[str, Any]] = []
+        if isinstance(payload, Mapping) and isinstance(payload.get("projects"), list):
+            projects = [proj for proj in payload.get("projects", []) if isinstance(proj, Mapping)]
+        elif isinstance(payload, Mapping) and isinstance(payload.get("data"), Mapping):
+            candidates = payload.get("data", {}).get("projects")
+            if isinstance(candidates, list):
+                projects = [proj for proj in candidates if isinstance(proj, Mapping)]
+        if projects:
+            for candidate in projects:
+                name = candidate.get("name") or candidate.get("full_name") or candidate.get("path")
+                if name == project_name:
+                    project = candidate
+                    break
+            if project is None:
+                project = projects[0]
+            project_id = project.get("id") or project.get("project") or project.get("project_id")
+    if project_id and project is None:
+        try:
+            response = session.send_request(
+                service="projects",
+                action="get_by_id",
+                json={"project": project_id},
+            )
+        except Exception as exc:
+            print(f"[warn] ClearML project lookup by id failed: {exc}", file=sys.stderr)
+            return
+        if not getattr(response, "ok", False):
+            return
+        try:
+            payload = response.json() or {}
+        except Exception:
+            payload = {}
+        if isinstance(payload, Mapping) and isinstance(payload.get("project"), Mapping):
+            project = payload.get("project")
+        elif isinstance(payload, Mapping) and isinstance(payload.get("data"), Mapping):
+            project = payload.get("data", {}).get("project")
+    if not project_id:
+        project_id = project.get("id") if project else None
+    if not project_id:
+        return
+    system_tags = project.get("system_tags") or []
+    if not isinstance(system_tags, list):
+        try:
+            system_tags = list(system_tags)
+        except Exception:
+            system_tags = []
+    merged = _dedupe_tags([*system_tags, *add_list])
+    if remove_set:
+        merged = [tag for tag in merged if tag not in remove_set]
+    if merged == system_tags:
+        return
+    try:
+        update = session.send_request(
+            service="projects",
+            action="update",
+            json={"project": project_id, "system_tags": merged},
+        )
+    except Exception as exc:
+        print(f"[warn] ClearML project update failed: {exc}", file=sys.stderr)
+        return
+    if not getattr(update, "ok", False):
+        print("[warn] ClearML project update returned non-ok response", file=sys.stderr)
+
+
 def _apply_clearml_tags(task: Any, tags: Iterable[str] | None) -> None:
     tag_list = _dedupe_tags(tags or [])
     if not tag_list:
@@ -2597,6 +2703,8 @@ def create_pipeline_controller(
     if pipeline_utils is None:
         raise PlatformAdapterError("pipeline_utils is not available.")
     project_mode = str(_cfg_value(cfg, "run.clearml.pipeline.project_mode", "subproject")).lower()
+    tag_pipeline_project = bool(_cfg_value(cfg, "run.clearml.pipeline.project_tag_pipeline", project_mode == "visible"))
+    unhide_pipeline_project = bool(_cfg_value(cfg, "run.clearml.pipeline.project_unhide", project_mode == "visible"))
     controller_project = _cfg_value(cfg, "run.clearml.pipeline.project_name")
     if not controller_project:
         controller_project = _cfg_value(cfg, "run.clearml.project_name")
@@ -2607,6 +2715,13 @@ def create_pipeline_controller(
             PipelineController = None
         if PipelineController is not None:
             PipelineController._pipeline_as_sub_project_cached = False
+    elif project_mode == "subproject":
+        try:
+            from clearml.automation import PipelineController  # type: ignore
+        except Exception:
+            PipelineController = None
+        if PipelineController is not None:
+            PipelineController._pipeline_as_sub_project_cached = True
     tag_list: list[str] = []
     if tags:
         tag_list = [str(tag) for tag in tags if tag]
@@ -2629,6 +2744,13 @@ def create_pipeline_controller(
     _apply_clearml_system_tags(task, ["pipeline"])
     if tag_list:
         _apply_clearml_tags(task, tag_list)
+    if tag_pipeline_project:
+        if project_mode == "subproject":
+            project_name = getattr(task, "project", None) or controller_project
+        else:
+            project_name = controller_project or getattr(task, "project", None)
+        remove_tags = ["hidden"] if unhide_pipeline_project else []
+        _ensure_clearml_project_system_tags(project_name, ["pipeline"], remove_tags=remove_tags)
     if properties:
         platform_clearml = _load_clearml_module(clearml_enabled=True)
         setter = getattr(platform_clearml, "set_user_properties", None)

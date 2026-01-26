@@ -55,6 +55,7 @@ python -m tabular_analysis.ops.manage_clearml_templates --validate
   実行時に `uv sync --all-extras --frozen` で `.venv` を構築して再実行する。
 - templates は `run.clearml.env.uv.all_extras=true` を既定にする。
 - `infer.mode=optimize` の optuna も all-extras に含まれる。
+- `run.clearml.env.apt_packages` は **Linux (apt-get) のみ**で有効。Windows では別の OS パッケージ機構が必要。
 
 ## Template 一覧（現行）
 - dataset_register

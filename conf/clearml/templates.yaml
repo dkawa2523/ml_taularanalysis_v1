@@ -9,6 +9,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -32,6 +33,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -55,6 +57,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -78,6 +81,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -93,6 +97,75 @@ templates:
       process: "train_ensemble"
       schema_version: "{schema_version}"
 
+  train_model_full:
+    project_name: "{project_root}/{solution_root}/{usecase_id}/{group_map[pipeline]}"
+    task_name_template: "train_model_full"
+    entrypoint: "python tools/clearml_entrypoint.py task=pipeline"
+    default_overrides:
+      - "run.clearml.enabled=true"
+      - "run.clearml.execution=pipeline_controller"
+      - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
+      - "run.clearml.env.uv.all_extras=true"
+      - "+pipeline.model_set=regression_all"
+      - "pipeline.run_dataset_register=false"
+      - "pipeline.run_preprocess=true"
+      - "pipeline.run_train=true"
+      - "pipeline.run_train_ensemble=false"
+      - "pipeline.run_leaderboard=false"
+      - "pipeline.run_infer=false"
+      - "ensemble.enabled=false"
+    requirements:
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
+    tags:
+      - "template:true"
+      - "usecase:{usecase_id}"
+      - "process:train_model_full"
+      - "schema:{schema_version}"
+      - "solution:tabular-analysis"
+      - "profile:full"
+    properties_minimal:
+      usecase_id: "{usecase_id}"
+      process: "train_model_full"
+      schema_version: "{schema_version}"
+
+  train_ensemble_full:
+    project_name: "{project_root}/{solution_root}/{usecase_id}/{group_map[pipeline]}"
+    task_name_template: "train_ensemble_full"
+    entrypoint: "python tools/clearml_entrypoint.py task=pipeline"
+    default_overrides:
+      - "run.clearml.enabled=true"
+      - "run.clearml.execution=pipeline_controller"
+      - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
+      - "run.clearml.env.uv.all_extras=true"
+      - "+pipeline.model_set=regression_all"
+      - "pipeline.run_dataset_register=false"
+      - "pipeline.run_preprocess=true"
+      - "pipeline.run_train=true"
+      - "pipeline.run_train_ensemble=true"
+      - "pipeline.run_leaderboard=true"
+      - "pipeline.run_infer=false"
+      - "ensemble.enabled=true"
+      - "ensemble.top_k=0"
+      - "ensemble.methods=[mean_topk,weighted,stacking]"
+      - "ensemble.weighted.top_k_max=0"
+    requirements:
+      - "clearml>=1.15.0"
+      - "uv>=0.5.0"
+    tags:
+      - "template:true"
+      - "usecase:{usecase_id}"
+      - "process:train_ensemble_full"
+      - "schema:{schema_version}"
+      - "solution:tabular-analysis"
+      - "profile:full"
+    properties_minimal:
+      usecase_id: "{usecase_id}"
+      process: "train_ensemble_full"
+      schema_version: "{schema_version}"
+
   infer:
     project_name: "{project_root}/{solution_root}/{usecase_id}/{group_map[infer]}"
     task_name_template: "infer"
@@ -101,6 +174,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -124,6 +198,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"
@@ -147,6 +222,7 @@ templates:
       - "run.clearml.enabled=true"
       - "run.clearml.execution=logging"
       - "run.clearml.env.bootstrap=uv"
+      - "run.clearml.env.apt_packages=[libgomp1]"
       - "run.clearml.env.uv.all_extras=true"
     requirements:
       - "clearml>=1.15.0"

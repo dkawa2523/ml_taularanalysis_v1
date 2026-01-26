@@ -663,3 +663,513 @@ $ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/
 $ /Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/.venv/bin/python -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260116_035419 run.output_dir=/Users/kawahito/Desktop/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260116_035419 data.raw_dataset_id=1c4ebb141c914edba6ca8e33f41d09d6 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default run.clearml.project_root=LOCAL +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[catboost,elasticnet,extra_trees,gaussian_process,gradient_boosting,knn,lasso,lgbm,linear_regression,mlp,random_forest,ridge,svc,svr,xgboost]'
 ```
 - result: success
+## 2026-01-25T02:52:34Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_025234
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025234
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_025234 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025234'"'"'' 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_025234 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025234'"'"'' data.raw_dataset_id=ad779bb86e1844e3bbb19c3e4a958074 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_025234
+
+usecase_id: test_toy_20260125_025234
+- dataset_register: 2
+  - ea24d5c224c64593808ccebb122e41d9 completed dataset_register version_num=empty
+  - ad779bb86e1844e3bbb19c3e4a958074 completed test_toy_20260125_025234__raw__toy version_num=empty
+- pipeline: 1
+  - 5ae063eb014f4c96a5c8f7624d6a6f5c queued pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T02:56:29Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_025629
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025629
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_025629 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025629'"'"'' 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_025629 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025629'"'"'' data.raw_dataset_id=3d06ad46b4f94d69963455641b8e4faf data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=clearml-agent-services +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_025629 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025629'"'"'' data.raw_dataset_id=3d06ad46b4f94d69963455641b8e4faf data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=clearml-agent-services +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+
+[warn] clearml-agent not found. Install it or disable remote execution (queue=clearml-agent-services).
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+InsecureRequestWarning: Certificate verification is disabled! Adding certificate verification is strongly advised. See: https://urllib3.readthedocs.io/en/latest/advanced-usage.html#ssl-warnings
+Traceback (most recent call last):
+  File "/Library/Frameworks/Python.framework/Versions/3.10/lib/pyth...
+## 2026-01-25T02:58:55Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_025855
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025855
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_025855 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025855'"'"'' 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_025855 'run.output_dir='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_025855'"'"'' data.raw_dataset_id=e9133106391b4d79a69f885848995825 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_025855
+
+usecase_id: test_toy_20260125_025855
+- dataset_register: 2
+  - cb8cfc22838c43a4bb16143a175216d2 completed dataset_register version_num=empty
+  - e9133106391b4d79a69f885848995825 completed test_toy_20260125_025855__raw__toy version_num=empty
+- pipeline: 1
+  - bb50b8d0d7f14ada8cb23733de7f0354 in_progress pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T04:27:19Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_042719
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_042719
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_042719 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_042719 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_042719 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_042719 data.raw_dataset_id=90266f17229640438c24358ddec5f134 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T04:31:31Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_043131
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_043131
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_043131 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_043131 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_043131 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_043131 data.raw_dataset_id=2d153c798cab4c3f80d92338f6ef8833 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T06:28:30Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_062830
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_062830
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_062830 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_062830 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_062830 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_062830 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+
+/Library/Frameworks/Python.framework/Versions/3.10/bin/python3: Error while finding module specification for 'tabular_analysis.cli' (ModuleNotFoundError: No module named 'tabular_analysis')
+## 2026-01-25T06:29:36Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_062936
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_062936
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_062936 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_062936 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_062936 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_062936 data.raw_dataset_id=59166329ec6144709523367a341833a9 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T06:47:04Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_064704
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_064704
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_064704 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_064704 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_064704 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_064704 data.raw_dataset_id=40628dcaea1847db9f4ad48f8931f48d data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T07:15:30Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_071530
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_071530
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_071530 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_071530 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_071530 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_071530 data.raw_dataset_id=9dca2a3c6a16421eaf17367838f7a62e data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T08:03:50Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_080350
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_080350
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_080350 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_080350 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_080350 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_080350 data.raw_dataset_id=b10d8507af41426ab3521bf1edf0e419 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T08:07:24Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_080724
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_080724
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_080724 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_080724 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_080724 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_080724 data.raw_dataset_id=7d514e5dbd1648b8a9cebd39c244629a data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-25T08:48:41Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_084841
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_084841
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_084841 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_084841 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_084841 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_084841 data.raw_dataset_id=8d76cd39b01f422183331b47d66db639 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=default run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_084841
+
+usecase_id: test_toy_20260125_084841
+- dataset_register: 2
+  - c0b71f3366e84c6f8f7e73e7f3e58a72 completed dataset_register version_num=empty
+  - 8d76cd39b01f422183331b47d66db639 completed test_toy_20260125_084841__raw__toy version_num=empty
+- pipeline: 1
+  - c2eed58077f64df192a7f03fb626d4b6 queued pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T08:49:42Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_084942
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_084942
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_084942 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_084942 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_084942 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_084942 data.raw_dataset_id=a36592b823824527ba1f18b2d3f55320 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_084942
+
+usecase_id: test_toy_20260125_084942
+- dataset_register: 2
+  - 1e75d3573e1e4ae9ae1b860d3831261b completed dataset_register version_num=empty
+  - a36592b823824527ba1f18b2d3f55320 completed test_toy_20260125_084942__raw__toy version_num=empty
+- pipeline: 1
+  - f6e4feb816904be9814affa4c5c6001f queued pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T09:15:15Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_091515
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_091515
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_091515 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_091515 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_091515 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_091515 data.raw_dataset_id=384d04b5ce57472090af92fef79cca51 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_091515
+
+usecase_id: test_toy_20260125_091515
+- dataset_register: 2
+  - 61a4de00f6a1417aa2886704caad673f completed dataset_register version_num=empty
+  - 384d04b5ce57472090af92fef79cca51 completed test_toy_20260125_091515__raw__toy version_num=empty
+- pipeline: 1
+  - e1e29d9b4f2a498eb6bfbaf148ec4761 queued pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T10:22:35Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_102235
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_102235
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_102235 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_102235 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_102235 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_102235 data.raw_dataset_id=323ee4d1e16a4a2784da12be208aa3d8 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_102235
+
+usecase_id: test_toy_20260125_102235
+- dataset_register: 2
+  - 80a9701a0680481b87cc7a7f6af54231 completed dataset_register version_num=empty
+  - 323ee4d1e16a4a2784da12be208aa3d8 completed test_toy_20260125_102235__raw__toy version_num=empty
+- pipeline: 1
+  - db5a901e9ddc4843b0d107a383de0b53 in_progress pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T12:24:25Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_122425
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_122425
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_122425 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_122425 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_122425 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_122425 data.raw_dataset_id=9c57ff91c41144ce809c6731c294e84a data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_122425
+
+usecase_id: test_toy_20260125_122425
+- dataset_register: 2
+  - 10cbc0d92eff43c99275364e1f0f2667 completed dataset_register version_num=empty
+  - 9c57ff91c41144ce809c6731c294e84a completed test_toy_20260125_122425__raw__toy version_num=empty
+- pipeline: 1
+  - 5ccab9052eea4168841452f91cc67e3e queued pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T12:39:18Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_123918
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_123918
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_123918 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_123918 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_123918 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_123918 data.raw_dataset_id=90373b617e534275b64857478a7eee8e data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_123918
+
+usecase_id: test_toy_20260125_123918
+- dataset_register: 2
+  - 236a06c377c846448787a6368939fb2b completed dataset_register version_num=empty
+  - 90373b617e534275b64857478a7eee8e completed test_toy_20260125_123918__raw__toy version_num=empty
+- pipeline: 1
+  - 6e1aa18947ea4639aab5881b5d3847c2 in_progress pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-25T22:50:59Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260125_225059
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260125_225059
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260125_225059 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_225059 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260125_225059 run.output_dir=work/rehearsal/out/agent/test_toy_20260125_225059 data.raw_dataset_id=9d55e85b320f442b9d8ce7ca6c9f9974 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: failure
+- error: Command failed (exit=1)
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 '/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/tools/tests/rehearsal_verify_clearml_ui.py' --usecase-id test_toy_20260125_225059
+
+usecase_id: test_toy_20260125_225059
+- dataset_register: 2
+  - f3ea57e918f2424bbca25ee0168f55d7 completed dataset_register version_num=empty
+  - 9d55e85b320f442b9d8ce7ca6c9f9974 completed test_toy_20260125_225059__raw__toy version_num=empty
+- pipeline: 1
+  - a524495ea4ee464a9ef061aa58b7ab21 in_progress pipeline version_num=empty
+errors:
+- missing processes: leaderboard, preprocess, train_model
+## 2026-01-26T00:22:46Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_002246
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_002246
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_002246 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_002246 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_002246 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_002246 data.raw_dataset_id=f51e39600f0946c6ac1de99a58aa7b59 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T00:53:21Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_005321
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_005321
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_005321 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_005321 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_005321 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_005321 data.raw_dataset_id=4148e7596249412aa611b1789a269282 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T04:06:16Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_040616
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_040616
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_040616 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_040616 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_040616 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_040616 data.raw_dataset_id=7d09821e3c16406cbb51211babca8f00 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T04:07:48Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_040748
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_040748
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_040748 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_040748 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_040748 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_040748 data.raw_dataset_id=c848c480434643839f032828df53e289 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T04:15:26Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_041526
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_041526
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_041526 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_041526 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_041526 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_041526 data.raw_dataset_id=47a33c8d32994c8087cfb39d4c03ec5c data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T04:24:32Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_042432
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_042432
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_042432 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_042432 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_042432 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_042432 data.raw_dataset_id=3b6a00e9be06491490fbff16164847e5 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success
+## 2026-01-26T04:27:18Z
+- execution: agent
+- task_type: regression
+- dry_run: false
+- usecase_id: test_toy_20260126_042718
+- repo: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis
+- dataset_path: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv
+- output_dir: /Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/out/agent/test_toy_20260126_042718
+- python: 3.10.8 (/Library/Frameworks/Python.framework/Versions/3.10/bin/python3)
+- platform: macOS-14.5-arm64-arm-64bit
+- commands:
+```bash
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=dataset_register run.usecase_id=test_toy_20260126_042718 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_042718 'data.dataset_path='"'"'/Volumes/SP PX10/Main_code/ml_polyrepo_workspace_v1/ml-solution-tabular-analysis/work/rehearsal/tmp/toy.csv'"'"'' data.target_column=target run.clearml.enabled=true run.clearml.execution=logging
+$ /Library/Frameworks/Python.framework/Versions/3.10/bin/python3 -m tabular_analysis.cli task=pipeline run.usecase_id=test_toy_20260126_042718 run.output_dir=work/rehearsal/out/agent/test_toy_20260126_042718 data.raw_dataset_id=dfcb1715ee0b4e9290e9ebfe71940d76 data.target_column=target run.clearml.enabled=true run.clearml.execution=pipeline_controller run.clearml.queue_name=services run.clearml.env.bootstrap=uv run.clearml.env.uv.all_extras=true run.clearml.env.uv.frozen=true +pipeline.preprocess_variant=stdscaler_ohe '+pipeline.model_variants=[ridge,elasticnet]'
+```
+- result: success

@@ -83,6 +83,9 @@ Key assumptions (T097):
 | Artifacts | - [ ] `config_resolved.yaml`, `out.json`, `manifest.json`（Artifacts は検索キーではない）<br>- [ ] `pipeline_run.json`, `plan.json`, `report.md`, `report.json`, `report_links.json`, `run_summary.json` |
 | Tags / User Properties | - [ ] Tags: `usecase:<usecase_id>` / `process:pipeline` / `schema:v1` / `grid:<grid_id>`（+ `solution:tabular-analysis`）<br>- [ ] 子タスクにも `usecase:<usecase_id>` が付与され、Project 階層に反映される |
 
+※ Pipelines タブの表示には project system tag `pipeline` が必要なため、
+`run.clearml.pipeline.project_tag_pipeline=true` を前提とする。
+
 ## 8. infer（single/batch/optimize の UI 表示）
 | 項目 | 見る場所 / 確認内容 |
 | --- | --- |

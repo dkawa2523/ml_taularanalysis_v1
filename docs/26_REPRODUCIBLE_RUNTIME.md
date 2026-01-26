@@ -18,6 +18,11 @@ the upload step is a no-op but local files are still created.
 ClearML entrypoint bootstrap (`uv sync --all-extras --frozen`) for stable, repo-side
 environments.
 
+Note: `run.clearml.env.apt_packages` installs **OS libraries** at task runtime via
+`apt-get`. This is **Linux-only** and requires root + apt-get in the agent image.
+Windows environments need a different OS package mechanism (e.g., winget/choco),
+so do not assume apt-based installs there.
+
 ### Update steps
 1. Regenerate the lockfile after dependency changes:
    ```bash

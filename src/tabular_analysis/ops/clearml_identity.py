@@ -316,6 +316,12 @@ def apply_clearml_identity(cfg: Any, *, stage: str, now: datetime | None = None)
         process=process_name,
         layout=layout,
     )
+    if stage == "99_pipeline":
+        pipeline_project = _normalize_str(_cfg_value(cfg, "run.clearml.pipeline.project_name"))
+        if pipeline_project == "default":
+            project_name = f"{pipeline_project}/.pipelines/{identity.usecase_id}"
+            _set_cfg_value(cfg, "run.clearml.pipeline.project_mode", "visible")
+            _set_cfg_value(cfg, "run.clearml.pipeline.project_name", project_name)
     _set_cfg_value(cfg, "run.clearml.project_name", project_name)
     _set_cfg_value(cfg, "task.project_name", project_name)
     return identity

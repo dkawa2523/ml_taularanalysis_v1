@@ -217,6 +217,39 @@ def _resolve_uv_settings(overrides: dict[str, str]) -> tuple[str, list[str], boo
     return (venv_dir, extras, all_extras, frozen)
 
 
+def _resolve_apt_settings(overrides: dict[str, str]) -> tuple[list[str], bool, bool]:
+    packages = _parse_list(overrides.get("run.clearml.env.apt_packages"))
+    if not packages:
+        packages = _parse_list(os.getenv("TABULAR_ANALYSIS_APT_PACKAGES"))
+    update = _parse_bool(overrides.get("run.clearml.env.apt_update"), default=True)
+    allow_local = _parse_bool(overrides.get("run.clearml.env.apt_allow_local"), default=False)
+    return packages, update, allow_local
+
+
+def _maybe_install_apt_packages(argv: list[str]) -> None:
+    def _warn(message: str) -> None:
+        print(f"[clearml_entrypoint] {message}", file=sys.stderr)
+
+    overrides = _parse_cli_overrides(argv)
+    packages, update, allow_local = _resolve_apt_settings(overrides)
+    if not packages:
+        return
+    if not _is_clearml_context() and not allow_local:
+        return
+    if os.geteuid() != 0:
+        _warn("Skipping apt install (requires root).")
+        return
+    if shutil.which("apt-get") is None:
+        _warn("Skipping apt install (apt-get not found).")
+        return
+    env = os.environ.copy()
+    env.setdefault("DEBIAN_FRONTEND", "noninteractive")
+    if update:
+        subprocess.run(["apt-get", "update", "-y"], check=True, env=env)
+    cmd = ["apt-get", "install", "-y", "--no-install-recommends", *packages]
+    subprocess.run(cmd, check=True, env=env)
+
+
 def _ensure_uv_available() -> None:
     if shutil.which("uv"):
         return
@@ -429,6 +462,7 @@ def main(argv: list[str] | None = None) -> None:
     _maybe_patch_clearml_files_host()
 
     args = _merge_clearml_overrides(list(argv or []))
+    _maybe_install_apt_packages(args)
     _maybe_bootstrap_uv(repo_root, args)
 
     from tabular_analysis import cli

@@ -591,6 +591,15 @@ def _collect_run_overrides(
         overrides["run.clearml.clone_from_task_id"] = getattr(clearml_cfg, "clone_from_task_id", None)
         env_cfg = getattr(clearml_cfg, "env", None)
         if env_cfg is not None:
+            apt_packages = _to_list(getattr(env_cfg, "apt_packages", None))
+            if apt_packages:
+                overrides["run.clearml.env.apt_packages"] = apt_packages
+            apt_update = getattr(env_cfg, "apt_update", None)
+            if apt_update is not None:
+                overrides["run.clearml.env.apt_update"] = apt_update
+            apt_allow_local = getattr(env_cfg, "apt_allow_local", None)
+            if apt_allow_local is not None:
+                overrides["run.clearml.env.apt_allow_local"] = apt_allow_local
             bootstrap = getattr(env_cfg, "bootstrap", None)
             if bootstrap and str(bootstrap).lower() not in {"none", "false", "0", "off"}:
                 overrides["run.clearml.env.bootstrap"] = bootstrap

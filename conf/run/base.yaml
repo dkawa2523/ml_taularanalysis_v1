@@ -66,9 +66,14 @@ clearml:
   # PipelineController を hidden project にせず可視 project に置くための設定
   # project_mode: subproject | visible
   pipeline:
-    project_mode: "visible"
+    project_mode: "subproject"
     # Optional override for pipeline controller project (full path)
-    project_name: null
+    # TEMP: Pipelines UI visibility workaround (place controller under default/.pipelines).
+    project_name: "default"
+    # Ensure pipeline projects show in Pipelines tab by tagging the project as pipeline.
+    project_tag_pipeline: true
+    # Remove hidden tag when present so UI does not require "Show hidden projects".
+    project_unhide: true
 
   # 追加タグ（usecase/process/schema/grid は標準で付与する想定）
   extra_tags: []
@@ -82,6 +87,11 @@ clearml:
   env:
     # none | uv | auto (auto uses uv only when CLEARML_TASK_ID is present)
     bootstrap: "none"
+    # System packages to install at task runtime (apt-get based images only).
+    # This is handled inside tools/clearml_entrypoint.py, not agent config.
+    apt_packages: []
+    apt_update: true
+    apt_allow_local: false
     uv:
       venv_dir: ".venv"
       extras: []
