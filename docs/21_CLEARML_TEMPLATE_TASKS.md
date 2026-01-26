@@ -42,6 +42,9 @@ python -m tabular_analysis.ops.manage_clearml_templates --apply
 - 既存テンプレがあれば `conf/clearml/templates.lock.yaml` の task_id を再利用
 - 作成した task_id は lock に保存
 - requirements / entrypoint / tags が現行の spec に合うよう自動更新
+- **テンプレ更新後は旧テンプレを自動で deprecated**  
+  - 失敗タスク・仕様不一致タスクは `template:deprecated` を付与
+  - `template:true` のみを Clone 対象にする運用を推奨
 
 ### Validate（ClearML 必須）
 ```bash

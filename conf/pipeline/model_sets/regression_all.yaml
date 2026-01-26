@@ -2,4 +2,5 @@
 task_type: regression
 auto: true
 variants: []
-exclude: []
+exclude:
+  - tabpfn
