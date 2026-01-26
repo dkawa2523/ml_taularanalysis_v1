@@ -2744,8 +2744,25 @@ def create_pipeline_controller(
     _apply_clearml_system_tags(task, ["pipeline"])
     if tag_list:
         _apply_clearml_tags(task, tag_list)
-    if tag_pipeline_project:
-        if project_mode == "subproject":
+    execution_project = _cfg_value(cfg, "run.clearml.project_name") or controller_project
+    if execution_project:
+        mover = getattr(task, "move_to_project", None)
+        if callable(mover):
+            try:
+                current_project = None
+                getter = getattr(task, "get_project_name", None)
+                if callable(getter):
+                    current_project = getter()
+                if not current_project:
+                    current_project = getattr(task, "project", None)
+                if str(current_project or "") != str(execution_project):
+                    mover(new_project_name=str(execution_project))
+            except Exception:
+                pass
+    if tag_pipeline_project or execution_project:
+        if execution_project:
+            project_name = execution_project
+        elif project_mode == "subproject":
             project_name = getattr(task, "project", None) or controller_project
         else:
             project_name = controller_project or getattr(task, "project", None)
