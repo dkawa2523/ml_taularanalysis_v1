@@ -34,6 +34,7 @@ from ..platform_adapter import (
     resolve_version_props,
     save_config_resolved,
     upload_artifact,
+    update_clearml_task_tags,
     write_manifest,
     write_out_json,
 )
@@ -780,10 +781,20 @@ def _make_base_task_factory(base_task_id: str, *, project_name: str):
     def _factory(node: Any):  # ClearML PipelineController.Node
         name = getattr(node, "name", None) or "pipeline_step"
         if project_id:
-            return ClearMLTask.clone(base_task_id, name=str(name), project=project_id)
-        task = ClearMLTask.clone(base_task_id, name=str(name))
+            task = ClearMLTask.clone(base_task_id, name=str(name), project=project_id)
+        else:
+            task = ClearMLTask.clone(base_task_id, name=str(name))
         try:
             task.set_project(project_name=str(project_name))
+        except Exception:
+            pass
+        try:
+            task_id = getattr(task, "id", None) or getattr(task, "task_id", None)
+            if task_id:
+                update_clearml_task_tags(
+                    str(task_id),
+                    remove=["template:true", "template:deprecated"],
+                )
         except Exception:
             pass
         return task
