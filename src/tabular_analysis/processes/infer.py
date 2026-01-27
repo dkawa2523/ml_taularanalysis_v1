@@ -99,6 +99,53 @@ def _normalize_task_type(value: Any) -> str:
     return "regression"
 
 
+def _has_payload(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, Mapping):
+        return bool(value)
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return len(value) > 0
+    return True
+
+
+def _validate_infer_input_sources(
+    *,
+    mode: str,
+    has_input_json: bool,
+    has_input_path: bool,
+    has_batch_inputs_json: bool,
+    has_batch_inputs_path: bool,
+    has_search_space: bool,
+) -> None:
+    errors: list[str] = []
+    if mode == "single":
+        if has_search_space:
+            errors.append("infer.optimize.search_space is not supported in infer.mode=single.")
+        if has_batch_inputs_json or has_batch_inputs_path:
+            errors.append("infer.batch inputs are not supported in infer.mode=single.")
+        if has_input_json and has_input_path:
+            errors.append("Specify only one of infer.input_json or infer.input_path for infer.mode=single.")
+    elif mode == "batch":
+        if has_search_space:
+            errors.append("infer.optimize.search_space is not supported in infer.mode=batch.")
+        if has_batch_inputs_json and has_input_json:
+            errors.append("Specify only one of infer.batch.inputs_json or infer.input_json for infer.mode=batch.")
+        if has_batch_inputs_path and has_input_path:
+            errors.append("Specify only one of infer.batch.inputs_path or infer.input_path for infer.mode=batch.")
+        if (has_batch_inputs_json or has_input_json) and (has_batch_inputs_path or has_input_path):
+            errors.append("Specify either inputs_json or inputs_path for infer.mode=batch, not both.")
+    elif mode == "optimize":
+        if has_input_json or has_input_path or has_batch_inputs_json or has_batch_inputs_path:
+            errors.append("infer.mode=optimize only supports infer.optimize.search_space.")
+        if not has_search_space:
+            errors.append("infer.optimize.search_space is required for infer.mode=optimize.")
+    if errors:
+        raise ValueError(" ".join(errors))
+
+
 def _cfg_value(cfg: Any, dotted_path: str, default: Any | None = None) -> Any:
     if cfg is None:
         return default
@@ -319,6 +366,14 @@ def _normalize_optimize_search_space(space: Any) -> list[dict[str, Any]]:
     entries: list[dict[str, Any]] = []
     if not space:
         return entries
+    if isinstance(space, str):
+        text = space.strip()
+        if not text:
+            return entries
+        try:
+            space = json.loads(text)
+        except json.JSONDecodeError as exc:
+            raise ValueError("infer.optimize.search_space must be valid JSON or a mapping/list.") from exc
     if isinstance(space, Mapping):
         for name, payload in space.items():
             entry: dict[str, Any] = {"name": str(name)}
@@ -2123,6 +2178,23 @@ def run(cfg: Any) -> None:
     debug_output_sample: Any | None = None
     infer_cfg = getattr(cfg, "infer", None)
     batch_cfg = getattr(infer_cfg, "batch", None)
+    optimize_cfg = getattr(infer_cfg, "optimize", None)
+    has_input_json = _has_payload(getattr(infer_cfg, "input_json", None))
+    has_input_path = _normalize_str(getattr(infer_cfg, "input_path", None)) is not None
+    has_batch_inputs_json = _has_payload(getattr(batch_cfg, "inputs_json", None))
+    has_batch_inputs_path = _normalize_str(getattr(batch_cfg, "inputs_path", None)) is not None
+    has_search_space = _has_payload(getattr(optimize_cfg, "search_space", None))
+    _validate_infer_input_sources(
+        mode=mode,
+        has_input_json=has_input_json,
+        has_input_path=has_input_path,
+        has_batch_inputs_json=has_batch_inputs_json,
+        has_batch_inputs_path=has_batch_inputs_path,
+        has_search_space=has_search_space,
+    )
+    model_id_value = _normalize_str(getattr(infer_cfg, "model_id", None))
+    model_bundle_path_value = _normalize_str(getattr(infer_cfg, "model_bundle_path", None))
+    train_task_id_value = _normalize_str(getattr(infer_cfg, "train_task_id", None))
     input_payload = _parse_input_payload(getattr(infer_cfg, "input_json", None))
     batch_inputs_payload = _parse_batch_inputs_payload(getattr(batch_cfg, "inputs_json", None))
     if mode == "batch" and batch_inputs_payload is None:
@@ -2160,6 +2232,17 @@ def run(cfg: Any) -> None:
     if mode == "optimize" and not is_child_task:
         optimize_hparams = _build_optimize_hparams(optimize_settings)
     dry_run = bool(getattr(infer_cfg, "dry_run", False))
+    if not dry_run and not (model_id_value or train_task_id_value or model_bundle_path_value):
+        raise ValueError("infer.model_id or infer.train_task_id (or infer.model_bundle_path) is required.")
+    if clearml_enabled:
+        summary_lines = [
+            f"mode: {mode}",
+            f"input_source: {input_source}",
+            f"model_id: {model_id_value or 'n/a'}",
+            f"train_task_id: {train_task_id_value or 'n/a'}",
+            f"search_space: {'set' if has_search_space else 'none'}",
+        ]
+        log_debug_text(ctx.task, "infer", "settings", "\n".join(summary_lines), step=0)
 
     if dry_run:
         model_id = _normalize_str(getattr(infer_cfg, "model_id", None)) or _normalize_str(

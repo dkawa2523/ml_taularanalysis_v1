@@ -17,7 +17,6 @@ from ..platform_adapter import (
     create_clearml_task,
     detect_git_branch,
     detect_git_repository_url,
-    ensure_clearml_task_args,
     ensure_clearml_task_properties,
     ensure_clearml_task_requirements,
     ensure_clearml_task_script,
@@ -27,6 +26,7 @@ from ..platform_adapter import (
     list_clearml_tasks_by_tags,
     resolve_clearml_script_spec,
     update_clearml_task_tags,
+    reset_clearml_task_args,
 )
 
 try:
@@ -244,8 +244,8 @@ def _apply_templates(
                     changes.append("requirements")
                 if ensure_clearml_task_properties(task_id, target.properties):
                     changes.append("properties")
-                if ensure_clearml_task_args(task_id, target.args):
-                    changes.append("args")
+                if reset_clearml_task_args(task_id, target.args):
+                    changes.append("args_reset")
                 if changes:
                     print(f"[update] {target.name}: {', '.join(changes)}")
                 else:

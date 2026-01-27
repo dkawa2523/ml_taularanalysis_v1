@@ -17,7 +17,7 @@ Codex タスクでは、まずこの adapter を platform 実装に合わせて�
 
 from __future__ import annotations
 
-from collections.abc import Iterable as IterableABC
+from collections.abc import Iterable as IterableABC, Sequence as SequenceABC
 from datetime import datetime, timezone
 import json
 from dataclasses import dataclass
@@ -2204,7 +2204,27 @@ def set_clearml_task_parameters(
     if not parameters:
         return False
     task = _get_clearml_task(task_id)
-    normalized = {str(key): "" if value is None else str(value) for key, value in parameters.items()}
+    json_keys = {
+        "infer.input_json",
+        "infer.batch.inputs_json",
+        "infer.validation.inputs_json",
+        "infer.optimize.search_space",
+    }
+    normalized: dict[str, str] = {}
+    for key, value in parameters.items():
+        key_text = str(key)
+        if value is None:
+            normalized[key_text] = ""
+            continue
+        if key_text in json_keys and isinstance(value, (Mapping, SequenceABC)) and not isinstance(
+            value, (str, bytes)
+        ):
+            try:
+                normalized[key_text] = json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+                continue
+            except Exception:
+                pass
+        normalized[key_text] = str(value)
     getter = getattr(task, "get_parameters_as_dict", None)
     existing = None
     if callable(getter):
@@ -2383,6 +2403,38 @@ def ensure_clearml_task_args(task_id: str, args: Iterable[str]) -> bool:
     if callable(setter):
         merged = {**existing_args, **updates}
         setter({"Args": merged})
+        return True
+    raise PlatformAdapterError("ClearML Task.set_parameters is not available.")
+
+
+def reset_clearml_task_args(task_id: str, args: Iterable[str]) -> bool:
+    desired = _parse_task_args(args)
+    task = _get_clearml_task(task_id)
+    normalized = {str(key): "" if value is None else str(value) for key, value in desired.items()}
+    getter = getattr(task, "get_parameters_as_dict", None)
+    if callable(getter):
+        try:
+            params = getter(cast=False)
+        except Exception:
+            params = None
+        if isinstance(params, Mapping):
+            params = dict(params)
+            params["Args"] = dict(normalized)
+            setter = getattr(task, "set_parameters_as_dict", None)
+            if callable(setter):
+                setter(params)
+                return True
+    params = _task_parameters(task)
+    updated = {k: v for k, v in params.items() if not (isinstance(k, str) and k.startswith("Args/"))}
+    for key, value in normalized.items():
+        updated[f"Args/{key}"] = value
+    setter = getattr(task, "set_parameters", None)
+    if callable(setter):
+        setter(updated)
+        return True
+    setter = getattr(task, "set_parameters_as_dict", None)
+    if callable(setter):
+        setter({"Args": dict(normalized)})
         return True
     raise PlatformAdapterError("ClearML Task.set_parameters is not available.")
 

@@ -68,8 +68,8 @@ clearml:
   pipeline:
     project_mode: "subproject"
     # Optional override for pipeline controller project (full path)
-    # TEMP: Pipelines UI visibility workaround (place controller under default/.pipelines).
-    project_name: "default"
+    # null の場合は run.clearml.project_name（usecase配下）に配置する
+    project_name: null
     # Ensure pipeline projects show in Pipelines tab by tagging the project as pipeline.
     project_tag_pipeline: true
     # Remove hidden tag when present so UI does not require "Show hidden projects".

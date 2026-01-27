@@ -347,6 +347,26 @@ def _quote(text: str) -> str:
     return f"'{escaped}'"
 
 
+_JSON_OVERRIDE_KEYS = {
+    "infer.input_json",
+    "infer.batch.inputs_json",
+    "infer.validation.inputs_json",
+    "infer.optimize.search_space",
+}
+
+
+def _is_json_text(text: str) -> bool:
+    if not text:
+        return False
+    try:
+        import json
+
+        json.loads(text)
+        return True
+    except Exception:
+        return False
+
+
 def _format_override_value(value: Any) -> str:
     if value is None:
         return "null"
@@ -354,6 +374,35 @@ def _format_override_value(value: Any) -> str:
         return "true" if value else "false"
     text = str(value)
     return _quote(text) if _needs_quote(text) else text
+
+
+def _format_override_value_for_key(key: str, value: Any) -> str:
+    text = "" if value is None else str(value)
+    if key in _JSON_OVERRIDE_KEYS and _is_json_text(text):
+        return _quote(text)
+    return _format_override_value(value)
+
+
+def _normalize_json_override_args(argv: list[str]) -> list[str]:
+    normalized: list[str] = []
+    for item in argv:
+        if not item or item.startswith("-") or "=" not in item:
+            normalized.append(item)
+            continue
+        key, value = item.split("=", 1)
+        key = key.strip()
+        if not key:
+            normalized.append(item)
+            continue
+        key_for_check = key.lstrip("+")
+        raw = value.strip()
+        if key_for_check in _JSON_OVERRIDE_KEYS:
+            text = _strip_quotes(raw)
+            if _is_json_text(text):
+                normalized.append(f"{key}={_quote(text)}")
+                continue
+        normalized.append(item)
+    return normalized
 
 
 def _load_clearml_overrides() -> dict[str, Any]:
@@ -438,6 +487,7 @@ def _load_clearml_overrides() -> dict[str, Any]:
 
 
 def _merge_clearml_overrides(argv: list[str]) -> list[str]:
+    argv = _normalize_json_override_args(list(argv))
     overrides = _load_clearml_overrides()
     if not overrides:
         return argv
@@ -446,7 +496,7 @@ def _merge_clearml_overrides(argv: list[str]) -> list[str]:
     for key, value in overrides.items():
         if key in existing:
             continue
-        merged.append(f"{key}={_format_override_value(value)}")
+        merged.append(f"{key}={_format_override_value_for_key(key, value)}")
     return merged
 
 
