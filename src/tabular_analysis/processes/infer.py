@@ -2601,7 +2601,7 @@ def run(cfg: Any) -> None:
                 "run.clearml.execution": "logging",
                 "run.clearml.queue_name": queue_name,
                 "run.clearml.enabled": True,
-                "+run.clearml.task_name": child_name,
+                "run.clearml.task_name": child_name,
             }
             if child_train_task_id:
                 overrides["infer.train_task_id"] = child_train_task_id

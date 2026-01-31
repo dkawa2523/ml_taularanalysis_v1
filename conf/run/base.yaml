@@ -62,6 +62,8 @@ clearml:
   clone_from_task_id: null
   # pipeline タスク ID（子タスクへ伝播して registry tag に利用）
   pipeline_task_id: null
+  # task_name override (used by optimize child tasks)
+  task_name: null
 
   # PipelineController を hidden project にせず可視 project に置くための設定
   # project_mode: subproject | visible
