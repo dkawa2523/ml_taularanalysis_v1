@@ -2598,6 +2598,13 @@ def run(cfg: Any) -> None:
                 "infer.dry_run": False,
                 "infer.validation.mode": validation_mode,
                 "infer.optimize.child_task": True,
+                # Clear optimize-specific overrides inherited from parent task.
+                "infer.optimize.search_space": "",
+                "infer.optimize.sampler": "",
+                "infer.optimize.n_trials": "",
+                "infer.optimize.direction": "",
+                "infer.optimize.objective.key": "",
+                "infer.optimize.top_k": "",
                 "run.clearml.execution": "logging",
                 "run.clearml.queue_name": queue_name,
                 "run.clearml.enabled": True,
