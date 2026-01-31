@@ -337,7 +337,7 @@ def _needs_quote(text: str) -> bool:
     if _looks_like_container(text):
         return False
     for ch in text:
-        if ch.isspace() or ch in "(),":
+        if ch.isspace() or ch in "(),=":
             return True
     return False
 

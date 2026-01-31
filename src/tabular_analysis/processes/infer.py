@@ -40,6 +40,7 @@ from ..platform_adapter import (
     is_clearml_enabled,
     resolve_version_props,
     resolve_clearml_task_url,
+    reset_clearml_task_args,
     save_config_resolved,
     set_clearml_task_parameters,
     update_task_properties,
@@ -2611,6 +2612,8 @@ def run(cfg: Any) -> None:
                 source_task_id=source_task_id,
                 task_name=child_name,
             )
+            # Clear inherited Args (e.g., optimize settings) so child tasks only use overrides.
+            reset_clearml_task_args(child_task_id, [])
             set_clearml_task_parameters(child_task_id, overrides)
             enqueue_clearml_task(child_task_id, queue_name)
 
