@@ -51,6 +51,7 @@ ClearML 上で増え続けるタスク/データセットを、少ないキー�
 - pipeline grid: `grid_cell:<preprocess>__<model>`
 - HPO trial: `hpo:<hpo_run_id>`
 - alerting: `alert:<kind>`, `severity:<level>`
+- infer optimize trial: `trial:optimize`, `parent:<optimize_task_id>`
 
 ### テンプレートタスク（PipelineController 用）
 - `template:true` + `process:<process>`

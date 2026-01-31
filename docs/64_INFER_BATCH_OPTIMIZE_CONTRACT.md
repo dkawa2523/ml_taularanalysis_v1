@@ -25,6 +25,15 @@
 - `run.clearml.queue_name`（または `exec_policy.queues.infer`）が未設定だと enqueue できない
 - 入力件数が多い場合は `infer.batch.max_children` でタスク爆発を防ぐ
 - infer.mode=optimize は Optuna が必須（未導入の場合は明示エラー）
+- optimize の child task は **親の infer.optimize.\*** を引き継がない（override で明示的にクリアする）
+
+## ClearML テンプレ／override 運用
+- clone は常に `template:true` の最新テンプレから行う（旧テンプレは `template:deprecated`）
+- JSON override（`infer.input_json` / `infer.batch.inputs_json` / `infer.optimize.search_space`）は
+  `tools/clearml_entrypoint.py` が自動クォートして Hydra パース失敗を防ぐ
+- child task の `run.clearml.task_name` は override で付与してよい
+  （`conf/run/base.yaml` に `run.clearml.task_name` を定義済み）
+- optimize の child は `trial:optimize` + `parent:<task_id>` タグを付与して UI 検索しやすくする
 
 ## optimize 設定
 - `infer.optimize.n_trials`: 試行回数

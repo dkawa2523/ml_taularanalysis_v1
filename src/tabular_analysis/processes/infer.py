@@ -43,6 +43,7 @@ from ..platform_adapter import (
     reset_clearml_task_args,
     save_config_resolved,
     set_clearml_task_parameters,
+    update_clearml_task_tags,
     update_task_properties,
     upload_artifact,
     write_manifest,
@@ -2621,6 +2622,10 @@ def run(cfg: Any) -> None:
             )
             # Clear inherited Args (e.g., optimize settings) so child tasks only use overrides.
             reset_clearml_task_args(child_task_id, [])
+            update_clearml_task_tags(
+                child_task_id,
+                add=[f"parent:{source_task_id}", "trial:optimize"],
+            )
             set_clearml_task_parameters(child_task_id, overrides)
             enqueue_clearml_task(child_task_id, queue_name)
 
@@ -2754,6 +2759,22 @@ def run(cfg: Any) -> None:
             )
             log_debug_table(ctx.task, "infer", "optimize_trials", trial_rows, step=0)
             log_debug_table(ctx.task, "infer", "optimize_child_tasks", child_rows, step=0)
+            failed_children = [row.get("task_id") for row in child_rows if row.get("status") not in completed]
+            log_debug_text(
+                ctx.task,
+                "infer",
+                "optimize_child_summary",
+                json.dumps(
+                    {
+                        "total": len(child_rows),
+                        "completed": len([row for row in child_rows if row.get("status") in completed]),
+                        "failed": len(failed_children),
+                        "failed_task_ids": failed_children,
+                    },
+                    ensure_ascii=False,
+                ),
+                step=0,
+            )
 
         out = {
             "optimize_trials_path": str(trials_path),
