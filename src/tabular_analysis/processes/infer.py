@@ -19,6 +19,7 @@ from ..clearml.ui_logger import (
     log_debug_table,
     log_debug_text,
     log_plotly,
+    log_scalar,
     report_input_output_table,
 )
 from ..io.bundle_io import load_bundle
@@ -92,6 +93,26 @@ def _parse_bool(value: Any) -> bool:
     if text in _BOOL_FALSY:
         return False
     return False
+
+
+def _get_child_reported_single_value(task_id: str, name: str) -> float | None:
+    if not task_id:
+        return None
+    try:
+        from clearml import Task as ClearMLTask  # type: ignore
+    except Exception:
+        return None
+    try:
+        task = ClearMLTask.get_task(task_id=task_id)
+    except Exception:
+        return None
+    getter = getattr(task, "get_reported_single_value", None)
+    if not callable(getter):
+        return None
+    try:
+        return getter(name)
+    except Exception:
+        return None
 
 
 def _normalize_task_type(value: Any) -> str:
@@ -2652,7 +2673,11 @@ def run(cfg: Any) -> None:
                     pred_path = get_task_artifact_local_copy(cfg, child_task_id, "prediction.json")
                     payload_out = _load_prediction_payload(pred_path)
                 except Exception as exc:
-                    error = str(exc)
+                    scalar_value = _get_child_reported_single_value(child_task_id, "infer/prediction")
+                    if scalar_value is not None:
+                        payload_out = {"prediction": scalar_value}
+                    else:
+                        error = str(exc)
             else:
                 error = f"child_status={status}"
 
@@ -2948,7 +2973,11 @@ def run(cfg: Any) -> None:
                     pred_path = get_task_artifact_local_copy(cfg, task_id, "prediction.json")
                     payload = _load_prediction_payload(pred_path)
                 except Exception as exc:
-                    error = str(exc)
+                    scalar_value = _get_child_reported_single_value(task_id, "infer/prediction")
+                    if scalar_value is not None:
+                        payload = {"prediction": scalar_value}
+                    else:
+                        error = str(exc)
             output_row = {
                 "condition_id": row["condition_id"],
                 "child_task_id": task_id,
@@ -3891,6 +3920,15 @@ def run(cfg: Any) -> None:
             )
             if debug_output_sample is None:
                 debug_output_sample = payload
+            if clearml_enabled:
+                flat = _flatten_prediction_payload(payload)
+                pred_value = flat.get("prediction")
+                if isinstance(pred_value, numbers.Real):
+                    log_scalar(ctx.task, "infer", "prediction", pred_value, step=0)
+                    logger = ctx.task.get_logger()
+                    reporter = getattr(logger, "report_single_value", None)
+                    if callable(reporter):
+                        reporter("infer/prediction", float(pred_value))
         else:
             if proba is None:
                 raise ValueError("classification infer requires predicted probabilities.")
@@ -3994,6 +4032,15 @@ def run(cfg: Any) -> None:
             )
             if debug_output_sample is None:
                 debug_output_sample = payload
+            if clearml_enabled:
+                flat = _flatten_prediction_payload(payload)
+                pred_value = flat.get("prediction")
+                if isinstance(pred_value, numbers.Real):
+                    log_scalar(ctx.task, "infer", "prediction", pred_value, step=0)
+                    logger = ctx.task.get_logger()
+                    reporter = getattr(logger, "report_single_value", None)
+                    if callable(reporter):
+                        reporter("infer/prediction", float(pred_value))
         else:
             n_cols = len(rows[0]) if rows else 1
             if output_format == "parquet":
