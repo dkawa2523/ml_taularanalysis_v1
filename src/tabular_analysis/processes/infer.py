@@ -2645,7 +2645,6 @@ def run(cfg: Any) -> None:
                 "run.clearml.task_name": child_name,
             }
             if child_project_name:
-                overrides["run.clearml.project_name"] = child_project_name
                 overrides["task.project_name"] = child_project_name
             if child_train_task_id:
                 overrides["infer.train_task_id"] = child_train_task_id
@@ -2962,7 +2961,6 @@ def run(cfg: Any) -> None:
                     "run.clearml.task_name": child_name,
                 }
                 if child_project_name:
-                    overrides["run.clearml.project_name"] = child_project_name
                     overrides["task.project_name"] = child_project_name
                 if child_train_task_id:
                     overrides["infer.train_task_id"] = child_train_task_id
