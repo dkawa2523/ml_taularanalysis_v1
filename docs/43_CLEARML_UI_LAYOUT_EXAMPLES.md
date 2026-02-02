@@ -18,6 +18,7 @@
 <ROOT>/<solution_root>/<usecase_id>/03_TrainModels
 <ROOT>/<solution_root>/<usecase_id>/00_Pipelines（leaderboard もここに配置）
 <ROOT>/<solution_root>/<usecase_id>/05_Infer
+<ROOT>/<solution_root>/<usecase_id>/05_Infer_Children
 <ROOT>/<solution_root>/<usecase_id>/00_Pipelines
 <ROOT>/<solution_root>/<usecase_id>/Misc
 ```

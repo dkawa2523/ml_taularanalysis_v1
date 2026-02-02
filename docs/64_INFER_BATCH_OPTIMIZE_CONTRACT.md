@@ -14,6 +14,9 @@
 - summary task:
   - batch: 全条件のテーブル + 予測分布など
   - optimize: Optuna可視化（history/parallel coords/importance/response surface） + 上位条件テーブル（input_output_table）
+- project 配置:
+  - summary: `<project_root>/TabularAnalysis/<usecase_id>/05_Infer`
+  - child: `<project_root>/TabularAnalysis/<usecase_id>/05_Infer_Children`
 
 ## 入力と上限
 - batch summary は `infer.batch.inputs_path`（csv/parquet）または `infer.batch.inputs_json`（条件リスト）を読む

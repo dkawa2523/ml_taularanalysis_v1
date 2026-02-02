@@ -89,7 +89,7 @@ Key assumptions (T097):
 ## 8. infer（single/batch/optimize の UI 表示）
 | 項目 | 見る場所 / 確認内容 |
 | --- | --- |
-| 探し方 | - [ ] Projects: `<project_root>/TabularAnalysis/<usecase_id>/05_Infer`<br>- [ ] Tags: `usecase:<usecase_id>` / `process:infer` / `schema:v1`<br>- [ ] batch/optimize は summary task + child tasks（`infer__single__...`）がある |
+| 探し方 | - [ ] Projects: `<project_root>/TabularAnalysis/<usecase_id>/05_Infer`（summary）/ `<project_root>/TabularAnalysis/<usecase_id>/05_Infer_Children`（child）<br>- [ ] Tags: `usecase:<usecase_id>` / `process:infer` / `schema:v1`<br>- [ ] batch/optimize は summary task + child tasks（`infer__single__...`）がある |
 | Configuration | - [ ] HyperParameters > inputs に `infer.mode`, `infer.input_path/json`, `infer.validation.mode`, `infer.batch.inputs_path/json` が載る<br>- [ ] HyperParameters > dataset に `data.raw_dataset_id` / `data.processed_dataset_id` が載る |
 | Scalars | - [ ] `infer/latency_ms` がある（推奨） |
 | Plots | - [ ] input vs output の例は Debug Samples ではなく PLOTS のテーブルで確認する<br>- [ ] batch: 全条件のテーブル + 予測分布などが summary に出る<br>- [ ] optimize: Optuna 可視化（history/parallel/importance/response surface）+ 上位条件テーブル |

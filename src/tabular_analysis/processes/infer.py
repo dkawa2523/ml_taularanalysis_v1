@@ -26,7 +26,7 @@ from ..io.bundle_io import load_bundle
 from ..io.schema import extract_schema_dtypes
 from ..monitoring.drift import build_drift_report, build_train_profile, render_drift_markdown
 from ..ops.alerting import emit_alert
-from ..ops.clearml_identity import apply_clearml_identity
+from ..ops.clearml_identity import apply_clearml_identity, build_project_name
 from ..ops.data_quality import raise_on_quality_fail, run_data_quality_gate
 from .drift_report import append_drift_summary, annotate_profile, resolve_drift_settings, sample_frame
 from ..platform_adapter import (
@@ -2567,6 +2567,18 @@ def run(cfg: Any) -> None:
         if not queue_name:
             raise ValueError("run.clearml.queue_name is required to enqueue optimize child tasks.")
 
+        child_project_name = None
+        project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root"))
+        usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id"))
+        if project_root and usecase_id:
+            child_project_name = build_project_name(
+                project_root,
+                usecase_id,
+                stage="infer",
+                process="infer_child",
+                cfg=cfg,
+            )
+
         source_task_id = _normalize_str(_cfg_value(cfg, "run.clearml.clone_from_task_id"))
         if not source_task_id:
             source_task_id = str(getattr(ctx.task, "id", ""))
@@ -2632,6 +2644,9 @@ def run(cfg: Any) -> None:
                 "run.clearml.enabled": True,
                 "run.clearml.task_name": child_name,
             }
+            if child_project_name:
+                overrides["run.clearml.project_name"] = child_project_name
+                overrides["task.project_name"] = child_project_name
             if child_train_task_id:
                 overrides["infer.train_task_id"] = child_train_task_id
             else:
@@ -2903,6 +2918,18 @@ def run(cfg: Any) -> None:
             if not queue_name:
                 raise ValueError("run.clearml.queue_name is required to enqueue batch child tasks.")
 
+            child_project_name = None
+            project_root = _normalize_str(_cfg_value(cfg, "run.clearml.project_root"))
+            usecase_id = _normalize_str(_cfg_value(cfg, "run.usecase_id"))
+            if project_root and usecase_id:
+                child_project_name = build_project_name(
+                    project_root,
+                    usecase_id,
+                    stage="infer",
+                    process="infer_child",
+                    cfg=cfg,
+                )
+
             source_task_id = _normalize_str(_cfg_value(cfg, "run.clearml.clone_from_task_id"))
             if not source_task_id:
                 source_task_id = str(getattr(ctx.task, "id", ""))
@@ -2934,6 +2961,9 @@ def run(cfg: Any) -> None:
                     "run.clearml.enabled": True,
                     "run.clearml.task_name": child_name,
                 }
+                if child_project_name:
+                    overrides["run.clearml.project_name"] = child_project_name
+                    overrides["task.project_name"] = child_project_name
                 if child_train_task_id:
                     overrides["infer.train_task_id"] = child_train_task_id
                 else:
@@ -3030,6 +3060,17 @@ def run(cfg: Any) -> None:
                     output_path=ctx.output_dir / "prediction_labels.png",
                 )
                 log_plotly(ctx.task, "infer", "prediction_labels", label_fig, step=0)
+            child_table_fig = build_input_output_table(
+                None,
+                child_rows,
+                max_rows=table_rows,
+                max_input_columns=table_settings["max_input_columns"],
+                max_output_columns=table_settings["max_output_columns"],
+                title="Batch Child Tasks",
+                output_path=ctx.output_dir / "batch_child_tasks_table.png",
+            )
+            if child_table_fig is not None:
+                log_plotly(ctx.task, "infer", "batch_child_tasks_table", child_table_fig, step=0)
             log_debug_table(ctx.task, "infer", "batch_child_tasks", child_rows, step=0)
 
         out = {

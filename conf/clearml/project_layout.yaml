@@ -7,6 +7,7 @@ group_map:
   train_model: "03_TrainModels"
   train_ensemble: "04_Ensembles"
   infer: "05_Infer"
+  infer_child: "05_Infer_Children"
   leaderboard: "00_Pipelines"
   pipeline: "00_Pipelines"
 misc_group: "99_Misc"

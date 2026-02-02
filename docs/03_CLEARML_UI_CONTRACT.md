@@ -17,6 +17,7 @@
 - `MFG/TabularAnalysis/test_toy_20260101_120000/03_TrainModels`
 - `MFG/TabularAnalysis/test_toy_20260101_120000/04_Ensembles`
 - `MFG/TabularAnalysis/test_toy_20260101_120000/05_Infer`
+- `MFG/TabularAnalysis/test_toy_20260101_120000/05_Infer_Children`（batch/optimize の child）
 - `MFG/TabularAnalysis/test_toy_20260101_120000/00_Pipelines`（leaderboard もここに配置）
 
 ## Task 名（推奨）
