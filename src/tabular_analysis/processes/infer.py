@@ -43,6 +43,7 @@ from ..platform_adapter import (
     resolve_clearml_task_url,
     reset_clearml_task_args,
     save_config_resolved,
+    set_clearml_task_entry_point,
     set_clearml_task_parameters,
     update_clearml_task_tags,
     update_task_properties,
@@ -2627,6 +2628,7 @@ def run(cfg: Any) -> None:
             if model_abbr:
                 child_name = f"infer__single__model={model_abbr}__trial={trial_number}"
             overrides: dict[str, Any] = {
+                "task": "infer",
                 "infer.mode": "single",
                 "infer.input_json": payload,
                 "infer.dry_run": False,
@@ -2643,6 +2645,7 @@ def run(cfg: Any) -> None:
                 "run.clearml.queue_name": queue_name,
                 "run.clearml.enabled": True,
                 "run.clearml.task_name": child_name,
+                "run.clearml.env.bootstrap": "auto",
             }
             if child_project_name:
                 overrides["task.project_name"] = child_project_name
@@ -2655,6 +2658,10 @@ def run(cfg: Any) -> None:
                 source_task_id=source_task_id,
                 task_name=child_name,
             )
+            try:
+                set_clearml_task_entry_point(child_task_id, "tools/clearml_entrypoint.py")
+            except Exception:
+                pass
             # Clear inherited Args (e.g., optimize settings) so child tasks only use overrides.
             reset_clearml_task_args(child_task_id, [])
             update_clearml_task_tags(
@@ -2950,6 +2957,7 @@ def run(cfg: Any) -> None:
                 if model_abbr:
                     child_name = f"infer__single__model={model_abbr}__case={idx}"
                 overrides: dict[str, Any] = {
+                    "task": "infer",
                     "infer.mode": "single",
                     "infer.input_json": payload,
                     "infer.dry_run": False,
@@ -2959,6 +2967,7 @@ def run(cfg: Any) -> None:
                     "run.clearml.queue_name": queue_name,
                     "run.clearml.enabled": True,
                     "run.clearml.task_name": child_name,
+                    "run.clearml.env.bootstrap": "auto",
                 }
                 if child_project_name:
                     overrides["task.project_name"] = child_project_name
@@ -2971,6 +2980,10 @@ def run(cfg: Any) -> None:
                     source_task_id=source_task_id,
                     task_name=child_name,
                 )
+                try:
+                    set_clearml_task_entry_point(child_task_id, "tools/clearml_entrypoint.py")
+                except Exception:
+                    pass
                 set_clearml_task_parameters(child_task_id, overrides)
                 enqueue_clearml_task(child_task_id, queue_name)
                 child_task_ids.append(child_task_id)

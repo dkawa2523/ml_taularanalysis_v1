@@ -159,8 +159,7 @@ def _resolve_clearml_files_host_fallback() -> str | None:
 
 
 def _apply_clearml_files_host_substitution() -> None:
-    if not _in_docker():
-        return
+    in_docker = _in_docker()
     try:
         from clearml.backend_api.session import Session  # type: ignore
         from clearml.storage.helper import StorageHelper  # type: ignore
@@ -181,18 +180,31 @@ def _apply_clearml_files_host_substitution() -> None:
     if not normalized:
         normalized = _resolve_clearml_files_host_fallback()
     if not normalized:
-        return
+        if in_docker:
+            return
+        normalized = _normalize_files_host(
+            os.getenv("CLEARML_FILES_HOST") or _read_clearml_config_api_section().get("files_server") or ""
+        )
+        if not normalized:
+            return
 
     os.environ.setdefault("CLEARML_FILES_HOST", normalized)
     try:
         existing = {rule.registered_prefix: rule.local_prefix for rule in StorageHelper._path_substitutions}
     except Exception:
         existing = {}
+    extra_prefixes: tuple[str, ...] = ()
+    if not in_docker and urlparse(normalized).hostname in {"localhost", "127.0.0.1"}:
+        extra_prefixes = (
+            "http://host.docker.internal:8081",
+            "https://host.docker.internal:8081",
+        )
     for prefix in (
         "http://localhost:8081",
         "http://127.0.0.1:8081",
         "https://localhost:8081",
         "https://127.0.0.1:8081",
+        *extra_prefixes,
     ):
         if existing.get(prefix) == normalized:
             continue
@@ -2195,6 +2207,18 @@ def clone_clearml_task(
     return str(task_id)
 
 
+def set_clearml_task_entry_point(task_id: str, entry_point: str) -> None:
+    task = _get_clearml_task(task_id)
+    script = _task_script(task)
+    payload: dict[str, Any] = {}
+    for key in ("repository", "branch", "working_dir", "version_num"):
+        value = script.get(key)
+        if value is not None:
+            payload[key] = value
+    payload["entry_point"] = entry_point
+    _set_clearml_task_script(task, payload)
+
+
 def set_clearml_task_parameters(
     task_id: str,
     parameters: Mapping[str, Any],
@@ -2548,13 +2572,56 @@ def _artifact_local_copy(artifact: Any) -> str | None:
 def get_task_artifact_local_copy(cfg: Any, task_id: str, artifact_name: str) -> Path:
     if not is_clearml_enabled(cfg):
         raise PlatformAdapterError("ClearML is disabled; cannot fetch task artifacts.")
+    _apply_clearml_files_host_substitution()
     task = _get_clearml_task(task_id)
     artifact = _resolve_task_artifact(task, artifact_name)
     local_path = _artifact_local_copy(artifact)
     if not local_path:
-        raise PlatformAdapterError(
-            f"Artifact {artifact_name} not found on ClearML task {task_id}."
-        )
+        uri = None
+        if isinstance(artifact, Mapping):
+            uri = artifact.get("uri") or artifact.get("url")
+        else:
+            uri = getattr(artifact, "uri", None) or getattr(artifact, "url", None)
+        if uri:
+            try:
+                from clearml.backend_api import Session  # type: ignore
+            except Exception:
+                Session = None
+            try:
+                import requests  # type: ignore
+            except Exception:
+                requests = None
+            if Session is not None and requests is not None:
+                try:
+                    session = Session()
+                    files_host = os.getenv("CLEARML_FILES_HOST") or session.config.get("api.files_server")
+                    if files_host:
+                        normalized = _normalize_files_host(files_host)
+                        if normalized:
+                            parsed = urlparse(uri)
+                            if parsed.hostname in {"host.docker.internal", "clearml-fileserver"}:
+                                uri = uri.replace(f"{parsed.scheme}://{parsed.netloc}", normalized)
+                    creds = session.config.get("api.credentials")
+                    token_resp = session.send_request(
+                        service="auth",
+                        action="login",
+                        json={"access_key": creds["access_key"], "secret_key": creds["secret_key"]},
+                    )
+                    token = token_resp.json()["data"]["token"]
+                    headers = {"Authorization": f"Bearer {token}"}
+                    response = requests.get(uri, headers=headers, timeout=30)
+                    response.raise_for_status()
+                    target_dir = Path("/tmp/clearml_artifacts") / task_id
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    target_path = target_dir / artifact_name
+                    target_path.write_bytes(response.content)
+                    local_path = str(target_path)
+                except Exception:
+                    local_path = None
+        if not local_path:
+            raise PlatformAdapterError(
+                f"Artifact {artifact_name} not found on ClearML task {task_id}."
+            )
     path = Path(local_path)
     if not path.exists():
         raise PlatformAdapterError(
