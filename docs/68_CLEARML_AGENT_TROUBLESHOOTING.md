@@ -43,3 +43,26 @@ Same rule applies to `pipeline.grid.preprocess_variants`.
 
 If you see split tokens in agent logs, regenerate the entry_point by re-running
 pipeline controller or updating the task script.
+
+## Hydra override (child task)
+- child では **run.clearml.project_name を使わない**（Hydra struct に無く失敗するため）。
+- 子タスクの project を変える場合は **task.project_name のみ**を override する。
+- どうしても新規キーを上書きする場合は `+key=value` で追加する（例: `+run.clearml.project_name=...`）。
+
+## Trial ログ回収（--rm 対策）
+child task の失敗ログが消える場合は以下を前提にする。
+
+1) agent-services で --rm を外す  
+`docker-compose.override.yml` に追加:
+```
+CLEARML_AGENT_SERVICES_DOCKER_RESTART: "no"
+```
+（restart policy が付くと `--rm` が外れる）
+
+2) docker logs を即時回収  
+```
+python tools/clearml/watch_trial_logs.py --parent-task-id <PARENT_TASK_ID> --log-dir /tmp/clearml_trial_logs
+```
+
+注意:
+- コンテナが残るため、不要になったら `docker container prune` で掃除する。
