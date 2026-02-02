@@ -1,5 +1,10 @@
 # 実行体の説明
 
+## Windows 補足
+- `/tmp/...` は Windows では存在しないため、`$env:TEMP` を使用してください。
+- PowerShell で実行する場合はパス区切りを `\\` にします。
+- 詳細は `90_windows.md` を参照してください。
+
 ## 1. 実行モード一覧
 実行モードは `run.clearml.execution` で切り替えます（設定キー名は歴史的経緯で clearml を使用）。
 

@@ -17,6 +17,12 @@ export TABULAR_MODEL_BUNDLE=/path/to/model_bundle.joblib
 uvicorn tabular_analysis.serve.app:app --reload
 ```
 
+### Windows (PowerShell)
+```powershell
+$env:TABULAR_MODEL_BUNDLE = "C:\\path\\to\\model_bundle.joblib"
+uvicorn tabular_analysis.serve.app:app --reload
+```
+
 ## Programmatic usage
 
 ```python
@@ -41,6 +47,14 @@ Example:
 curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -d '{"records":[{"num1":1.2,"num2":3.4,"cat":"a"}]}'
+```
+
+PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/predict" `
+  -ContentType "application/json" `
+  -Body '{"records":[{"num1":1.2,"num2":3.4,"cat":"a"}]}'
 ```
 
 ## Schema validation

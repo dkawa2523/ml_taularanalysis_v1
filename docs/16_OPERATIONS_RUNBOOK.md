@@ -1,5 +1,9 @@
 # 16_OPERATIONS_RUNBOOK (Selection Flow)
 
+## Windows 補足
+- `/tmp/...` は Windows では `"$env:TEMP\\..."` に置き換えてください。
+- PowerShell ではパス区切りを `\\` にします。
+
 ## Goal
 運用担当者が **pipeline 実行 → leaderboard レビュー → 推論時のモデル選択** まで迷わず進められるよう、
 最低限の手順と確認ポイントをまとめます。

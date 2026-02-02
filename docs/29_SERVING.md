@@ -19,6 +19,15 @@ export AUDIT_LOG_PATH=./audit.jsonl
 uvicorn serving.app:app --reload
 ```
 
+### Windows (PowerShell)
+```powershell
+$env:MODEL_STAGE = "production"
+$env:API_KEY = "your-key"
+$env:SCHEMA_MODE = "warn"
+$env:AUDIT_LOG_PATH = ".\\audit.jsonl"
+uvicorn serving.app:app --reload
+```
+
 ## Environment variables
 
 - `API_KEY`
@@ -58,6 +67,15 @@ curl -X POST "http://localhost:8000/predict" \
   -H "Content-Type: application/json" \
   -H "X-API-Key: your-key" \
   -d '{"records":[{"num1":1.2,"num2":3.4,"cat":"a"}]}'
+```
+
+PowerShell:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:8000/predict" `
+  -Headers @{ "X-API-Key" = "your-key" } `
+  -ContentType "application/json" `
+  -Body '{"records":[{"num1":1.2,"num2":3.4,"cat":"a"}]}'
 ```
 
 ## Audit log

@@ -11,6 +11,14 @@ pip install -r requirements/base.txt
 pip install -e .
 ```
 
+Windows (PowerShell):
+```powershell
+python -m venv .venv
+.\\.venv\\Scripts\\Activate.ps1
+pip install -r requirements/base.txt
+pip install -e .
+```
+
 uv alternative:
 ```bash
 uv sync --frozen

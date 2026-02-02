@@ -1,5 +1,9 @@
 # 試験（ローカル→社内）リハーサルコマンド v2
 
+## Windows 補足
+- `/tmp/...` は Windows では `"$env:TEMP\\..."` に置き換えてください。
+- bash 前提の例は PowerShell での実行に置換してください（詳細は `docs_manual/90_windows.md`）。
+
 ## 0) Python runner（推奨・自動検証つき）
 ```bash
 python tools/rehearsal/run_pipeline_v2.py --execution local \

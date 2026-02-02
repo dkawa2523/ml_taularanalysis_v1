@@ -28,6 +28,7 @@ nav:
   - 命名・タグ・プロジェクト階層ルール: 19_naming_policy.md
   - 再現性・成果物・バージョニング: 20_reproducibility_artifacts.md
   - レポーティング: 21_reporting.md
+  - Windows 実行ガイド: 90_windows.md
 
 theme:
   name: mkdocs

@@ -1,5 +1,8 @@
 # 70_CHATGPT_HANDOFF (ClearML update5-clearml)
 
+## Windows 補足
+- `/tmp/...` は Windows では `"$env:TEMP\\..."` に置き換えてください。
+
 This note summarizes the changes and verification performed in the recent ChatGPT/Codex session
 so another agent can quickly understand intent, edits, and current status.
 

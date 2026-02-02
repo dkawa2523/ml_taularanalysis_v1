@@ -1,5 +1,8 @@
 # ClearML Agent Troubleshooting (child tasks / templates)
 
+## Windows 補足
+- `/tmp/...` は Windows では `"$env:TEMP\\..."` に置き換えてください。
+
 ## Quick triage order (when child tasks are not created)
 1) Pipeline task script: repository/branch/entry_point
 2) Queue/Agent status
@@ -61,7 +64,7 @@ CLEARML_AGENT_SERVICES_DOCKER_RESTART: "no"
 
 2) docker logs を即時回収  
 ```
-python tools/clearml/watch_trial_logs.py --parent-task-id <PARENT_TASK_ID> --log-dir /tmp/clearml_trial_logs
+python tools/clearml/watch_trial_logs.py --parent-task-id <PARENT_TASK_ID> --log-dir <TEMP>/clearml_trial_logs
 ```
 
 注意:

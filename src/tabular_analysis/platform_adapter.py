@@ -135,12 +135,12 @@ def _read_clearml_config_api_section() -> dict[str, str]:
     return {}
 
 
-def _resolve_clearml_files_host_fallback() -> str | None:
+def _resolve_clearml_files_host_fallback(*, in_docker: bool) -> str | None:
     api_section = _read_clearml_config_api_section()
     files_host = os.getenv("CLEARML_FILES_HOST") or api_section.get("files_server") or api_section.get("files")
     if files_host:
         normalized = _normalize_files_host(files_host)
-        if normalized and urlparse(normalized).hostname not in {"localhost", "127.0.0.1"}:
+        if normalized and (not in_docker or urlparse(normalized).hostname not in {"localhost", "127.0.0.1"}):
             return normalized
 
     api_host = os.getenv("CLEARML_API_HOST") or os.getenv("CLEARML_WEB_HOST")
@@ -149,7 +149,7 @@ def _resolve_clearml_files_host_fallback() -> str | None:
     if api_host:
         parsed = urlparse(api_host if "://" in api_host else f"http://{api_host}")
         host = parsed.hostname
-        if host and host not in {"localhost", "127.0.0.1"}:
+        if host and (not in_docker or host not in {"localhost", "127.0.0.1"}):
             port = parsed.port
             if port is None or port in {8008, 8080}:
                 port = 8081
@@ -178,7 +178,7 @@ def _apply_clearml_files_host_substitution() -> None:
             normalized = None
 
     if not normalized:
-        normalized = _resolve_clearml_files_host_fallback()
+        normalized = _resolve_clearml_files_host_fallback(in_docker=in_docker)
     if not normalized:
         if in_docker:
             return
@@ -2611,7 +2611,9 @@ def get_task_artifact_local_copy(cfg: Any, task_id: str, artifact_name: str) -> 
                     headers = {"Authorization": f"Bearer {token}"}
                     response = requests.get(uri, headers=headers, timeout=30)
                     response.raise_for_status()
-                    target_dir = Path("/tmp/clearml_artifacts") / task_id
+                    import tempfile
+
+                    target_dir = Path(tempfile.gettempdir()) / "clearml_artifacts" / task_id
                     target_dir.mkdir(parents=True, exist_ok=True)
                     target_path = target_dir / artifact_name
                     target_path.write_bytes(response.content)

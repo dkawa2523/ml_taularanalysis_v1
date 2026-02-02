@@ -2,12 +2,13 @@
 """Watch ClearML child task containers and persist docker logs.
 
 Usage:
-  python tools/clearml/watch_trial_logs.py --parent-task-id <TASK_ID> --log-dir /tmp/clearml_trial_logs
+  python tools/clearml/watch_trial_logs.py --parent-task-id <TASK_ID> --log-dir <TEMP>/clearml_trial_logs
 """
 
 from __future__ import annotations
 
 import argparse
+import tempfile
 import json
 import time
 from pathlib import Path
@@ -74,7 +75,10 @@ def _fetch_child_tasks(session: Session, parent_task_id: str) -> dict[str, str]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Watch ClearML trial logs (docker).")
     parser.add_argument("--parent-task-id", required=True)
-    parser.add_argument("--log-dir", default="/tmp/clearml_trial_logs")
+    parser.add_argument(
+        "--log-dir",
+        default=str(Path(tempfile.gettempdir()) / "clearml_trial_logs"),
+    )
     parser.add_argument("--tail", type=int, default=200)
     parser.add_argument("--poll-sec", type=int, default=10)
     parser.add_argument("--timeout-sec", type=int, default=900)
